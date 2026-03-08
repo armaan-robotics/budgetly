@@ -118,7 +118,7 @@ function OverviewTab(p: OvProps) {
           {label:"Cash Flow In", val:fmt(p.cashFlowIn),  color:C.green,  sub:`Budget + ${fmt(p.totalEarnings)} earned`},
           {label:"Cash Flow Out",val:fmt(p.cashFlowOut), color:C.red,    sub:`${p.expenses.length} expense${p.expenses.length!==1?"s":""}`},
           {label:"Total Savings",val:fmt(p.totalSavings),color:C.amber,  sub:`${p.savings.length} entr${p.savings.length!==1?"ies":"y"}`},
-          {label:"Net Balance",  val:fmt(p.remaining),   color:p.remaining>=0?C.green:C.red, sub:p.remaining>=0?"On track":"Over budget ⚠"},
+          {label:"To Spend",     val:fmt(p.remaining),   color:p.remaining>=0?C.green:C.red, sub:p.remaining>=0?"On track":"Over budget ⚠"},
         ] as {label:string;val:string;color:string;sub:string}[]).map(s=>(
           <div key={s.label} style={{...sCard,borderTop:`3px solid ${s.color}`,padding:"14px"}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"5px"}}>{s.label}</div>
@@ -162,8 +162,8 @@ function OverviewTab(p: OvProps) {
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)"}}>
           {([
             {label:"Ideal monthly avg", val:fmt(p.idealPerDay),      color:C.accent, note:"cash in ÷ days in month"},
-            {label:"Current avg",       val:fmt(p.currentDailyAvg),  color:p.currentDailyAvg>p.idealPerDay?C.red:C.green, note:"spent ÷ days passed"},
-            {label:"Current ideal avg", val:fmt(p.currentIdealAvg),  color:C.amber,  note:"left ÷ days remaining"},
+            {label:"Daily avg to spend", val:fmt(p.currentIdealAvg),  color:p.currentIdealAvg<p.idealPerDay?C.green:C.red, note:"to spend ÷ days remaining"},
+            {label:"Spent per day",      val:fmt(p.currentDailyAvg),  color:C.muted,  note:"spent ÷ days passed"},
           ] as {label:string;val:string;color:string;note:string}[]).map((d,i)=>(
             <div key={i} style={{padding:"10px 8px",borderLeft:i>0?`1px solid ${C.border}`:"none",textAlign:"center"}}>
               <div style={{fontSize:"9px",color:C.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:"6px",lineHeight:1.3}}>{d.label}</div>
@@ -652,7 +652,7 @@ export default function BudgetTracker() {
 
         {/* Balance pill */}
         <div style={{margin:"0 12px 16px",background:remaining>=0?"#edfaf5":"#fdecea",borderRadius:"10px",padding:"12px 14px",border:`1px solid ${remaining>=0?"#b2ead0":"#f5c0b8"}`}}>
-          <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"3px"}}>Net Balance</div>
+          <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"3px"}}>To Spend</div>
           <div style={{fontSize:"19px",fontWeight:600,color:remaining>=0?C.green:C.red}}>{fmt(remaining)}</div>
           <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>{fmtMK(activeMK)}</div>
         </div>
@@ -680,7 +680,7 @@ export default function BudgetTracker() {
         {/* Upcoming features */}
         <div style={{margin:"12px 12px 10px",padding:"11px",background:"#faf9f7",borderRadius:"10px",border:`1px solid ${C.border}`}}>
           <div style={{fontSize:"9px",color:C.faint,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"6px"}}>Upcoming Features</div>
-          {["Account creation ✓","Import from Excel"].map(f=>(
+          {["Dark mode","Import from Excel"].map(f=>(
             <div key={f} style={{display:"flex",alignItems:"center",gap:"5px",marginBottom:"3px"}}>
               <div style={{width:"4px",height:"4px",borderRadius:"50%",background:C.faint,flexShrink:0}}/>
               <span style={{fontSize:"10px",color:C.faint}}>{f}</span>
