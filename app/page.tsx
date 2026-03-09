@@ -628,17 +628,10 @@ export default function BudgetTracker() {
   function SidebarInner() {
     return (
       <>
-        {/* Logo + dark toggle */}
-        <div style={{padding:"0 18px 20px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div>
-            <div style={{fontSize:"20px",fontWeight:700,letterSpacing:"-0.3px",color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
-            <div style={{fontSize:"10px",color:C.faint,marginTop:"1px"}}>by Armaan Gupta</div>
-          </div>
-          {/* Dark mode toggle */}
-          <button onClick={toggleDark} title={dark?"Switch to light mode":"Switch to dark mode"}
-            style={{background:C.navActive,border:`1px solid ${C.border}`,borderRadius:"8px",padding:"5px 8px",cursor:"pointer",fontSize:"14px",lineHeight:1,marginTop:"2px"}}>
-            {dark?"☀️":"🌙"}
-          </button>
+        {/* Logo */}
+        <div style={{padding:"0 18px 20px"}}>
+          <div style={{fontSize:"20px",fontWeight:700,letterSpacing:"-0.3px",color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
+          <div style={{fontSize:"10px",color:C.faint,marginTop:"1px"}}>by Armaan Gupta</div>
         </div>
 
         {/* User info */}
@@ -744,7 +737,14 @@ export default function BudgetTracker() {
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0;}
-        body{background:${C.bg};font-family:'DM Sans',sans-serif;transition:background 0.2s;color-scheme:${dark?'dark':'light'};}
+        body{background:${C.bg};font-family:'DM Sans',sans-serif;transition:background 0.35s ease,color 0.35s ease;color-scheme:${dark?'dark':'light'};}
+        *{transition:background-color 0.35s ease,border-color 0.35s ease,color 0.35s ease,box-shadow 0.35s ease;}
+        input,select,button{transition:background-color 0.35s ease,border-color 0.35s ease,color 0.35s ease!important;}
+        /* Theme toggle switch */
+        .theme-toggle{position:fixed;top:16px;right:20px;z-index:300;display:flex;align-items:center;gap:8px;background:${C.card};border:1px solid ${C.border};border-radius:30px;padding:5px 10px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,${dark?'0.4':'0.08'});}
+        .theme-toggle:hover{box-shadow:0 4px 14px rgba(0,0,0,${dark?'0.5':'0.13'});}
+        .toggle-track{width:36px;height:20px;border-radius:20px;background:${dark?C.accent:'#d1cfe8'};position:relative;transition:background 0.35s ease;flex-shrink:0;}
+        .toggle-thumb{position:absolute;top:3px;left:${dark?'17px':'3px'};width:14px;height:14px;border-radius:50%;background:#fff;transition:left 0.3s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 1px 4px rgba(0,0,0,0.2);}
         ::-webkit-scrollbar{width:6px;height:6px;}
         ::-webkit-scrollbar-track{background:${C.bg};}
         ::-webkit-scrollbar-thumb{background:${C.faint};border-radius:6px;}
@@ -769,8 +769,7 @@ export default function BudgetTracker() {
       <div className="mob-header">
         <div style={{fontSize:"18px",fontWeight:700,color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-          <button onClick={toggleDark} style={{background:"none",border:`1px solid ${C.border}`,borderRadius:"7px",padding:"4px 7px",cursor:"pointer",fontSize:"13px"}}>{dark?"☀️":"🌙"}</button>
-          <span style={{fontSize:"13px",fontWeight:600,color:remaining>=0?C.green:C.red}}>{fmt(remaining)}</span>
+<span style={{fontSize:"13px",fontWeight:600,color:remaining>=0?C.green:C.red}}>{fmt(remaining)}</span>
           <button onClick={()=>setDrawerOpen(true)} style={{background:"none",border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",borderRadius:"7px",padding:"5px 9px",fontSize:"14px"}}>☰</button>
         </div>
       </div>
@@ -813,6 +812,17 @@ export default function BudgetTracker() {
           {activeTab==="categories" &&<CategoriesTab {...caProps}/>}
         </main>
       </div>
+
+      {/* Fixed theme toggle — top right corner */}
+      <button className="theme-toggle" onClick={toggleDark} title={dark?"Switch to light":"Switch to dark"}>
+        <span style={{fontSize:"12px",color:C.muted,fontFamily:"'DM Sans',sans-serif",fontWeight:500,userSelect:"none"}}>
+          {dark?"Light":"Dark"}
+        </span>
+        <div className="toggle-track">
+          <div className="toggle-thumb"/>
+        </div>
+        <span style={{fontSize:"13px",lineHeight:1}}>{dark?"☀️":"🌙"}</span>
+      </button>
 
       <div className="mob-nav">
         {NAV.map(item=>(
