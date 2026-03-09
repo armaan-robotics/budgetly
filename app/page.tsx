@@ -548,7 +548,7 @@ export default function BudgetTracker() {
   const cashFlowIn        = budget + totalEarnings;
   const cashFlowOut       = totalExpenses;
   const remaining         = cashFlowIn - cashFlowOut - totalSavings;
-  const spentPct          = cashFlowIn>0 ? Math.min((cashFlowOut/cashFlowIn)*100,100) : 0;
+  const spentPct          = cashFlowIn>0 ? Math.min((cashFlowOut/(cashFlowIn-totalSavings))*100,100) : 0;
   const daysInMonth       = getDays(activeMK);
   const todayDay          = activeMK===curMK() ? new Date().getDate() : daysInMonth;
   const daysLeft          = Math.max(daysInMonth - todayDay, 1);
