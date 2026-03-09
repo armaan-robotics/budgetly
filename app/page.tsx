@@ -230,7 +230,7 @@ function OverviewTab(p: OvProps) {
             <div key={i} style={{padding:"10px 8px",borderLeft:i>0?`1px solid ${C.border}`:"none",textAlign:"center"}}>
               <div style={{fontSize:"9px",color:C.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:"6px",lineHeight:1.3}}>{d.label}</div>
               <div style={{fontSize:"clamp(13px,2vw,18px)",fontWeight:600,color:d.color}}>{d.val}</div>
-              <div style={{fontSize:"9px",color:C.faint,marginTop:"4px",lineHeight:1.3}}>{d.note}</div>
+              <div style={{fontSize:"9px",color:C.muted,marginTop:"4px",lineHeight:1.3}}>{d.note}</div>
             </div>
           ))}
         </div>
