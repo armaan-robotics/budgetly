@@ -519,7 +519,12 @@ export default function BudgetTracker() {
   const [deleteMonthConfirm, setDeleteMonthConfirm] = useState(false);
 
   const C = makeTheme(dark);
-  const toggleDark = () => { setDark(d => { lsSave("budgetly_dark", !d); return !d; }); };
+  const toggleDark = () => {
+    const html = document.documentElement;
+    html.classList.add("theme-transitioning");
+    setTimeout(() => html.classList.remove("theme-transitioning"), 600);
+    setDark(d => { lsSave("budgetly_dark", !d); return !d; });
+  };
 
   const today = todayS();
   const [expAmt,   setExpAmt]   = useState("");
@@ -737,14 +742,14 @@ export default function BudgetTracker() {
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0;}
-        body{background:${C.bg};font-family:'DM Sans',sans-serif;transition:background 0.35s ease,color 0.35s ease;color-scheme:${dark?'dark':'light'};}
-        *{transition:background-color 0.35s ease,border-color 0.35s ease,color 0.35s ease,box-shadow 0.35s ease;}
-        input,select,button{transition:background-color 0.35s ease,border-color 0.35s ease,color 0.35s ease!important;}
+        body{background:${C.bg};font-family:'DM Sans',sans-serif;color-scheme:${dark?'dark':'light'};}
+        *,*::before,*::after{transition:background-color 0.5s ease,border-color 0.5s ease,color 0.5s ease,box-shadow 0.5s ease!important;}
+        input,select,textarea,button{transition:background-color 0.5s ease,border-color 0.5s ease,color 0.5s ease,opacity 0.15s ease,box-shadow 0.5s ease!important;}
         /* Theme toggle switch */
         .theme-toggle{position:fixed;top:16px;right:20px;z-index:300;display:flex;align-items:center;gap:8px;background:${C.card};border:1px solid ${C.border};border-radius:30px;padding:5px 10px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,${dark?'0.4':'0.08'});}
         .theme-toggle:hover{box-shadow:0 4px 14px rgba(0,0,0,${dark?'0.5':'0.13'});}
-        .toggle-track{width:36px;height:20px;border-radius:20px;background:${dark?C.accent:'#d1cfe8'};position:relative;transition:background 0.35s ease;flex-shrink:0;}
-        .toggle-thumb{position:absolute;top:3px;left:${dark?'17px':'3px'};width:14px;height:14px;border-radius:50%;background:#fff;transition:left 0.3s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 1px 4px rgba(0,0,0,0.2);}
+        .toggle-track{width:36px;height:20px;border-radius:20px;background:${dark?C.accent:'#d1cfe8'};position:relative;transition:background 0.45s ease;flex-shrink:0;}
+        .toggle-thumb{position:absolute;top:3px;left:${dark?'17px':'3px'};width:14px;height:14px;border-radius:50%;background:#fff;transition:left 0.45s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 1px 4px rgba(0,0,0,0.2);}
         ::-webkit-scrollbar{width:6px;height:6px;}
         ::-webkit-scrollbar-track{background:${C.bg};}
         ::-webkit-scrollbar-thumb{background:${C.faint};border-radius:6px;}
