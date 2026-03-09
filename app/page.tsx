@@ -161,7 +161,7 @@ function OverviewTab(p: OvProps) {
         <div style={sSecT}>Daily Averages</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)"}}>
           {([
-            {label:"Ideal monthly avg", val:fmt(p.idealPerDay),      color:C.accent, note:"cash in ÷ days in month"},
+            {label:"Ideal monthly avg", val:fmt(p.idealPerDay),      color:C.accent, note:"(cash in - savings) ÷ days in month"},
             {label:"Daily avg to spend", val:fmt(p.currentIdealAvg),  color:p.currentIdealAvg<p.idealPerDay?C.green:C.red, note:"to spend ÷ days remaining"},
             {label:"Spent per day",      val:fmt(p.currentDailyAvg),  color:C.muted,  note:"spent ÷ days passed"},
           ] as {label:string;val:string;color:string;note:string}[]).map((d,i)=>(
@@ -553,7 +553,7 @@ export default function BudgetTracker() {
   const todayDay          = activeMK===curMK() ? new Date().getDate() : daysInMonth;
   const daysLeft          = Math.max(daysInMonth - todayDay, 1);
   const moneyLeft         = Math.max(remaining, 0);
-  const idealPerDay       = Math.round(cashFlowIn / daysInMonth);
+  const idealPerDay       = Math.round((cashFlowIn - totalSavings) / daysInMonth);
   const idealSpentByToday = idealPerDay * todayDay;
   const actualVsIdeal     = cashFlowOut - idealSpentByToday;
   const currentDailyAvg   = todayDay>0 ? Math.round(cashFlowOut/todayDay) : 0;
