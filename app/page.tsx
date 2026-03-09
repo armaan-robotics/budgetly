@@ -46,28 +46,28 @@ const NAV = [
 // ─── Theme factory ────────────────────────────────────────────────────────────
 function makeTheme(dark: boolean): Theme {
   return dark ? {
-    bg:             "#0f0f13",
-    sidebar:        "#16161e",
-    card:           "#1c1c26",
-    cardAlt:        "#14141c",
-    border:         "#2a2a3a",
-    text:           "#e8e6f0",
-    muted:          "#7a7890",
-    faint:          "#46445a",
-    accent:         "#8b7cf6",
-    green:          "#2dd4a0",
-    red:            "#f07060",
-    amber:          "#f0bc40",
-    inputBg:        "#13131a",
-    progressTrack:  "#2a2a3a",
-    navActive:      "#2a2440",
-    pillGreen:      "#0d2e22",
-    pillGreenBorder:"#1a5a3a",
-    pillRed:        "#2e1010",
-    pillRedBorder:  "#5a2020",
-    delBg:          "#2e1212",
-    cancelBg:       "#1e1e2a",
-    upcomingBg:     "#13131a",
+    bg:             "#111114",
+    sidebar:        "#18181c",
+    card:           "#1e1e23",
+    cardAlt:        "#16161a",
+    border:         "#2c2c34",
+    text:           "#c8c6d0",
+    muted:          "#68667a",
+    faint:          "#3c3a4c",
+    accent:         "#7c6fd4",
+    green:          "#3aaa80",
+    red:            "#b86050",
+    amber:          "#b89028",
+    inputBg:        "#141418",
+    progressTrack:  "#2c2c34",
+    navActive:      "#222230",
+    pillGreen:      "#0e241a",
+    pillGreenBorder:"#1c3e2c",
+    pillRed:        "#241212",
+    pillRedBorder:  "#3e2020",
+    delBg:          "#241414",
+    cancelBg:       "#1e1e26",
+    upcomingBg:     "#141418",
   } : {
     bg:             "#f7f6f3",
     sidebar:        "#ffffff",
@@ -697,7 +697,7 @@ export default function BudgetTracker() {
         {/* Upcoming features */}
         <div style={{margin:"12px 12px 10px",padding:"11px",background:C.upcomingBg,borderRadius:"10px",border:`1px solid ${C.border}`}}>
           <div style={{fontSize:"9px",color:C.faint,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"6px"}}>Upcoming Features</div>
-          {["Dark mode ✓","Import from Excel"].map(f=>(
+          {["Export as Excel","Import from Excel"].map(f=>(
             <div key={f} style={{display:"flex",alignItems:"center",gap:"5px",marginBottom:"3px"}}>
               <div style={{width:"4px",height:"4px",borderRadius:"50%",background:C.faint,flexShrink:0}}/>
               <span style={{fontSize:"10px",color:C.faint}}>{f}</span>
