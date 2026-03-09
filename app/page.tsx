@@ -636,7 +636,7 @@ export default function BudgetTracker() {
         {/* Logo */}
         <div style={{padding:"0 18px 20px"}}>
           <div style={{fontSize:"20px",fontWeight:700,letterSpacing:"-0.3px",color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
-          <div style={{fontSize:"10px",color:C.faint,marginTop:"1px"}}>by Armaan Gupta</div>
+          <div style={{fontSize:"10px",color:dark?C.muted:C.faint,marginTop:"1px"}}>by Armaan Gupta</div>
         </div>
 
         {/* User info */}
@@ -695,7 +695,7 @@ export default function BudgetTracker() {
         {/* Upcoming features */}
         <div style={{margin:"12px 12px 10px",padding:"11px",background:C.upcomingBg,borderRadius:"10px",border:`1px solid ${C.border}`}}>
           <div style={{fontSize:"9px",color:C.faint,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"6px"}}>Upcoming Features</div>
-          {["Export as Excel","Import from Excel"].map(f=>(
+          {["Export as Spreadsheet","Import from Spreadsheet"].map(f=>(
             <div key={f} style={{display:"flex",alignItems:"center",gap:"5px",marginBottom:"3px"}}>
               <div style={{width:"4px",height:"4px",borderRadius:"50%",background:C.faint,flexShrink:0}}/>
               <span style={{fontSize:"10px",color:C.faint}}>{f}</span>
