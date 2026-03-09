@@ -744,7 +744,11 @@ export default function BudgetTracker() {
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0;}
-        body{background:${C.bg};font-family:'DM Sans',sans-serif;transition:background 0.2s;}
+        body{background:${C.bg};font-family:'DM Sans',sans-serif;transition:background 0.2s;color-scheme:${dark?'dark':'light'};}
+        ::-webkit-scrollbar{width:6px;height:6px;}
+        ::-webkit-scrollbar-track{background:${C.bg};}
+        ::-webkit-scrollbar-thumb{background:${C.faint};border-radius:6px;}
+        ::-webkit-scrollbar-thumb:hover{background:${C.muted};}
         input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
         input:focus,select:focus{border-color:${C.accent}!important;box-shadow:0 0 0 3px ${C.accent}22;}
         input,select,option{color-scheme:${dark?"dark":"light"};}
