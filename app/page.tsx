@@ -234,11 +234,7 @@ function OverviewTab(p: OvProps) {
             </div>
           ))}
         </div>
-        <div style={{marginTop:"12px",background:p.actualVsIdeal>0?C.pillRed:C.pillGreen,borderRadius:"8px",padding:"8px 12px",textAlign:"center",border:`1px solid ${p.actualVsIdeal>0?C.pillRedBorder:C.pillGreenBorder}`}}>
-          <span style={{fontSize:"12px",color:p.actualVsIdeal>0?C.red:C.green,fontWeight:500}}>
-            {p.actualVsIdeal>0?`⚠ ${fmt(p.actualVsIdeal)} over daily pace`:`✓ ${fmt(Math.abs(p.actualVsIdeal))} under daily pace`}
-          </span>
-        </div>
+
       </div>
 
       {catTotals.length>0&&(
