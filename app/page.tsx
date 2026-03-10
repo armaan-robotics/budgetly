@@ -756,6 +756,7 @@ export default function BudgetTracker() {
         .mob-header{display:none;}
         .mob-nav{display:none;}
         @media(max-width:768px){
+          .theme-toggle{display:none!important;}
           .mob-header{display:flex!important;position:fixed;top:0;left:0;right:0;z-index:100;background:${C.sidebar};border-bottom:1px solid ${C.border};padding:11px 15px;align-items:center;justify-content:space-between;}
           .desk-sidebar{display:none!important;}
           .mob-nav{display:flex!important;position:fixed;bottom:0;left:0;right:0;background:${C.sidebar};border-top:1px solid ${C.border};z-index:50;padding:5px 0 max(8px,env(safe-area-inset-bottom));}
@@ -771,6 +772,12 @@ export default function BudgetTracker() {
         <div style={{fontSize:"18px",fontWeight:700,color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
 <span style={{fontSize:"13px",fontWeight:600,color:remaining>=0?C.green:C.red}}>{fmt(remaining)}</span>
+          <button onClick={toggleDark} style={{background:C.navActive,border:`1px solid ${C.border}`,borderRadius:"20px",padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",gap:"5px"}}>
+            <div style={{width:"28px",height:"16px",borderRadius:"16px",background:dark?C.accent:"#d1cfe8",position:"relative",flexShrink:0}}>
+              <div style={{position:"absolute",top:"2px",left:dark?"14px":"2px",width:"12px",height:"12px",borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,0.2)"}}/>
+            </div>
+            <span style={{fontSize:"12px"}}>{dark?"☀️":"🌙"}</span>
+          </button>
           <button onClick={()=>setDrawerOpen(true)} style={{background:"none",border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",borderRadius:"7px",padding:"5px 9px",fontSize:"14px"}}>☰</button>
         </div>
       </div>
