@@ -717,12 +717,12 @@ export default function BudgetTracker() {
     rows.push(["Exported on", new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})]);
     rows.push([]);
     rows.push(["SUMMARY"]);
-    rows.push(["Budget", budget]);
-    rows.push(["Total Earnings", totalEarnings]);
-    rows.push(["Cash Flow In", cashFlowIn]);
-    rows.push(["Total Expenses", cashFlowOut]);
-    rows.push(["Total Savings", totalSavings]);
-    rows.push(["To Spend (Remaining)", remaining]);
+    rows.push(["Budget", String(budget)]);
+    rows.push(["Total Earnings", String(totalEarnings)]);
+    rows.push(["Cash Flow In", String(cashFlowIn)]);
+    rows.push(["Total Expenses", String(cashFlowOut)]);
+    rows.push(["Total Savings", String(totalSavings)]);
+    rows.push(["To Spend (Remaining)", String(remaining)]);
     rows.push([]);
 
     // Expenses
@@ -730,7 +730,7 @@ export default function BudgetTracker() {
     rows.push(["Date","Category","Description","Amount (INR)"]);
     if (expenses.length === 0) rows.push(["No expenses"]);
     else [...expenses].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e =>
-      rows.push([e.date, e.category, e.description||"—", e.amount])
+      rows.push([e.date, e.category, e.description||"—", String(e.amount)])
     );
     rows.push([]);
 
@@ -739,7 +739,7 @@ export default function BudgetTracker() {
     rows.push(["Date","Description","Amount (INR)"]);
     if (earnings.length === 0) rows.push(["No earnings"]);
     else [...earnings].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e =>
-      rows.push([e.date, e.description||"—", e.amount])
+      rows.push([e.date, e.description||"—", String(e.amount)])
     );
     rows.push([]);
 
@@ -748,7 +748,7 @@ export default function BudgetTracker() {
     rows.push(["Date","Description","Amount (INR)"]);
     if (savings.length === 0) rows.push(["No savings"]);
     else [...savings].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e =>
-      rows.push([e.date, e.description||"—", e.amount])
+      rows.push([e.date, e.description||"—", String(e.amount)])
     );
 
     const csv = rows.map(r => r.map(c => q(c)).join(",")).join("\n");
