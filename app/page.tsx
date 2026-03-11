@@ -706,6 +706,61 @@ export default function BudgetTracker() {
   }
 
   // ─── Settings Modal ────────────────────────────────────────────────────────
+  // ─── Export CSV ─────────────────────────────────────────────────────────────
+  const exportCSV = () => {
+    const rows: string[][] = [];
+    const q = (s: string | number) => `"${String(s).replace(/"/g,'""')}"`;
+
+    // Summary
+    rows.push(["BUDGETLY EXPORT"]);
+    rows.push(["Month", fmtMK(activeMK)]);
+    rows.push(["Exported on", new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})]);
+    rows.push([]);
+    rows.push(["SUMMARY"]);
+    rows.push(["Budget", budget]);
+    rows.push(["Total Earnings", totalEarnings]);
+    rows.push(["Cash Flow In", cashFlowIn]);
+    rows.push(["Total Expenses", cashFlowOut]);
+    rows.push(["Total Savings", totalSavings]);
+    rows.push(["To Spend (Remaining)", remaining]);
+    rows.push([]);
+
+    // Expenses
+    rows.push(["EXPENSES"]);
+    rows.push(["Date","Category","Description","Amount (INR)"]);
+    if (expenses.length === 0) rows.push(["No expenses"]);
+    else [...expenses].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e =>
+      rows.push([e.date, e.category, e.description||"—", e.amount])
+    );
+    rows.push([]);
+
+    // Earnings
+    rows.push(["CASH IN (EARNINGS)"]);
+    rows.push(["Date","Description","Amount (INR)"]);
+    if (earnings.length === 0) rows.push(["No earnings"]);
+    else [...earnings].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e =>
+      rows.push([e.date, e.description||"—", e.amount])
+    );
+    rows.push([]);
+
+    // Savings
+    rows.push(["SAVINGS"]);
+    rows.push(["Date","Description","Amount (INR)"]);
+    if (savings.length === 0) rows.push(["No savings"]);
+    else [...savings].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e =>
+      rows.push([e.date, e.description||"—", e.amount])
+    );
+
+    const csv = rows.map(r => r.map(c => q(c)).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `budgetly-${activeMK}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   function SettingsModal() {
     return (
       <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:500,display:"flex",alignItems:"flex-end",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}
@@ -728,13 +783,19 @@ export default function BudgetTracker() {
                 <button onClick={()=>{setShowSettings(false);setUser(null);}} style={{...btnP,width:"100%",padding:"10px",fontSize:"13px"}}>Create Account / Sign In</button>
               </>
             ) : (
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.cardAlt,padding:"10px 12px",borderRadius:"10px",border:`1px solid ${C.border}`}}>
-                <div>
-                  <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>Signed in as</div>
-                  <div style={{fontSize:"13px",color:C.text,fontWeight:500}}>{user.email}</div>
+              <>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.cardAlt,padding:"10px 12px",borderRadius:"10px",border:`1px solid ${C.border}`,marginBottom:"10px"}}>
+                  <div>
+                    <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>Signed in as</div>
+                    <div style={{fontSize:"13px",color:C.text,fontWeight:500}}>{user.email}</div>
+                  </div>
+                  <button onClick={()=>{setShowSettings(false);logout();}} style={{...btnB,background:C.delBg,color:C.red,padding:"7px 14px",fontSize:"12px"}}>Log out</button>
                 </div>
-                <button onClick={()=>{setShowSettings(false);logout();}} style={{...btnB,background:C.delBg,color:C.red,padding:"7px 14px",fontSize:"12px"}}>Log out</button>
-              </div>
+                <div style={{background:C.green+"14",border:`1px solid ${C.green}33`,borderRadius:"10px",padding:"11px 14px"}}>
+                  <div style={{fontSize:"11px",color:C.green,fontWeight:600,marginBottom:"3px"}}>✓ Account active</div>
+                  <div style={{fontSize:"11px",color:C.muted,lineHeight:1.7}}>Your data syncs across all devices and is securely stored. We recommend using an account over guest mode — guest data is limited to one device and may be lost if the browser is cleared.</div>
+                </div>
+              </>
             )}
           </div>
 
@@ -771,6 +832,15 @@ export default function BudgetTracker() {
                 🗑 Delete {fmtMK(activeMK)}
               </button>
             )}
+          </div>
+
+          {/* Export */}
+          <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Export Data</div>
+            <div style={{fontSize:"11px",color:C.muted,lineHeight:1.6,marginBottom:"10px"}}>Download all your data for {fmtMK(activeMK)} as a spreadsheet (.csv) you can open in Excel, Google Sheets, or any spreadsheet app.</div>
+            <button onClick={exportCSV} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:C.cardAlt,color:C.green,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:600,textAlign:"left"}}>
+              ↓ Export {fmtMK(activeMK)} as Spreadsheet
+            </button>
           </div>
 
           {/* Feedback */}
