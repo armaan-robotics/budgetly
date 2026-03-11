@@ -470,10 +470,13 @@ function AuthScreen({ onAuth, dark }: { onAuth:(user:User)=>void; dark:boolean }
             {mode==="login"?"Sign Up":"Log In"}
           </button>
         </div>
-        <div style={{textAlign:"center",marginTop:"20px",paddingTop:"16px",borderTop:`1px solid ${C.border}`}}>
-          <div style={{fontSize:"11px",color:C.faint,marginBottom:"8px"}}>Just want to try it?</div>
+        <div style={{marginTop:"20px",paddingTop:"16px",borderTop:`1px solid ${C.border}`}}>
+          <div style={{background:C.amber+"18",border:`1px solid ${C.amber}44`,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
+            <div style={{fontSize:"11px",color:C.amber,fontWeight:600,marginBottom:"4px"}}>⚠ Before you continue as guest</div>
+            <div style={{fontSize:"11px",color:C.muted,lineHeight:1.7}}>We recommend creating an account. Guest data is stored only on this device and may be lost if you clear your browser. You can always import your guest data into an account later.</div>
+          </div>
           <button onClick={()=>onAuth({id:"guest"} as unknown as User)}
-            style={{...btnB,background:C.cancelBg,color:C.muted,width:"100%",padding:"10px"}}>Continue as Guest</button>
+            style={{...btnB,background:C.cancelBg,color:C.muted,width:"100%",padding:"10px"}}>Continue as Guest anyway</button>
         </div>
       </div>
     </div>
@@ -511,6 +514,7 @@ export default function BudgetTracker() {
   const [deleteConfirm, setDeleteConfirm] = useState<number|null>(null);
   const [newCategory,   setNewCategory]   = useState("");
   const [drawerOpen,    setDrawerOpen]    = useState(false);
+  const [showSettings,  setShowSettings]  = useState(false);
   const [dbLoading,     setDbLoading]     = useState(false);
   const [deleteMonthConfirm, setDeleteMonthConfirm] = useState(false);
 
@@ -628,25 +632,11 @@ export default function BudgetTracker() {
 
   function SidebarInner() {
     return (
-      <>
+      <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
         {/* Logo */}
         <div style={{padding:"0 18px 20px"}}>
           <div style={{fontSize:"20px",fontWeight:700,letterSpacing:"-0.3px",color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
           <div style={{fontSize:"10px",color:dark?C.muted:C.faint,marginTop:"1px"}}>by Armaan Gupta</div>
-        </div>
-
-        {/* User info */}
-        <div style={{margin:"0 12px 16px",padding:"10px 12px",background:C.cardAlt,borderRadius:"10px",border:`1px solid ${C.border}`}}>
-          {isGuest ? (
-            <div style={{fontSize:"11px",color:C.muted}}>👤 Guest · <button onClick={()=>setUser(null)} style={{background:"none",border:"none",color:C.accent,cursor:"pointer",fontSize:"11px",fontFamily:"'DM Sans',sans-serif",fontWeight:600,padding:0}}>Sign in</button></div>
-          ) : (
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{fontSize:"11px",color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"130px"}}>{user.email}</div>
-              <button onClick={logout} style={{background:"none",border:"none",color:C.faint,cursor:"pointer",fontSize:"11px",fontFamily:"'DM Sans',sans-serif"}}
-                onMouseEnter={e=>{(e.currentTarget as HTMLButtonElement).style.color=C.red;}}
-                onMouseLeave={e=>{(e.currentTarget as HTMLButtonElement).style.color=C.faint;}}>Log out</button>
-            </div>
-          )}
         </div>
 
         {/* Month selector */}
@@ -656,9 +646,6 @@ export default function BudgetTracker() {
             style={{...sInput,fontSize:"12px",appearance:"none",cursor:"pointer",padding:"8px 11px"}}>
             {allMKs.map(mk=><option key={mk} value={mk}>{fmtMK(mk)}</option>)}
           </select>
-          <button onClick={addNextMonth} style={{width:"100%",marginTop:"7px",padding:"6px",borderRadius:"8px",border:`1px solid ${C.border}`,background:"transparent",color:C.accent,cursor:"pointer",fontSize:"11px",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>
-            + New Month
-          </button>
         </div>
 
         {/* To Spend pill */}
@@ -699,31 +686,104 @@ export default function BudgetTracker() {
           ))}
         </div>
 
-        {/* Footer */}
+        {/* Settings button at bottom */}
         <div style={{padding:"10px 12px 0",borderTop:`1px solid ${C.border}`}}>
-          <a href="https://docs.google.com/forms/d/e/1FAIpQLSdtx7DdVgiihO1C6qGfO8Y_nPjvyMvjQUr9fZMdwuG2C1DlCg/viewform?usp=publish-editor"
-            target="_blank" rel="noreferrer"
-            style={{display:"block",textAlign:"center",padding:"7px",borderRadius:"8px",background:C.navActive,color:C.accent,fontSize:"12px",fontWeight:600,textDecoration:"none",marginBottom:"7px"}}>
-            💬 Give Feedback
-          </a>
-          {deleteMonthConfirm ? (
-            <div style={{marginBottom:"7px"}}>
-              <div style={{fontSize:"11px",color:C.text,marginBottom:"6px",textAlign:"center"}}>Delete {fmtMK(activeMK)}?</div>
-              <div style={{display:"flex",gap:"6px"}}>
-                <button onClick={deleteMonth} style={{flex:1,padding:"6px",borderRadius:"7px",border:"none",background:C.delBg,color:C.red,cursor:"pointer",fontSize:"11px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>Yes, delete</button>
-                <button onClick={()=>setDeleteMonthConfirm(false)} style={{flex:1,padding:"6px",borderRadius:"7px",border:"none",background:C.cancelBg,color:C.muted,cursor:"pointer",fontSize:"11px",fontFamily:"'DM Sans',sans-serif"}}>Cancel</button>
-              </div>
-            </div>
-          ) : (
-            <button onClick={()=>setDeleteMonthConfirm(true)}
-              style={{width:"100%",padding:"6px",borderRadius:"8px",border:`1px solid ${C.border}`,background:"transparent",color:C.faint,cursor:"pointer",fontSize:"10px",fontFamily:"'DM Sans',sans-serif",marginBottom:"6px"}}
-              onMouseEnter={e=>{(e.currentTarget as HTMLButtonElement).style.color=C.red;(e.currentTarget as HTMLButtonElement).style.borderColor=C.red+"66";}}
-              onMouseLeave={e=>{(e.currentTarget as HTMLButtonElement).style.color=C.faint;(e.currentTarget as HTMLButtonElement).style.borderColor=C.border;}}>
-              🗑 Delete this month
-            </button>
-          )}
+          <button onClick={()=>setShowSettings(true)} style={{
+            width:"100%",padding:"9px 12px",borderRadius:"9px",border:"none",
+            background:"transparent",color:C.muted,fontWeight:400,
+            fontSize:"13px",cursor:"pointer",textAlign:"left",
+            display:"flex",alignItems:"center",gap:"9px",
+            fontFamily:"'DM Sans',sans-serif",
+          }}
+            onMouseEnter={e=>{(e.currentTarget as HTMLButtonElement).style.background=C.navActive;(e.currentTarget as HTMLButtonElement).style.color=C.accent;}}
+            onMouseLeave={e=>{(e.currentTarget as HTMLButtonElement).style.background="transparent";(e.currentTarget as HTMLButtonElement).style.color=C.muted;}}>
+            <span style={{fontSize:"15px",width:"18px",textAlign:"center"}}>⚙</span>
+            Settings
+          </button>
         </div>
-      </>
+      </div>
+    );
+  }
+
+  // ─── Settings Modal ────────────────────────────────────────────────────────
+  function SettingsModal() {
+    return (
+      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:500,display:"flex",alignItems:"flex-end",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}
+        onClick={e=>{if(e.target===e.currentTarget)setShowSettings(false);}}>
+        <div style={{background:C.card,borderRadius:"20px 20px 0 0",padding:"28px 24px 36px",width:"100%",maxWidth:"460px",border:`1px solid ${C.border}`,borderBottom:"none",maxHeight:"90vh",overflowY:"auto"}}>
+          {/* Handle bar */}
+          <div style={{width:"36px",height:"4px",borderRadius:"4px",background:C.faint,margin:"0 auto 24px"}}/>
+          <div style={{fontSize:"17px",fontWeight:600,color:C.text,marginBottom:"20px"}}>Settings</div>
+
+          {/* Account */}
+          <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Account</div>
+            {isGuest ? (
+              <>
+                <div style={{fontSize:"12px",color:C.muted,marginBottom:"10px"}}>👤 Signed in as Guest</div>
+                <div style={{background:C.amber+"18",border:`1px solid ${C.amber}44`,borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
+                  <div style={{fontSize:"12px",color:C.amber,fontWeight:600,marginBottom:"4px"}}>⚠ Guest Mode Limitations</div>
+                  <div style={{fontSize:"11px",color:C.muted,lineHeight:1.6}}>We recommend creating an account. Guest data is only accessible on this device and may be lost if you clear your browser. Your guest data can be imported into an account anytime.</div>
+                </div>
+                <button onClick={()=>{setShowSettings(false);setUser(null);}} style={{...btnP,width:"100%",padding:"10px",fontSize:"13px"}}>Create Account / Sign In</button>
+              </>
+            ) : (
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.cardAlt,padding:"10px 12px",borderRadius:"10px",border:`1px solid ${C.border}`}}>
+                <div>
+                  <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>Signed in as</div>
+                  <div style={{fontSize:"13px",color:C.text,fontWeight:500}}>{user.email}</div>
+                </div>
+                <button onClick={()=>{setShowSettings(false);logout();}} style={{...btnB,background:C.delBg,color:C.red,padding:"7px 14px",fontSize:"12px"}}>Log out</button>
+              </div>
+            )}
+          </div>
+
+          {/* Dark mode */}
+          <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Appearance</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.cardAlt,padding:"12px 14px",borderRadius:"10px",border:`1px solid ${C.border}`}}>
+              <div>
+                <div style={{fontSize:"13px",color:C.text,fontWeight:500}}>{dark?"Dark Mode":"Light Mode"}</div>
+                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>Switch appearance</div>
+              </div>
+              <button onClick={toggleDark} style={{background:dark?C.accent:"#d1cfe8",border:"none",borderRadius:"20px",width:"44px",height:"24px",cursor:"pointer",position:"relative",flexShrink:0}}>
+                <div style={{position:"absolute",top:"3px",left:dark?"23px":"3px",width:"18px",height:"18px",borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,0.25)"}}/>
+              </button>
+            </div>
+          </div>
+
+          {/* Month management */}
+          <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Month</div>
+            <button onClick={()=>{addNextMonth();setShowSettings(false);}} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:C.cardAlt,color:C.accent,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:600,textAlign:"left",marginBottom:"8px"}}>
+              + Add New Month
+            </button>
+            {deleteMonthConfirm ? (
+              <div>
+                <div style={{fontSize:"12px",color:C.text,marginBottom:"8px",textAlign:"center"}}>Delete {fmtMK(activeMK)}?</div>
+                <div style={{display:"flex",gap:"8px"}}>
+                  <button onClick={()=>{deleteMonth();setShowSettings(false);}} style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:C.delBg,color:C.red,cursor:"pointer",fontSize:"12px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>Yes, delete</button>
+                  <button onClick={()=>setDeleteMonthConfirm(false)} style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:C.cancelBg,color:C.muted,cursor:"pointer",fontSize:"12px",fontFamily:"'DM Sans',sans-serif"}}>Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={()=>setDeleteMonthConfirm(true)} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:"transparent",color:C.red,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",textAlign:"left",opacity:0.8}}>
+                🗑 Delete {fmtMK(activeMK)}
+              </button>
+            )}
+          </div>
+
+          {/* Feedback */}
+          <div>
+            <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Feedback</div>
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSdtx7DdVgiihO1C6qGfO8Y_nPjvyMvjQUr9fZMdwuG2C1DlCg/viewform?usp=publish-editor"
+              target="_blank" rel="noreferrer" onClick={()=>setShowSettings(false)}
+              style={{display:"block",textAlign:"center",padding:"10px",borderRadius:"10px",background:C.navActive,color:C.accent,fontSize:"13px",fontWeight:600,textDecoration:"none"}}>
+              💬 Give Feedback
+            </a>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -820,6 +880,8 @@ export default function BudgetTracker() {
           {activeTab==="categories" &&<CategoriesTab {...caProps}/>}
         </main>
       </div>
+
+      {showSettings&&<SettingsModal/>}
 
       {/* Fixed theme toggle — top right corner */}
       <button className="theme-toggle" onClick={toggleDark} title={dark?"Switch to light":"Switch to dark"}>
