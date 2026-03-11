@@ -678,7 +678,7 @@ export default function BudgetTracker() {
         {/* Upcoming features */}
         <div style={{margin:"12px 12px 10px",padding:"11px",background:C.upcomingBg,borderRadius:"10px",border:`1px solid ${C.border}`}}>
           <div style={{fontSize:"9px",color:C.faint,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"6px"}}>Upcoming Features</div>
-          {["Export as Spreadsheet","Import from Spreadsheet"].map(f=>(
+          {["Import from Spreadsheet"].map(f=>(
             <div key={f} style={{display:"flex",alignItems:"center",gap:"5px",marginBottom:"3px"}}>
               <div style={{width:"4px",height:"4px",borderRadius:"50%",background:C.faint,flexShrink:0}}/>
               <span style={{fontSize:"10px",color:C.faint}}>{f}</span>
