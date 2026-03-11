@@ -723,7 +723,7 @@ export default function BudgetTracker() {
                 <div style={{fontSize:"12px",color:C.muted,marginBottom:"10px"}}>👤 Signed in as Guest</div>
                 <div style={{background:C.amber+"18",border:`1px solid ${C.amber}44`,borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
                   <div style={{fontSize:"12px",color:C.amber,fontWeight:600,marginBottom:"4px"}}>⚠ Guest Mode Limitations</div>
-                  <div style={{fontSize:"11px",color:C.muted,lineHeight:1.6}}>We recommend creating an account. Guest data is only accessible on this device and may be lost if you clear your browser. Your guest data can be imported into an account anytime.</div>
+                  <div style={{fontSize:"11px",color:C.muted,lineHeight:1.7}}>We recommend creating an account and using the application since continuing as guest may result in loss of some data and is accessible through only one device. Data from guest can be imported into your account anytime.</div>
                 </div>
                 <button onClick={()=>{setShowSettings(false);setUser(null);}} style={{...btnP,width:"100%",padding:"10px",fontSize:"13px"}}>Create Account / Sign In</button>
               </>
@@ -802,10 +802,7 @@ export default function BudgetTracker() {
         *,*::before,*::after{transition:background-color 0.5s ease,border-color 0.5s ease,color 0.5s ease,box-shadow 0.5s ease!important;}
         input,select,textarea,button{transition:background-color 0.5s ease,border-color 0.5s ease,color 0.5s ease,opacity 0.15s ease,box-shadow 0.5s ease!important;}
         /* Theme toggle switch */
-        .theme-toggle{position:fixed;top:16px;right:20px;z-index:300;display:flex;align-items:center;gap:8px;background:${C.card};border:1px solid ${C.border};border-radius:30px;padding:5px 10px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,${dark?'0.4':'0.08'});}
-        .theme-toggle:hover{box-shadow:0 4px 14px rgba(0,0,0,${dark?'0.5':'0.13'});}
-        .toggle-track{width:36px;height:20px;border-radius:20px;background:${dark?C.accent:'#d1cfe8'};position:relative;transition:background 0.45s ease;flex-shrink:0;}
-        .toggle-thumb{position:absolute;top:3px;left:${dark?'17px':'3px'};width:14px;height:14px;border-radius:50%;background:#fff;transition:left 0.45s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 1px 4px rgba(0,0,0,0.2);}
+
         ::-webkit-scrollbar{width:6px;height:6px;}
         ::-webkit-scrollbar-track{background:${C.bg};}
         ::-webkit-scrollbar-thumb{background:${C.faint};border-radius:6px;}
@@ -816,7 +813,6 @@ export default function BudgetTracker() {
         .mob-header{display:none;}
         .mob-nav{display:none;}
         @media(max-width:768px){
-          .theme-toggle{display:none!important;}
           .mob-header{display:flex!important;position:fixed;top:0;left:0;right:0;z-index:100;background:${C.sidebar};border-bottom:1px solid ${C.border};padding:11px 15px;align-items:center;justify-content:space-between;}
           .desk-sidebar{display:none!important;}
           .mob-nav{display:flex!important;position:fixed;bottom:0;left:0;right:0;background:${C.sidebar};border-top:1px solid ${C.border};z-index:50;padding:5px 0 max(8px,env(safe-area-inset-bottom));}
@@ -882,17 +878,6 @@ export default function BudgetTracker() {
       </div>
 
       {showSettings&&<SettingsModal/>}
-
-      {/* Fixed theme toggle — top right corner */}
-      <button className="theme-toggle" onClick={toggleDark} title={dark?"Switch to light":"Switch to dark"}>
-        <span style={{fontSize:"12px",color:C.muted,fontFamily:"'DM Sans',sans-serif",fontWeight:500,userSelect:"none"}}>
-          {dark?"Light":"Dark"}
-        </span>
-        <div className="toggle-track">
-          <div className="toggle-thumb"/>
-        </div>
-        <span style={{fontSize:"13px",lineHeight:1}}>{dark?"☀️":"🌙"}</span>
-      </button>
 
       <div className="mob-nav">
         {NAV.map(item=>(
