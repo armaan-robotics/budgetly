@@ -793,7 +793,29 @@ export default function BudgetTracker() {
   const addCategory    = () => { const t=newCategory.trim(); if(!t||categories.includes(t))return; setCategories([...categories,t]); setNewCategory(""); };
   const deleteCategory = (cat:string) => { if(DEFAULT_CATS.includes(cat))return; setCategories(categories.filter(c=>c!==cat)); };
   const addCredit      = () => { if(!crAmt||isNaN(+crAmt)||!crPerson.trim())return; setCredits(prev=>[...prev,{id:Date.now(),person:crPerson.trim(),amount:+crAmt,description:crDesc,date:crDate,type:crType,cleared:false}]); setCrAmt(""); setCrPerson(""); setCrDesc(""); };
-  const toggleCleared  = (id:number) => setCredits(prev=>prev.map(c=>c.id===id?{...c,cleared:!c.cleared}:c));
+  const toggleCleared  = (id:number) => {
+    setCredits(prev => prev.map(c => {
+      if (c.id !== id) return c;
+      const nowCleared = !c.cleared;
+      const label = `Credit: ${c.person}${c.description ? ` — ${c.description}` : ""}`;
+      if (nowCleared) {
+        // clearing: add earning or expense
+        if (c.type === "owed_to_me") {
+          setM(activeMK, { ...getM(activeMK), earnings: [...getM(activeMK).earnings, { id: Date.now(), amount: c.amount, description: label, date: todayS() }] });
+        } else {
+          setM(activeMK, { ...getM(activeMK), expenses: [...getM(activeMK).expenses, { id: Date.now(), amount: c.amount, category: "Other", description: label, date: todayS() }] });
+        }
+      } else {
+        // un-clearing: remove the auto-added entry by matching description
+        if (c.type === "owed_to_me") {
+          setM(activeMK, { ...getM(activeMK), earnings: getM(activeMK).earnings.filter(e => e.description !== label) });
+        } else {
+          setM(activeMK, { ...getM(activeMK), expenses: getM(activeMK).expenses.filter(e => e.description !== label) });
+        }
+      }
+      return { ...c, cleared: nowCleared };
+    }));
+  };
   const deleteCredit   = (id:number) => { setCredits(prev=>prev.filter(c=>c.id!==id)); setDeleteConfirm(null); };
   const addNextMonth   = () => { const [y,m]=activeMK.split("-").map(Number); const nd=new Date(y,m,1); const nk=`${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2,"0")}`; if(!allMonths[nk])setM(nk,emptyMD()); setActiveMK(nk); };
   const deleteMonth    = async () => { setDeleteMonthConfirm(false); setAllMonths(prev=>{const next={...prev};delete next[activeMK];return next;}); if(!isGuest&&user) await supabase.from("month_data").delete().eq("user_id",user.id).eq("month_key",activeMK); setActiveMK(curMK()); };
