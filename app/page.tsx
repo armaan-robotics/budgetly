@@ -708,7 +708,8 @@ export default function BudgetTracker() {
   const [savAmt,   setSavAmt]   = useState("");
   const [savDesc,  setSavDesc]  = useState("");
   const [savDate,  setSavDate]  = useState(today);
-  const [credits,      setCredits]      = useState<CreditEntry[]>(() => lsLoad<CreditEntry[]>("budgetly_credits", []));
+  const [credits,      setCredits]      = useState<CreditEntry[]>([]);
+  const [creditsLoaded, setCreditsLoaded] = useState(false);
   const [crAmt,        setCrAmt]        = useState("");
   const [crPerson,     setCrPerson]     = useState("");
   const [crDesc,       setCrDesc]       = useState("");
@@ -726,7 +727,13 @@ export default function BudgetTracker() {
 
   useEffect(() => {
     if (!authReady) return;
-    if (isGuest) { setAllMonthsRaw(lsLoad<AllMonths>("budgetly_months",{})); setCategories(lsLoad<string[]>("budgetly_cats",DEFAULT_CATS)); return; }
+    if (isGuest) {
+      setAllMonthsRaw(lsLoad<AllMonths>("budgetly_months",{}));
+      setCategories(lsLoad<string[]>("budgetly_cats",DEFAULT_CATS));
+      setCredits(lsLoad<CreditEntry[]>("budgetly_credits",[]));
+      setCreditsLoaded(true);
+      return;
+    }
     loadFromSupabase();
     if (Object.keys(lsLoad<AllMonths>("budgetly_months",{})).length>0) setShowMigrate(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -748,6 +755,7 @@ export default function BudgetTracker() {
     if (!cError && cData && cData.length > 0) {
       setCredits((cData[0] as {credits:CreditEntry[]}).credits ?? []);
     }
+    setCreditsLoaded(true);
     setDbLoading(false);
   }, [user, isGuest]);
 
@@ -773,10 +781,11 @@ export default function BudgetTracker() {
 
   useEffect(()=>{ if(isGuest) lsSave("budgetly_cats",categories); }, [categories,isGuest]);
   useEffect(()=>{
+    if (!creditsLoaded) return;
     if(isGuest) { lsSave("budgetly_credits",credits); return; }
     saveCreditsToSupabase(credits);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [credits]);
+  }, [credits, creditsLoaded]);
 
   // Computed
   const totalExpenses     = expenses.reduce((s,e)=>s+e.amount,0);
