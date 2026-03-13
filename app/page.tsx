@@ -735,18 +735,30 @@ export default function BudgetTracker() {
   const loadFromSupabase = useCallback(async () => {
     if (!user||isGuest) return;
     setDbLoading(true);
-    const { data, error } = await supabase.from("month_data").select("*").eq("user_id",user.id);
+    const [{ data, error }, { data: cData, error: cError }] = await Promise.all([
+      supabase.from("month_data").select("*").eq("user_id",user.id),
+      supabase.from("user_credits").select("*").eq("user_id",user.id),
+    ]);
     if (error) { console.error(error); setDbLoading(false); return; }
     const rebuilt: AllMonths = {};
     (data??[]).forEach((row:{month_key:string;budget:number;expenses:Expense[];earnings:Entry[];savings:Entry[]}) => {
       rebuilt[row.month_key]={budget:row.budget,expenses:row.expenses,earnings:row.earnings,savings:row.savings};
     });
-    setAllMonthsRaw(rebuilt); setDbLoading(false);
+    setAllMonthsRaw(rebuilt);
+    if (!cError && cData && cData.length > 0) {
+      setCredits((cData[0] as {credits:CreditEntry[]}).credits ?? []);
+    }
+    setDbLoading(false);
   }, [user, isGuest]);
 
   const saveToSupabase = useCallback(async (mk:string, md:MonthData) => {
     if (!user||isGuest) return;
     await supabase.from("month_data").upsert({ user_id:user.id,month_key:mk,budget:md.budget,expenses:md.expenses,earnings:md.earnings,savings:md.savings,updated_at:new Date().toISOString() },{ onConflict:"user_id,month_key" });
+  }, [user, isGuest]);
+
+  const saveCreditsToSupabase = useCallback(async (c: CreditEntry[]) => {
+    if (!user||isGuest) return;
+    await supabase.from("user_credits").upsert({ user_id:user.id, credits:c, updated_at:new Date().toISOString() },{ onConflict:"user_id" });
   }, [user, isGuest]);
 
   const setAllMonths = useCallback((updater: AllMonths|((prev:AllMonths)=>AllMonths)) => {
@@ -760,7 +772,11 @@ export default function BudgetTracker() {
   const { budget, expenses, earnings, savings } = md;
 
   useEffect(()=>{ if(isGuest) lsSave("budgetly_cats",categories); }, [categories,isGuest]);
-  useEffect(()=>{ lsSave("budgetly_credits",credits); }, [credits]);
+  useEffect(()=>{
+    if(isGuest) { lsSave("budgetly_credits",credits); return; }
+    saveCreditsToSupabase(credits);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [credits]);
 
   // Computed
   const totalExpenses     = expenses.reduce((s,e)=>s+e.amount,0);
