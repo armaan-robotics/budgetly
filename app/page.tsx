@@ -40,7 +40,7 @@ const NAV = [
   { id:"expenses",   label:"Expenses",   icon:"↓" },
   { id:"earnings",   label:"Cash In",    icon:"↑" },
   { id:"savings",    label:"Savings",    icon:"⬡" },
-  { id:"categories", label:"Categories", icon:"▦" },
+  { id:"credit",     label:"Credit",     icon:"⇄" },
 ] as const;
 
 // ─── Theme factory ────────────────────────────────────────────────────────────
@@ -123,6 +123,8 @@ interface ExProps { C:Theme; expenses:Expense[];categories:string[];totalExpense
 interface ErProps { C:Theme; earnings:Entry[];totalEarnings:number;earnAmt:string;earnDesc:string;earnDate:string;setEarnAmt:(v:string)=>void;setEarnDesc:(v:string)=>void;setEarnDate:(v:string)=>void;addEarning:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteEarning:(id:number)=>void; }
 interface SvProps { C:Theme; savings:Entry[];totalSavings:number;cashFlowIn:number;savAmt:string;savDesc:string;savDate:string;setSavAmt:(v:string)=>void;setSavDesc:(v:string)=>void;setSavDate:(v:string)=>void;addSaving:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteSaving:(id:number)=>void; }
 interface CaProps { C:Theme; categories:string[];expenses:Expense[];cashFlowOut:number;newCategory:string;setNewCategory:(v:string)=>void;addCategory:()=>void;deleteCategory:(cat:string)=>void; }
+interface CreditEntry { id:number; person:string; amount:number; description:string; date:string; type:"owed_to_me"|"i_owe"; cleared:boolean; }
+interface CrProps { C:Theme; credits:CreditEntry[];crAmt:string;crPerson:string;crDesc:string;crDate:string;crType:"owed_to_me"|"i_owe";setCrAmt:(v:string)=>void;setCrPerson:(v:string)=>void;setCrDesc:(v:string)=>void;setCrDate:(v:string)=>void;setCrType:(v:"owed_to_me"|"i_owe")=>void;addCredit:()=>void;toggleCleared:(id:number)=>void;deleteCredit:(id:number)=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void; }
 
 // ─── Primitives (module-level) ────────────────────────────────────────────────
 function FF({ label, children, C }: { label:string; children:ReactNode; C:Theme }) {
@@ -223,9 +225,9 @@ function OverviewTab(p: OvProps) {
         <div style={sSecT}>Daily Averages</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)"}}>
           {([
-            {label:"Ideal monthly avg",  val:fmt(p.idealPerDay),     color:C.accent, note:"(cash in − savings) ÷ days"},
-            {label:"Daily avg to spend", val:fmt(p.currentIdealAvg), color:p.currentIdealAvg<p.idealPerDay?C.green:C.red, note:"to spend ÷ days remaining"},
-            {label:"Spent per day",      val:fmt(p.currentDailyAvg), color:C.muted,  note:"spent ÷ days passed"},
+            {label:"Ideal monthly avg",  val:fmt(p.idealPerDay),     color:C.accent, note:""},
+            {label:"Daily avg to spend", val:fmt(p.currentIdealAvg), color:p.currentIdealAvg<p.idealPerDay?C.green:C.red, note:""},
+            {label:"Spent per day",      val:fmt(p.currentDailyAvg), color:C.muted,  note:""},
           ] as {label:string;val:string;color:string;note:string}[]).map((d,i)=>(
             <div key={i} style={{padding:"10px 8px",borderLeft:i>0?`1px solid ${C.border}`:"none",textAlign:"center"}}>
               <div style={{fontSize:"9px",color:C.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:"6px",lineHeight:1.3}}>{d.label}</div>
@@ -413,6 +415,175 @@ function CategoriesTab(p: CaProps) {
   );
 }
 
+// ─── Tutorial Tab ────────────────────────────────────────────────────────────
+function TutorialTab({ C }: { C:Theme }) {
+  const sCard: CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}`,marginBottom:"14px" };
+  const steps = [
+    {
+      icon:"◎", title:"Overview",
+      body:"Your command centre. See Cash Flow In (budget + extra earnings), Cash Flow Out (expenses), Total Savings, and To Spend (what's left). The Daily Averages section shows your ideal spend per day, how much you should spend per day from today to finish the month on track, and your actual average spend so far.",
+    },
+    {
+      icon:"↓", title:"Expenses",
+      body:"Log every purchase here — amount, category, description, and date. Use categories to organise spending (Food, Transport, etc.). You can see a breakdown by category on the Overview tab.",
+    },
+    {
+      icon:"↑", title:"Cash In",
+      body:"Record any money that comes in beyond your base budget — freelance income, pocket money top-ups, selling something. This adds to your Cash Flow In.",
+    },
+    {
+      icon:"⬡", title:"Savings",
+      body:"Track money you're setting aside. Savings are subtracted from your spendable balance so you're not tempted to spend them. The ideal daily average also accounts for your savings goal.",
+    },
+    {
+      icon:"⇄", title:"Credit",
+      body:"Track debts and loans. 'They Owe Me' — someone borrowed money from you. 'I Owe Them' — you owe someone. Add the person's name, amount, what it's for, and date. Mark entries as Cleared once settled. Cleared entries are dimmed but kept for your records.",
+    },
+    {
+      icon:"📅", title:"Months",
+      body:"Each month is tracked separately. Use the month selector in the sidebar to switch between months. Click '+ New Month' to start a new one. Your budget resets each month — set it once and it carries over as the default.",
+    },
+    {
+      icon:"⚙", title:"Settings",
+      body:"Access dark mode, manage categories, export your data as a spreadsheet, delete a month, and log out — all from the Settings panel at the bottom of the sidebar.",
+    },
+    {
+      icon:"☁", title:"Sync",
+      body:"If you're signed in with an account, your data syncs across all your devices automatically. Guest mode only saves data in your current browser — create an account to keep your data safe.",
+    },
+  ];
+  return (
+    <div style={{maxWidth:"680px"}}>
+      <div style={{marginBottom:"20px"}}>
+        <h2 style={{fontSize:"20px",fontWeight:600,color:C.text,marginBottom:"6px"}}>How to use Budgetly</h2>
+        <p style={{fontSize:"13px",color:C.muted,lineHeight:1.7}}>A quick walkthrough of every feature so you can get the most out of the app.</p>
+      </div>
+      {steps.map((s,i)=>(
+        <div key={i} style={{background:C.card,borderRadius:"14px",padding:"18px 20px",border:`1px solid ${C.border}`,marginBottom:"10px",display:"flex",gap:"14px",alignItems:"flex-start"}}>
+          <div style={{width:"36px",height:"36px",borderRadius:"10px",background:C.navActive,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",flexShrink:0}}>{s.icon}</div>
+          <div>
+            <div style={{fontSize:"14px",fontWeight:600,color:C.text,marginBottom:"5px"}}>{s.title}</div>
+            <div style={{fontSize:"13px",color:C.muted,lineHeight:1.7}}>{s.body}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Credit Tab ──────────────────────────────────────────────────────────────
+function CreditTab(p: CrProps) {
+  const { C } = p;
+  const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
+  const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
+  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+
+  const owedToMe = p.credits.filter(c=>c.type==="owed_to_me");
+  const iOwe     = p.credits.filter(c=>c.type==="i_owe");
+  const totalOwedToMe = owedToMe.filter(c=>!c.cleared).reduce((s,c)=>s+c.amount,0);
+  const totalIOwe     = iOwe.filter(c=>!c.cleared).reduce((s,c)=>s+c.amount,0);
+
+  return (
+    <div>
+      {/* Summary pills */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"16px"}}>
+        <div style={{...sCard,borderTop:`3px solid ${C.green}`,padding:"14px"}}>
+          <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"5px"}}>People Owe Me</div>
+          <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:600,color:C.green}}>{new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(totalOwedToMe)}</div>
+          <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{owedToMe.filter(c=>!c.cleared).length} pending</div>
+        </div>
+        <div style={{...sCard,borderTop:`3px solid ${C.red}`,padding:"14px"}}>
+          <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"5px"}}>I Owe</div>
+          <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:600,color:C.red}}>{new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(totalIOwe)}</div>
+          <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{iOwe.filter(c=>!c.cleared).length} pending</div>
+        </div>
+      </div>
+
+      <div className="two-col-grid" style={{display:"grid",gridTemplateColumns:"clamp(240px,30%,300px) 1fr",gap:"16px"}}>
+        {/* Add form */}
+        <div style={sCard}>
+          <div style={{...sSecT,marginBottom:"14px"}}>Add Credit Entry</div>
+          {/* Type toggle */}
+          <div style={{display:"flex",gap:"6px",marginBottom:"14px"}}>
+            <button onClick={()=>p.setCrType("owed_to_me")} style={{flex:1,padding:"8px",borderRadius:"8px",border:`1.5px solid ${p.crType==="owed_to_me"?C.green:C.border}`,background:p.crType==="owed_to_me"?C.green+"18":"transparent",color:p.crType==="owed_to_me"?C.green:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>
+              They Owe Me
+            </button>
+            <button onClick={()=>p.setCrType("i_owe")} style={{flex:1,padding:"8px",borderRadius:"8px",border:`1.5px solid ${p.crType==="i_owe"?C.red:C.border}`,background:p.crType==="i_owe"?C.red+"18":"transparent",color:p.crType==="i_owe"?C.red:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>
+              I Owe Them
+            </button>
+          </div>
+          <FF label="Person's Name *" C={C}><input type="text" placeholder="Who?" value={p.crPerson} onChange={e=>p.setCrPerson(e.target.value)} style={sInput}/></FF>
+          <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.crAmt} onChange={e=>p.setCrAmt(e.target.value)} style={sInput}/></FF>
+          <FF label="Description" C={C}><input type="text" placeholder="What for?" value={p.crDesc} onChange={e=>p.setCrDesc(e.target.value)} style={sInput}/></FF>
+          <FF label="Date" C={C}><input type="date" value={p.crDate} onChange={e=>p.setCrDate(e.target.value)} style={sInput}/></FF>
+          <button onClick={p.addCredit} style={{width:"100%",padding:"11px",borderRadius:"9px",border:"none",background:p.crType==="owed_to_me"?C.green:C.red,color:"#fff",fontWeight:600,fontSize:"13px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+            + Add Entry
+          </button>
+        </div>
+
+        {/* Lists */}
+        <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+          {/* They owe me */}
+          <div style={sCard}>
+            <div style={sSecT}>They Owe Me</div>
+            {owedToMe.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"20px",fontSize:"13px"}}>No entries yet</div>}
+            {[...owedToMe].reverse().map(c=>(
+              <div key={c.id} style={{background:C.cardAlt,borderRadius:"10px",padding:"11px 13px",border:`1px solid ${c.cleared?C.border:C.green+"44"}`,marginBottom:"6px",opacity:c.cleared?0.55:1}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px"}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"2px",flexWrap:"wrap"}}>
+                      <span style={{fontSize:"13px",fontWeight:600,color:C.text}}>{c.person}</span>
+                      {c.cleared&&<span style={{fontSize:"10px",padding:"1px 6px",borderRadius:"20px",background:C.green+"22",color:C.green,fontWeight:600}}>Cleared</span>}
+                    </div>
+                    <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>{c.description||"—"}</div>
+                    <div style={{fontSize:"10px",color:C.faint}}>{c.date}</div>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
+                    <span style={{fontSize:"14px",fontWeight:600,color:C.green,whiteSpace:"nowrap"}}>+{new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(c.amount)}</span>
+                    <button onClick={()=>p.toggleCleared(c.id)} title={c.cleared?"Mark pending":"Mark cleared"}
+                      style={{background:c.cleared?C.green+"22":C.navActive,border:`1px solid ${c.cleared?C.green+"44":C.border}`,borderRadius:"6px",padding:"3px 7px",cursor:"pointer",fontSize:"11px",color:c.cleared?C.green:C.muted}}>
+                      {c.cleared?"✓":"○"}
+                    </button>
+                    <DelBtn id={c.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteCredit} C={C}/>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* I owe */}
+          <div style={sCard}>
+            <div style={sSecT}>I Owe</div>
+            {iOwe.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"20px",fontSize:"13px"}}>No entries yet</div>}
+            {[...iOwe].reverse().map(c=>(
+              <div key={c.id} style={{background:C.cardAlt,borderRadius:"10px",padding:"11px 13px",border:`1px solid ${c.cleared?C.border:C.red+"44"}`,marginBottom:"6px",opacity:c.cleared?0.55:1}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px"}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"2px",flexWrap:"wrap"}}>
+                      <span style={{fontSize:"13px",fontWeight:600,color:C.text}}>{c.person}</span>
+                      {c.cleared&&<span style={{fontSize:"10px",padding:"1px 6px",borderRadius:"20px",background:C.green+"22",color:C.green,fontWeight:600}}>Cleared</span>}
+                    </div>
+                    <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>{c.description||"—"}</div>
+                    <div style={{fontSize:"10px",color:C.faint}}>{c.date}</div>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
+                    <span style={{fontSize:"14px",fontWeight:600,color:C.red,whiteSpace:"nowrap"}}>-{new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(c.amount)}</span>
+                    <button onClick={()=>p.toggleCleared(c.id)} title={c.cleared?"Mark pending":"Mark cleared"}
+                      style={{background:c.cleared?C.green+"22":C.navActive,border:`1px solid ${c.cleared?C.green+"44":C.border}`,borderRadius:"6px",padding:"3px 7px",cursor:"pointer",fontSize:"11px",color:c.cleared?C.green:C.muted}}>
+                      {c.cleared?"✓":"○"}
+                    </button>
+                    <DelBtn id={c.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteCredit} C={C}/>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Auth Screen ──────────────────────────────────────────────────────────────
 function AuthScreen({ onAuth, dark }: { onAuth:(user:User)=>void; dark:boolean }) {
   const C = makeTheme(dark);
@@ -537,6 +708,12 @@ export default function BudgetTracker() {
   const [savAmt,   setSavAmt]   = useState("");
   const [savDesc,  setSavDesc]  = useState("");
   const [savDate,  setSavDate]  = useState(today);
+  const [credits,      setCredits]      = useState<CreditEntry[]>(() => lsLoad<CreditEntry[]>("budgetly_credits", []));
+  const [crAmt,        setCrAmt]        = useState("");
+  const [crPerson,     setCrPerson]     = useState("");
+  const [crDesc,       setCrDesc]       = useState("");
+  const [crDate,       setCrDate]       = useState(today);
+  const [crType,       setCrType]       = useState<"owed_to_me"|"i_owe">("owed_to_me");
 
   const isGuest = !user || (user as {id:string}).id==="guest";
 
@@ -583,6 +760,7 @@ export default function BudgetTracker() {
   const { budget, expenses, earnings, savings } = md;
 
   useEffect(()=>{ if(isGuest) lsSave("budgetly_cats",categories); }, [categories,isGuest]);
+  useEffect(()=>{ lsSave("budgetly_credits",credits); }, [credits]);
 
   // Computed
   const totalExpenses     = expenses.reduce((s,e)=>s+e.amount,0);
@@ -614,6 +792,9 @@ export default function BudgetTracker() {
   const deleteSaving   = (id:number) => { setM(activeMK,{...md,savings: savings.filter (e=>e.id!==id)}); setDeleteConfirm(null); };
   const addCategory    = () => { const t=newCategory.trim(); if(!t||categories.includes(t))return; setCategories([...categories,t]); setNewCategory(""); };
   const deleteCategory = (cat:string) => { if(DEFAULT_CATS.includes(cat))return; setCategories(categories.filter(c=>c!==cat)); };
+  const addCredit      = () => { if(!crAmt||isNaN(+crAmt)||!crPerson.trim())return; setCredits(prev=>[...prev,{id:Date.now(),person:crPerson.trim(),amount:+crAmt,description:crDesc,date:crDate,type:crType,cleared:false}]); setCrAmt(""); setCrPerson(""); setCrDesc(""); };
+  const toggleCleared  = (id:number) => setCredits(prev=>prev.map(c=>c.id===id?{...c,cleared:!c.cleared}:c));
+  const deleteCredit   = (id:number) => { setCredits(prev=>prev.filter(c=>c.id!==id)); setDeleteConfirm(null); };
   const addNextMonth   = () => { const [y,m]=activeMK.split("-").map(Number); const nd=new Date(y,m,1); const nk=`${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2,"0")}`; if(!allMonths[nk])setM(nk,emptyMD()); setActiveMK(nk); };
   const deleteMonth    = async () => { setDeleteMonthConfirm(false); setAllMonths(prev=>{const next={...prev};delete next[activeMK];return next;}); if(!isGuest&&user) await supabase.from("month_data").delete().eq("user_id",user.id).eq("month_key",activeMK); setActiveMK(curMK()); };
   const handleMigrate  = async (migrate:boolean) => { setShowMigrate(false); if(!migrate||!user)return; const lsData=lsLoad<AllMonths>("budgetly_months",{}); for(const [mk,d] of Object.entries(lsData)) await saveToSupabase(mk,d); localStorage.removeItem("budgetly_months"); await loadFromSupabase(); };
@@ -834,6 +1015,17 @@ export default function BudgetTracker() {
             )}
           </div>
 
+          {/* App */}
+          <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>App</div>
+            <button onClick={()=>{setShowSettings(false);setActiveTab("categories");}} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:500,textAlign:"left",marginBottom:"8px",display:"flex",alignItems:"center",gap:"10px"}}>
+              <span style={{fontSize:"15px"}}>▦</span> Manage Categories
+            </button>
+            <button onClick={()=>{setShowSettings(false);setActiveTab("tutorial");}} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:500,textAlign:"left",display:"flex",alignItems:"center",gap:"10px"}}>
+              <span style={{fontSize:"15px"}}>?</span> How to use Budgetly
+            </button>
+          </div>
+
           {/* Export */}
           <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Export Data</div>
@@ -862,6 +1054,7 @@ export default function BudgetTracker() {
   const erProps: ErProps = { C,earnings,totalEarnings,earnAmt,earnDesc,earnDate,setEarnAmt,setEarnDesc,setEarnDate,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning };
   const svProps: SvProps = { C,savings,totalSavings,cashFlowIn,savAmt,savDesc,savDate,setSavAmt,setSavDesc,setSavDate,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving };
   const caProps: CaProps = { C,categories,expenses,cashFlowOut,newCategory,setNewCategory,addCategory,deleteCategory };
+  const crProps: CrProps = { C,credits,crAmt,crPerson,crDesc,crDate,crType,setCrAmt,setCrPerson,setCrDesc,setCrDate,setCrType,addCredit,toggleCleared,deleteCredit,deleteConfirm,setDeleteConfirm };
 
   return (
     <>
@@ -927,7 +1120,7 @@ export default function BudgetTracker() {
           <div style={{marginBottom:"18px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px"}}>
             <div>
               <h1 style={{fontSize:"clamp(18px,3.5vw,24px)",fontWeight:600,color:C.text,letterSpacing:"-0.3px"}}>
-                {NAV.find(n=>n.id===activeTab)?.label}
+                {activeTab==="categories"?"Categories":activeTab==="tutorial"?"How to use Budgetly":NAV.find(n=>n.id===activeTab)?.label}
               </h1>
               <div style={{fontSize:"11px",color:C.muted,marginTop:"3px"}}>
                 {fmtMK(activeMK)}{activeMK!==curMK()&&" · past month"}
@@ -943,7 +1136,9 @@ export default function BudgetTracker() {
           {activeTab==="expenses"   &&<ExpensesTab   {...exProps}/>}
           {activeTab==="earnings"   &&<EarningsTab   {...erProps}/>}
           {activeTab==="savings"    &&<SavingsTab    {...svProps}/>}
+          {activeTab==="credit"     &&<CreditTab     {...crProps}/>}
           {activeTab==="categories" &&<CategoriesTab {...caProps}/>}
+          {activeTab==="tutorial"   &&<TutorialTab C={C}/>}
         </main>
       </div>
 
