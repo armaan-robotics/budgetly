@@ -641,14 +641,6 @@ function AuthScreen({ onAuth, dark }: { onAuth:(user:User)=>void; dark:boolean }
             {mode==="login"?"Sign Up":"Log In"}
           </button>
         </div>
-        <div style={{marginTop:"20px",paddingTop:"16px",borderTop:`1px solid ${C.border}`}}>
-          <div style={{background:C.amber+"18",border:`1px solid ${C.amber}44`,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
-            <div style={{fontSize:"11px",color:C.amber,fontWeight:600,marginBottom:"4px"}}>⚠ Before you continue as guest</div>
-            <div style={{fontSize:"11px",color:C.muted,lineHeight:1.7}}>We recommend creating an account. Guest data is stored only on this device and may be lost if you clear your browser. You can always import your guest data into an account later.</div>
-          </div>
-          <button onClick={()=>onAuth({id:"guest"} as unknown as User)}
-            style={{...btnB,background:C.cancelBg,color:C.muted,width:"100%",padding:"10px"}}>Continue as Guest anyway</button>
-        </div>
       </div>
     </div>
   );
@@ -659,8 +651,8 @@ function MigrateModal({ onDecide, C }: { onDecide:(migrate:boolean)=>void; C:The
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>
       <div style={{background:C.card,borderRadius:"14px",padding:"28px",maxWidth:"380px",width:"90%",border:`1px solid ${C.border}`}}>
-        <div style={{fontSize:"18px",fontWeight:600,color:C.text,marginBottom:"8px"}}>You have existing data</div>
-        <div style={{fontSize:"13px",color:C.muted,lineHeight:1.7,marginBottom:"20px"}}>We found budget data saved locally. Import it into your account so it syncs across devices?</div>
+        <div style={{fontSize:"18px",fontWeight:600,color:C.text,marginBottom:"8px"}}>Import your existing data?</div>
+        <div style={{fontSize:"13px",color:C.muted,lineHeight:1.7,marginBottom:"20px"}}>We found budget data saved locally on this device from before you had an account. Import it now so it syncs across all your devices?</div>
         <div style={{display:"flex",gap:"10px"}}>
           <button onClick={()=>onDecide(true)}  style={{...btnP,flex:1,padding:"11px"}}>Yes, import</button>
           <button onClick={()=>onDecide(false)} style={{...btnB,flex:1,padding:"11px",background:C.cancelBg,color:C.muted}}>Start fresh</button>
@@ -675,7 +667,7 @@ export default function BudgetTracker() {
   const [dark,          setDark]          = useState<boolean>(() => lsLoad<boolean>("budgetly_dark", false));
   const [user,          setUser]          = useState<User|null>(null);
   const [authReady,     setAuthReady]     = useState(false);
-  const [showMigrate,   setShowMigrate]   = useState(false);
+  const [showMigrate,   setShowMigrate]   = useState(false); // triggers after login if local data exists
   const [activeTab,     setActiveTab]     = useState<string>("overview");
   const [activeMK,      setActiveMK]      = useState<string>(curMK());
   const [allMonths,     setAllMonthsRaw]  = useState<AllMonths>({});
@@ -716,7 +708,7 @@ export default function BudgetTracker() {
   const [crDate,       setCrDate]       = useState(today);
   const [crType,       setCrType]       = useState<"owed_to_me"|"i_owe">("owed_to_me");
 
-  const isGuest = !user || (user as {id:string}).id==="guest";
+  const isGuest = false; // guest mode removed
 
   // Auth init
   useEffect(() => {
@@ -726,21 +718,16 @@ export default function BudgetTracker() {
   }, []);
 
   useEffect(() => {
-    if (!authReady) return;
-    if (isGuest) {
-      setAllMonthsRaw(lsLoad<AllMonths>("budgetly_months",{}));
-      setCategories(lsLoad<string[]>("budgetly_cats",DEFAULT_CATS));
-      setCredits(lsLoad<CreditEntry[]>("budgetly_credits",[]));
-      setCreditsLoaded(true);
-      return;
-    }
+    if (!authReady || !user) return;
     loadFromSupabase();
-    if (Object.keys(lsLoad<AllMonths>("budgetly_months",{})).length>0) setShowMigrate(true);
+    // If local data exists from a previous guest session, prompt to import
+    const lsMonths = lsLoad<AllMonths>("budgetly_months", {});
+    if (Object.keys(lsMonths).length > 0) setShowMigrate(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authReady]);
 
   const loadFromSupabase = useCallback(async () => {
-    if (!user||isGuest) return;
+    if (!user) return;
     setDbLoading(true);
     const [{ data, error }, { data: cData, error: cError }] = await Promise.all([
       supabase.from("month_data").select("*").eq("user_id",user.id),
@@ -760,17 +747,17 @@ export default function BudgetTracker() {
   }, [user, isGuest]);
 
   const saveToSupabase = useCallback(async (mk:string, md:MonthData) => {
-    if (!user||isGuest) return;
+    if (!user) return;
     await supabase.from("month_data").upsert({ user_id:user.id,month_key:mk,budget:md.budget,expenses:md.expenses,earnings:md.earnings,savings:md.savings,updated_at:new Date().toISOString() },{ onConflict:"user_id,month_key" });
   }, [user, isGuest]);
 
   const saveCreditsToSupabase = useCallback(async (c: CreditEntry[]) => {
-    if (!user||isGuest) return;
+    if (!user) return;
     await supabase.from("user_credits").upsert({ user_id:user.id, credits:c, updated_at:new Date().toISOString() },{ onConflict:"user_id" });
   }, [user, isGuest]);
 
   const setAllMonths = useCallback((updater: AllMonths|((prev:AllMonths)=>AllMonths)) => {
-    setAllMonthsRaw(prev => { const next=typeof updater==="function"?updater(prev):updater; if(isGuest)lsSave("budgetly_months",next); return next; });
+    setAllMonthsRaw(prev => { const next=typeof updater==="function"?updater(prev):updater; return next; });
   }, [isGuest]);
 
   const getM = (mk:string): MonthData => allMonths[mk]??emptyMD();
@@ -779,10 +766,9 @@ export default function BudgetTracker() {
   const md = getM(activeMK);
   const { budget, expenses, earnings, savings } = md;
 
-  useEffect(()=>{ if(isGuest) lsSave("budgetly_cats",categories); }, [categories,isGuest]);
+  // categories stored locally (not synced — custom categories per device is fine)
   useEffect(()=>{
     if (!creditsLoaded) return;
-    if(isGuest) { lsSave("budgetly_credits",credits); return; }
     saveCreditsToSupabase(credits);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [credits, creditsLoaded]);
@@ -843,7 +829,7 @@ export default function BudgetTracker() {
   };
   const deleteCredit   = (id:number) => { setCredits(prev=>prev.filter(c=>c.id!==id)); setDeleteConfirm(null); };
   const addNextMonth   = () => { const [y,m]=activeMK.split("-").map(Number); const nd=new Date(y,m,1); const nk=`${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2,"0")}`; if(!allMonths[nk])setM(nk,emptyMD()); setActiveMK(nk); };
-  const deleteMonth    = async () => { setDeleteMonthConfirm(false); setAllMonths(prev=>{const next={...prev};delete next[activeMK];return next;}); if(!isGuest&&user) await supabase.from("month_data").delete().eq("user_id",user.id).eq("month_key",activeMK); setActiveMK(curMK()); };
+  const deleteMonth    = async () => { setDeleteMonthConfirm(false); setAllMonths(prev=>{const next={...prev};delete next[activeMK];return next;}); if(user) await supabase.from("month_data").delete().eq("user_id",user.id).eq("month_key",activeMK); setActiveMK(curMK()); };
   const handleMigrate  = async (migrate:boolean) => { setShowMigrate(false); if(!migrate||!user)return; const lsData=lsLoad<AllMonths>("budgetly_months",{}); for(const [mk,d] of Object.entries(lsData)) await saveToSupabase(mk,d); localStorage.removeItem("budgetly_months"); await loadFromSupabase(); };
   const logout         = async () => { await supabase.auth.signOut(); setUser(null); setAllMonthsRaw({}); };
 
@@ -1001,16 +987,6 @@ export default function BudgetTracker() {
           {/* Account */}
           <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Account</div>
-            {isGuest ? (
-              <>
-                <div style={{fontSize:"12px",color:C.muted,marginBottom:"10px"}}>👤 Signed in as Guest</div>
-                <div style={{background:C.amber+"18",border:`1px solid ${C.amber}44`,borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
-                  <div style={{fontSize:"12px",color:C.amber,fontWeight:600,marginBottom:"4px"}}>⚠ Guest Mode Limitations</div>
-                  <div style={{fontSize:"11px",color:C.muted,lineHeight:1.7}}>We recommend creating an account and using the application since continuing as guest may result in loss of some data and is accessible through only one device. Data from guest can be imported into your account anytime.</div>
-                </div>
-                <button onClick={()=>{setShowSettings(false);setUser(null);}} style={{...btnP,width:"100%",padding:"10px",fontSize:"13px"}}>Create Account / Sign In</button>
-              </>
-            ) : (
               <>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.cardAlt,padding:"10px 12px",borderRadius:"10px",border:`1px solid ${C.border}`,marginBottom:"10px"}}>
                   <div>
@@ -1021,10 +997,9 @@ export default function BudgetTracker() {
                 </div>
                 <div style={{background:C.green+"14",border:`1px solid ${C.green}33`,borderRadius:"10px",padding:"11px 14px"}}>
                   <div style={{fontSize:"11px",color:C.green,fontWeight:600,marginBottom:"3px"}}>✓ Account active</div>
-                  <div style={{fontSize:"11px",color:C.muted,lineHeight:1.7}}>Your data syncs across all devices and is securely stored. We recommend using an account over guest mode — guest data is limited to one device and may be lost if the browser is cleared.</div>
+                  <div style={{fontSize:"11px",color:C.muted,lineHeight:1.7}}>Your data syncs across all devices and is securely stored.</div>
                 </div>
               </>
-            )}
           </div>
 
           {/* Dark mode */}
