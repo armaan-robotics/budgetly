@@ -991,7 +991,7 @@ export default function BudgetTracker() {
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.cardAlt,padding:"10px 12px",borderRadius:"10px",border:`1px solid ${C.border}`,marginBottom:"10px"}}>
                   <div>
                     <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>Signed in as</div>
-                    <div style={{fontSize:"13px",color:C.text,fontWeight:500}}>{user.email}</div>
+                    <div style={{fontSize:"13px",color:C.text,fontWeight:500}}>{user?.email}</div>
                   </div>
                   <button onClick={()=>{setShowSettings(false);logout();}} style={{...btnB,background:C.delBg,color:C.red,padding:"7px 14px",fontSize:"12px"}}>Log out</button>
                 </div>
