@@ -868,6 +868,8 @@ export default function BudgetTracker() {
   const [showSettings,  setShowSettings]  = useState(false);
   const [dbLoading,     setDbLoading]     = useState(false);
   const [deleteMonthConfirm, setDeleteMonthConfirm] = useState(false);
+  const [swipeOffset,   setSwipeOffset]   = useState(0);   // live drag offset px
+  const [swipeAnim,     setSwipeAnim]     = useState<"in-left"|"in-right"|null>(null); // entry animation
 
   const C = makeTheme(dark);
   const toggleDark = () => {
@@ -1319,6 +1321,8 @@ export default function BudgetTracker() {
         input:focus,select:focus{border-color:${C.accent}!important;box-shadow:0 0 0 3px ${C.accent}22;}
         input,select,option{color-scheme:${dark?"dark":"light"};}
         .mob-header{display:none;}
+        @keyframes slideInFromRight{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes slideInFromLeft{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:translateX(0)}}
         .mob-nav{display:none;}
         @media(max-width:768px){
           .mob-header{display:flex!important;position:fixed;top:0;left:0;right:0;z-index:100;background:${C.sidebar};border-bottom:1px solid ${C.border};padding:11px 15px;align-items:center;justify-content:space-between;}
@@ -1361,25 +1365,57 @@ export default function BudgetTracker() {
           <SidebarInner/>
         </aside>
 
-        <main className="main-wrap" style={{flex:1,padding:"28px",overflowY:"auto"}}
+        <main className="main-wrap" style={{flex:1,padding:"28px",overflowY:"auto",overflow:"hidden"}}
           onTouchStart={e=>{
             const t=e.touches[0];
-            (e.currentTarget as HTMLElement).dataset.touchX=String(t.clientX);
-            (e.currentTarget as HTMLElement).dataset.touchY=String(t.clientY);
+            const el=e.currentTarget as HTMLElement;
+            el.dataset.touchX=String(t.clientX);
+            el.dataset.touchY=String(t.clientY);
+            el.dataset.dragging="1";
+          }}
+          onTouchMove={e=>{
+            const el=e.currentTarget as HTMLElement;
+            if(!el.dataset.dragging)return;
+            const startX=parseFloat(el.dataset.touchX||"0");
+            const startY=parseFloat(el.dataset.touchY||"0");
+            const dx=e.touches[0].clientX-startX;
+            const dy=e.touches[0].clientY-startY;
+            // only track if horizontal
+            if(Math.abs(dx)>Math.abs(dy)){
+              e.preventDefault();
+              setSwipeOffset(dx*0.4); // rubber-band feel
+            }
           }}
           onTouchEnd={e=>{
             const el=e.currentTarget as HTMLElement;
+            el.dataset.dragging="";
             const startX=parseFloat(el.dataset.touchX||"0");
             const startY=parseFloat(el.dataset.touchY||"0");
             const endX=e.changedTouches[0].clientX;
             const endY=e.changedTouches[0].clientY;
             const dx=endX-startX;
             const dy=endY-startY;
-            // Only trigger if horizontal swipe is dominant and long enough
-            if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;
+            setSwipeOffset(0);
+            if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy)*1.5)return;
             const idx=SWIPE_TABS.indexOf(activeTab);
-            if(dx<0&&idx<SWIPE_TABS.length-1)setActiveTab(SWIPE_TABS[idx+1]); // swipe left → next
-            if(dx>0&&idx>0)setActiveTab(SWIPE_TABS[idx-1]); // swipe right → prev
+            if(dx<0&&idx<SWIPE_TABS.length-1){
+              setSwipeAnim("in-left");
+              setActiveTab(SWIPE_TABS[idx+1]);
+              setTimeout(()=>setSwipeAnim(null),350);
+            }
+            if(dx>0&&idx>0){
+              setSwipeAnim("in-right");
+              setActiveTab(SWIPE_TABS[idx-1]);
+              setTimeout(()=>setSwipeAnim(null),350);
+            }
+          }}>
+          <div style={{
+            transform:`translateX(${swipeOffset}px)`,
+            transition:swipeOffset===0?"transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)":"none",
+            animation:swipeAnim==="in-left"?"slideInFromRight 0.32s cubic-bezier(0.25,0.46,0.45,0.94)":swipeAnim==="in-right"?"slideInFromLeft 0.32s cubic-bezier(0.25,0.46,0.45,0.94)":"none",
+            willChange:"transform",
+            overflowY:"auto",
+            height:"100%",
           }}>
           <div style={{marginBottom:"18px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px"}}>
             <div>
@@ -1404,6 +1440,7 @@ export default function BudgetTracker() {
           {activeTab==="categories" &&<CategoriesTab {...caProps}/>}
           {activeTab==="tutorial"   &&<TutorialTab C={C}/>}
           {activeTab==="trends"     &&<TrendsTab     {...trProps}/>}
+          </div>{/* end swipe animation wrapper */}
         </main>
       </div>
 
