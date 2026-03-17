@@ -1087,17 +1087,6 @@ export default function BudgetTracker() {
           </button>
         </nav>
 
-        {/* Upcoming features */}
-        <div style={{margin:"12px 12px 10px",padding:"11px",background:C.upcomingBg,borderRadius:"10px",border:`1px solid ${C.border}`}}>
-          <div style={{fontSize:"9px",color:C.faint,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"6px"}}>Upcoming Features</div>
-          {["Import from Spreadsheet"].map(f=>(
-            <div key={f} style={{display:"flex",alignItems:"center",gap:"5px",marginBottom:"3px"}}>
-              <div style={{width:"4px",height:"4px",borderRadius:"50%",background:C.faint,flexShrink:0}}/>
-              <span style={{fontSize:"10px",color:C.faint}}>{f}</span>
-            </div>
-          ))}
-        </div>
-
         {/* Settings button at bottom */}
         <div style={{padding:"10px 12px 0",borderTop:`1px solid ${C.border}`}}>
           <button onClick={()=>setShowSettings(true)} style={{
@@ -1405,6 +1394,16 @@ export default function BudgetTracker() {
             <span style={{fontSize:"9px",fontWeight:activeTab===item.id?600:400}}>{item.label}</span>
           </button>
         ))}
+        {/* Trends — mob nav only */}
+        <button onClick={()=>setActiveTab("trends")} style={{flex:1,padding:"5px 3px",border:"none",background:"transparent",color:activeTab==="trends"?C.accent:C.faint,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:"2px",fontFamily:"'DM Sans',sans-serif"}}>
+          <span style={{fontSize:"16px"}}>∿</span>
+          <span style={{fontSize:"9px",fontWeight:activeTab==="trends"?600:400}}>Trends</span>
+        </button>
+        {/* Get App — mob nav only */}
+        <button onClick={()=>{setShowSettings(true);}} style={{flex:1,padding:"5px 3px",border:"none",background:"transparent",color:C.faint,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:"2px",fontFamily:"'DM Sans',sans-serif"}}>
+          <span style={{fontSize:"16px"}}>⬇</span>
+          <span style={{fontSize:"9px",fontWeight:400}}>Get App</span>
+        </button>
       </div>
     </>
   );
