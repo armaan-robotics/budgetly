@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.armaangupta.budgetly",
+    "sha256_cert_fingerprints": [
+      "FA:A6:72:2F:87:61:09:91:27:34:2C:DB:B9:E9:0A:27:D9:64:97:1A:CE:22:4D:15:CD:E7:BA:0F:E6:19:3A:A0"
+    ]
+  }
+}]
