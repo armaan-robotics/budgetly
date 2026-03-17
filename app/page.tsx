@@ -1249,14 +1249,20 @@ export default function BudgetTracker() {
           {/* Get the App */}
           <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Get the App</div>
-            <div style={{background:C.navActive,borderRadius:"10px",padding:"12px 14px",marginBottom:"10px",border:`1px solid ${C.border}`}}>
-              <div style={{fontSize:"12px",color:C.accent,fontWeight:600,marginBottom:"3px"}}>📱 Install on your phone</div>
-              <div style={{fontSize:"11px",color:C.muted,lineHeight:1.7}}>Open Budgetly in Chrome on your Android phone and tap "Add to Home Screen" to install it as an app. Works offline, no Play Store needed.</div>
+            <div style={{background:C.navActive,borderRadius:"10px",padding:"14px",border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:"12px",color:C.accent,fontWeight:600,marginBottom:"8px"}}>📱 Install on Android</div>
+              {[
+                "Open budgetly-xldm.vercel.app in Chrome on your phone",
+                "Tap the 3-dot menu (⋮) in the top right",
+                `Tap "Add to Home screen"`,
+                `Tap "Add" — done`,
+              ].map((step, i) => (
+                <div key={i} style={{display:"flex",gap:"10px",marginBottom:"6px",alignItems:"flex-start"}}>
+                  <div style={{width:"18px",height:"18px",borderRadius:"50%",background:C.accent,color:"#fff",fontSize:"10px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px"}}>{i+1}</div>
+                  <div style={{fontSize:"11px",color:C.muted,lineHeight:1.6}}>{step}</div>
+                </div>
+              ))}
             </div>
-            <a href="https://budgetly-xldm.vercel.app" target="_blank" rel="noreferrer"
-              style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.accent}44`,background:C.navActive,color:C.accent,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:600,textDecoration:"none"}}>
-              <span style={{fontSize:"15px"}}>↗</span> Open in browser to install
-            </a>
           </div>
 
           {/* Export */}
