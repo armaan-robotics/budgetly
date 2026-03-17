@@ -1399,11 +1399,7 @@ export default function BudgetTracker() {
           <span style={{fontSize:"16px"}}>∿</span>
           <span style={{fontSize:"9px",fontWeight:activeTab==="trends"?600:400}}>Trends</span>
         </button>
-        {/* Get App — mob nav only */}
-        <button onClick={()=>{setShowSettings(true);}} style={{flex:1,padding:"5px 3px",border:"none",background:"transparent",color:C.faint,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:"2px",fontFamily:"'DM Sans',sans-serif"}}>
-          <span style={{fontSize:"16px"}}>⬇</span>
-          <span style={{fontSize:"9px",fontWeight:400}}>Get App</span>
-        </button>
+
       </div>
     </>
   );
