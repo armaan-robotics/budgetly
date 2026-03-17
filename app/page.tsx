@@ -1072,21 +1072,20 @@ export default function BudgetTracker() {
               {item.label}
             </button>
           ))}
+          {/* Trends — sidebar only */}
+          <button onClick={()=>{setActiveTab("trends");setDrawerOpen(false);}} style={{
+            width:"100%",padding:"9px 12px",borderRadius:"9px",border:"none",
+            background:activeTab==="trends"?C.navActive:"transparent",
+            color:activeTab==="trends"?C.accent:C.muted,
+            fontWeight:activeTab==="trends"?600:400,
+            fontSize:"13px",cursor:"pointer",textAlign:"left",
+            display:"flex",alignItems:"center",gap:"9px",
+            marginBottom:"2px",fontFamily:"'DM Sans',sans-serif",
+          }}>
+            <span style={{fontSize:"14px",width:"18px",textAlign:"center",fontStyle:"normal"}}>∿</span>
+            Trends
+          </button>
         </nav>
-
-        {/* Trends — sidebar only, not in bottom nav */}
-        <button onClick={()=>{setActiveTab("trends");setDrawerOpen(false);}} style={{
-          width:"100%",padding:"9px 12px",borderRadius:"9px",border:"none",
-          background:activeTab==="trends"?C.navActive:"transparent",
-          color:activeTab==="trends"?C.accent:C.muted,
-          fontWeight:activeTab==="trends"?600:400,
-          fontSize:"13px",cursor:"pointer",textAlign:"left",
-          display:"flex",alignItems:"center",gap:"9px",
-          marginBottom:"2px",fontFamily:"'DM Sans',sans-serif",
-        }}>
-          <span style={{fontSize:"14px",width:"18px",textAlign:"center"}}>📈</span>
-          Trends
-        </button>
 
         {/* Upcoming features */}
         <div style={{margin:"12px 12px 10px",padding:"11px",background:C.upcomingBg,borderRadius:"10px",border:`1px solid ${C.border}`}}>
