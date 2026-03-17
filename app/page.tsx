@@ -43,6 +43,9 @@ const NAV = [
   { id:"credit",     label:"Credit",     icon:"⇄" },
 ] as const;
 
+// Swipeable tab order (only main tabs, not settings/categories/tutorial)
+const SWIPE_TABS = ["overview","expenses","earnings","savings","credit","trends"];
+
 // ─── Theme factory ────────────────────────────────────────────────────────────
 function makeTheme(dark: boolean): Theme {
   return dark ? {
@@ -1358,7 +1361,26 @@ export default function BudgetTracker() {
           <SidebarInner/>
         </aside>
 
-        <main className="main-wrap" style={{flex:1,padding:"28px",overflowY:"auto"}}>
+        <main className="main-wrap" style={{flex:1,padding:"28px",overflowY:"auto"}}
+          onTouchStart={e=>{
+            const t=e.touches[0];
+            (e.currentTarget as HTMLElement).dataset.touchX=String(t.clientX);
+            (e.currentTarget as HTMLElement).dataset.touchY=String(t.clientY);
+          }}
+          onTouchEnd={e=>{
+            const el=e.currentTarget as HTMLElement;
+            const startX=parseFloat(el.dataset.touchX||"0");
+            const startY=parseFloat(el.dataset.touchY||"0");
+            const endX=e.changedTouches[0].clientX;
+            const endY=e.changedTouches[0].clientY;
+            const dx=endX-startX;
+            const dy=endY-startY;
+            // Only trigger if horizontal swipe is dominant and long enough
+            if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;
+            const idx=SWIPE_TABS.indexOf(activeTab);
+            if(dx<0&&idx<SWIPE_TABS.length-1)setActiveTab(SWIPE_TABS[idx+1]); // swipe left → next
+            if(dx>0&&idx>0)setActiveTab(SWIPE_TABS[idx-1]); // swipe right → prev
+          }}>
           <div style={{marginBottom:"18px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px"}}>
             <div>
               <h1 style={{fontSize:"clamp(18px,3.5vw,24px)",fontWeight:600,color:C.text,letterSpacing:"-0.3px"}}>
