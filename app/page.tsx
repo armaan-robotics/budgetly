@@ -1394,11 +1394,7 @@ export default function BudgetTracker() {
             <span style={{fontSize:"9px",fontWeight:activeTab===item.id?600:400}}>{item.label}</span>
           </button>
         ))}
-        {/* Trends — mob nav only */}
-        <button onClick={()=>setActiveTab("trends")} style={{flex:1,padding:"5px 3px",border:"none",background:"transparent",color:activeTab==="trends"?C.accent:C.faint,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:"2px",fontFamily:"'DM Sans',sans-serif"}}>
-          <span style={{fontSize:"16px"}}>∿</span>
-          <span style={{fontSize:"9px",fontWeight:activeTab==="trends"?600:400}}>Trends</span>
-        </button>
+
 
       </div>
     </>
