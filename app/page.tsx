@@ -43,6 +43,9 @@ const NAV = [
   { id:"credit",     label:"Credit",     icon:"⇄" },
 ] as const;
 
+// Swipeable tab order (only main tabs, not settings/categories/tutorial)
+const SWIPE_TABS = ["overview","expenses","earnings","savings","credit","trends"];
+
 // ─── Theme factory ────────────────────────────────────────────────────────────
 function makeTheme(dark: boolean): Theme {
   return dark ? {
@@ -119,9 +122,9 @@ interface OvProps {
   idealSpentByToday:number; actualVsIdeal:number;
   moneyLeft:number; daysLeft:number; currentDailyAvg:number; currentIdealAvg:number;
 }
-interface ExProps { C:Theme; expenses:Expense[];categories:string[];totalExpenses:number;expAmt:string;expCat:string;expDesc:string;expDate:string;setExpAmt:(v:string)=>void;setExpCat:(v:string)=>void;setExpDesc:(v:string)=>void;setExpDate:(v:string)=>void;addExpense:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteExpense:(id:number)=>void; }
-interface ErProps { C:Theme; earnings:Entry[];totalEarnings:number;earnAmt:string;earnDesc:string;earnDate:string;setEarnAmt:(v:string)=>void;setEarnDesc:(v:string)=>void;setEarnDate:(v:string)=>void;addEarning:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteEarning:(id:number)=>void; }
-interface SvProps { C:Theme; savings:Entry[];totalSavings:number;cashFlowIn:number;savAmt:string;savDesc:string;savDate:string;setSavAmt:(v:string)=>void;setSavDesc:(v:string)=>void;setSavDate:(v:string)=>void;addSaving:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteSaving:(id:number)=>void; }
+interface ExProps { C:Theme; expenses:Expense[];categories:string[];totalExpenses:number;expAmt:string;expCat:string;expDesc:string;expDate:string;setExpAmt:(v:string)=>void;setExpCat:(v:string)=>void;setExpDesc:(v:string)=>void;setExpDate:(v:string)=>void;addExpense:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteExpense:(id:number)=>void;updateExpense:(id:number,u:Partial<Expense>)=>void; }
+interface ErProps { C:Theme; earnings:Entry[];totalEarnings:number;earnAmt:string;earnDesc:string;earnDate:string;setEarnAmt:(v:string)=>void;setEarnDesc:(v:string)=>void;setEarnDate:(v:string)=>void;addEarning:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteEarning:(id:number)=>void;updateEarning:(id:number,u:Partial<Entry>)=>void; }
+interface SvProps { C:Theme; savings:Entry[];totalSavings:number;cashFlowIn:number;savAmt:string;savDesc:string;savDate:string;setSavAmt:(v:string)=>void;setSavDesc:(v:string)=>void;setSavDate:(v:string)=>void;addSaving:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteSaving:(id:number)=>void;updateSaving:(id:number,u:Partial<Entry>)=>void; }
 interface CaProps { C:Theme; categories:string[];expenses:Expense[];cashFlowOut:number;newCategory:string;setNewCategory:(v:string)=>void;addCategory:()=>void;deleteCategory:(cat:string)=>void; }
 interface CreditEntry { id:number; person:string; amount:number; description:string; date:string; type:"owed_to_me"|"i_owe"; cleared:boolean; }
 interface CrProps { C:Theme; credits:CreditEntry[];crAmt:string;crPerson:string;crDesc:string;crDate:string;crType:"owed_to_me"|"i_owe";setCrAmt:(v:string)=>void;setCrPerson:(v:string)=>void;setCrDesc:(v:string)=>void;setCrDate:(v:string)=>void;setCrType:(v:"owed_to_me"|"i_owe")=>void;addCredit:()=>void;toggleCleared:(id:number)=>void;deleteCredit:(id:number)=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void; }
@@ -158,6 +161,40 @@ function DelBtn({ id,confirm,setConfirm,onDel,C }: { id:number;confirm:number|nu
       style={{background:"none",border:`1px solid ${C.border}`,color:C.faint,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}
       onMouseEnter={e=>{(e.currentTarget as HTMLButtonElement).style.color=C.red;(e.currentTarget as HTMLButtonElement).style.borderColor=C.red+"66";}}
       onMouseLeave={e=>{(e.currentTarget as HTMLButtonElement).style.color=C.faint;(e.currentTarget as HTMLButtonElement).style.borderColor=C.border;}}>✕</button>
+  );
+}
+
+// ─── Edit Modal ───────────────────────────────────────────────────────────────
+function EditModal({ C, title, fields, onSave, onClose }: {
+  C: Theme;
+  title: string;
+  fields: { label: string; value: string; onChange: (v: string) => void; type?: string; options?: string[] }[];
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif",padding:"16px"}}>
+      <div style={{background:C.card,borderRadius:"16px",padding:"24px",width:"100%",maxWidth:"420px",border:`1px solid ${C.border}`}}>
+        <div style={{fontSize:"16px",fontWeight:600,color:C.text,marginBottom:"18px"}}>{title}</div>
+        {fields.map((f,i) => (
+          <div key={i} style={{marginBottom:"12px"}}>
+            <label style={{display:"block",fontSize:"11px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"6px",fontWeight:500}}>{f.label}</label>
+            {f.options ? (
+              <select value={f.value} onChange={e=>f.onChange(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>
+                {f.options.map(o=><option key={o} value={o}>{o}</option>)}
+              </select>
+            ) : (
+              <input type={f.type||"text"} value={f.value} onChange={e=>f.onChange(e.target.value)} style={sInput}/>
+            )}
+          </div>
+        ))}
+        <div style={{display:"flex",gap:"10px",marginTop:"8px"}}>
+          <button onClick={onSave} style={{...{borderRadius:"9px",border:"none",fontWeight:600,fontSize:"13px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"10px 18px",transition:"opacity 0.15s"},background:"#6c5ce7",color:"#fff",flex:1}}>Save</button>
+          <button onClick={onClose} style={{...{borderRadius:"9px",border:"none",fontWeight:600,fontSize:"13px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"10px 18px",transition:"opacity 0.15s"},background:C.cancelBg,color:C.muted,flex:1}}>Cancel</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -292,13 +329,34 @@ function ExpensesTab(p: ExProps) {
       <div style={sCard}>
         <div style={sSecT}>All Expenses</div>
         {p.expenses.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"32px",fontSize:"13px"}}>No expenses yet</div>}
-        {[...p.expenses].reverse().map(exp=>{
-          const ci=p.categories.indexOf(exp.category); const col=CAT_COLORS[ci>=0?ci%CAT_COLORS.length:0];
-          return <EntryRow key={exp.id} C={C}
-            left={<><div style={{display:"flex",gap:"6px",marginBottom:"3px",flexWrap:"wrap",alignItems:"center"}}><span style={{fontSize:"10px",padding:"2px 7px",borderRadius:"20px",background:col+"22",color:col,fontWeight:600}}>{exp.category}</span><span style={{fontSize:"10px",color:C.faint}}>{exp.date}</span></div><div style={{fontSize:"13px",color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{exp.description||"—"}</div></>}
-            right={<><span style={{fontSize:"14px",fontWeight:600,color:C.red,whiteSpace:"nowrap"}}>-{fmt(exp.amount)}</span><DelBtn id={exp.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteExpense} C={C}/></>}
-          />;
-        })}
+        {(()=>{
+          const [editId,setEditId]=React.useState<number|null>(null);
+          const [editAmt,setEditAmt]=React.useState("");
+          const [editCat,setEditCat]=React.useState("");
+          const [editDesc,setEditDesc]=React.useState("");
+          const [editDate,setEditDate]=React.useState("");
+          return <>
+            {[...p.expenses].reverse().map(exp=>{
+              const ci=p.categories.indexOf(exp.category); const col=CAT_COLORS[ci>=0?ci%CAT_COLORS.length:0];
+              return <EntryRow key={exp.id} C={C}
+                left={<><div style={{display:"flex",gap:"6px",marginBottom:"3px",flexWrap:"wrap",alignItems:"center"}}><span style={{fontSize:"10px",padding:"2px 7px",borderRadius:"20px",background:col+"22",color:col,fontWeight:600}}>{exp.category}</span><span style={{fontSize:"10px",color:C.faint}}>{exp.date}</span></div><div style={{fontSize:"13px",color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{exp.description||"—"}</div></>}
+                right={<><span style={{fontSize:"14px",fontWeight:600,color:C.red,whiteSpace:"nowrap"}}>-{fmt(exp.amount)}</span>
+                  <button onClick={()=>{setEditId(exp.id);setEditAmt(String(exp.amount));setEditCat(exp.category);setEditDesc(exp.description);setEditDate(exp.date);}} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}>✎</button>
+                  <DelBtn id={exp.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteExpense} C={C}/></>}
+              />;
+            })}
+            {editId!==null&&<EditModal C={C} title="Edit Expense"
+              fields={[
+                {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+                {label:"Category",value:editCat,onChange:setEditCat,options:p.categories},
+                {label:"Description",value:editDesc,onChange:setEditDesc},
+                {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+              ]}
+              onSave={()=>{p.updateExpense(editId,{amount:+editAmt,category:editCat,description:editDesc,date:editDate});setEditId(null);}}
+              onClose={()=>setEditId(null)}
+            />}
+          </>;
+        })()}
       </div>
     </div>
   );
@@ -328,10 +386,29 @@ function EarningsTab(p: ErProps) {
       <div style={sCard}>
         <div style={sSecT}>All Income</div>
         {p.earnings.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"32px",fontSize:"13px"}}>No income yet</div>}
-        {[...p.earnings].reverse().map(earn=><EntryRow key={earn.id} C={C}
-          left={<><div style={{fontSize:"10px",color:C.faint,marginBottom:"3px"}}>{earn.date}</div><div style={{fontSize:"13px",color:C.text}}>{earn.description||"Income"}</div></>}
-          right={<><span style={{fontSize:"14px",fontWeight:600,color:C.green,whiteSpace:"nowrap"}}>+{fmt(earn.amount)}</span><DelBtn id={earn.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteEarning} C={C}/></>}
-        />)}
+        {(()=>{
+          const [editId,setEditId]=React.useState<number|null>(null);
+          const [editAmt,setEditAmt]=React.useState("");
+          const [editDesc,setEditDesc]=React.useState("");
+          const [editDate,setEditDate]=React.useState("");
+          return <>
+            {[...p.earnings].reverse().map(earn=><EntryRow key={earn.id} C={C}
+              left={<><div style={{fontSize:"10px",color:C.faint,marginBottom:"3px"}}>{earn.date}</div><div style={{fontSize:"13px",color:C.text}}>{earn.description||"Income"}</div></>}
+              right={<><span style={{fontSize:"14px",fontWeight:600,color:C.green,whiteSpace:"nowrap"}}>+{fmt(earn.amount)}</span>
+                <button onClick={()=>{setEditId(earn.id);setEditAmt(String(earn.amount));setEditDesc(earn.description);setEditDate(earn.date);}} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}>✎</button>
+                <DelBtn id={earn.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteEarning} C={C}/></>}
+            />)}
+            {editId!==null&&<EditModal C={C} title="Edit Income"
+              fields={[
+                {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+                {label:"Description",value:editDesc,onChange:setEditDesc},
+                {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+              ]}
+              onSave={()=>{p.updateEarning(editId,{amount:+editAmt,description:editDesc,date:editDate});setEditId(null);}}
+              onClose={()=>setEditId(null)}
+            />}
+          </>;
+        })()}
       </div>
     </div>
   );
@@ -361,10 +438,29 @@ function SavingsTab(p: SvProps) {
       <div style={sCard}>
         <div style={sSecT}>All Savings</div>
         {p.savings.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"32px",fontSize:"13px"}}>No savings yet</div>}
-        {[...p.savings].reverse().map(sav=><EntryRow key={sav.id} C={C}
-          left={<><div style={{fontSize:"10px",color:C.faint,marginBottom:"3px"}}>{sav.date}</div><div style={{fontSize:"13px",color:C.text}}>{sav.description||"Savings"}</div></>}
-          right={<><span style={{fontSize:"14px",fontWeight:600,color:C.amber,whiteSpace:"nowrap"}}>{fmt(sav.amount)}</span><DelBtn id={sav.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteSaving} C={C}/></>}
-        />)}
+        {(()=>{
+          const [editId,setEditId]=React.useState<number|null>(null);
+          const [editAmt,setEditAmt]=React.useState("");
+          const [editDesc,setEditDesc]=React.useState("");
+          const [editDate,setEditDate]=React.useState("");
+          return <>
+            {[...p.savings].reverse().map(sav=><EntryRow key={sav.id} C={C}
+              left={<><div style={{fontSize:"10px",color:C.faint,marginBottom:"3px"}}>{sav.date}</div><div style={{fontSize:"13px",color:C.text}}>{sav.description||"Savings"}</div></>}
+              right={<><span style={{fontSize:"14px",fontWeight:600,color:C.amber,whiteSpace:"nowrap"}}>{fmt(sav.amount)}</span>
+                <button onClick={()=>{setEditId(sav.id);setEditAmt(String(sav.amount));setEditDesc(sav.description);setEditDate(sav.date);}} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}>✎</button>
+                <DelBtn id={sav.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteSaving} C={C}/></>}
+            />)}
+            {editId!==null&&<EditModal C={C} title="Edit Saving"
+              fields={[
+                {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+                {label:"Description",value:editDesc,onChange:setEditDesc},
+                {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+              ]}
+              onSave={()=>{p.updateSaving(editId,{amount:+editAmt,description:editDesc,date:editDate});setEditId(null);}}
+              onClose={()=>setEditId(null)}
+            />}
+          </>;
+        })()}
       </div>
     </div>
   );
@@ -865,6 +961,8 @@ export default function BudgetTracker() {
   const [showSettings,  setShowSettings]  = useState(false);
   const [dbLoading,     setDbLoading]     = useState(false);
   const [deleteMonthConfirm, setDeleteMonthConfirm] = useState(false);
+  const [swipeOffset,   setSwipeOffset]   = useState(0);   // live drag offset px
+  const [swipeAnim,     setSwipeAnim]     = useState<"in-left"|"in-right"|null>(null); // entry animation
 
   const C = makeTheme(dark);
   const toggleDark = () => {
@@ -986,6 +1084,10 @@ export default function BudgetTracker() {
   const deleteExpense  = (id:number) => { setM(activeMK,{...md,expenses:expenses.filter(e=>e.id!==id)}); setDeleteConfirm(null); };
   const deleteEarning  = (id:number) => { setM(activeMK,{...md,earnings:earnings.filter(e=>e.id!==id)}); setDeleteConfirm(null); };
   const deleteSaving   = (id:number) => { setM(activeMK,{...md,savings: savings.filter (e=>e.id!==id)}); setDeleteConfirm(null); };
+  const updateExpense  = (id:number,u:Partial<Expense>) => setM(activeMK,{...md,expenses:expenses.map(e=>e.id===id?{...e,...u}:e)});
+  const updateEarning  = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,earnings:earnings.map(e=>e.id===id?{...e,...u}:e)});
+  const updateSaving   = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,savings: savings.map (e=>e.id===id?{...e,...u}:e)});
+  const updateCredit   = (id:number,u:Partial<CreditEntry>) => setCredits(prev=>prev.map(c=>c.id===id?{...c,...u}:c));
   const addCategory    = () => { const t=newCategory.trim(); if(!t||categories.includes(t))return; setCategories([...categories,t]); setNewCategory(""); };
   const deleteCategory = (cat:string) => { if(DEFAULT_CATS.includes(cat))return; setCategories(categories.filter(c=>c!==cat)); };
   const addCredit      = () => { if(!crAmt||isNaN(+crAmt)||!crPerson.trim())return; setCredits(prev=>[...prev,{id:Date.now(),person:crPerson.trim(),amount:+crAmt,description:crDesc,date:crDate,type:crType,cleared:false}]); setCrAmt(""); setCrPerson(""); setCrDesc(""); };
@@ -1086,17 +1188,6 @@ export default function BudgetTracker() {
             Trends
           </button>
         </nav>
-
-        {/* Upcoming features */}
-        <div style={{margin:"12px 12px 10px",padding:"11px",background:C.upcomingBg,borderRadius:"10px",border:`1px solid ${C.border}`}}>
-          <div style={{fontSize:"9px",color:C.faint,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"6px"}}>Upcoming Features</div>
-          {["Import from Spreadsheet"].map(f=>(
-            <div key={f} style={{display:"flex",alignItems:"center",gap:"5px",marginBottom:"3px"}}>
-              <div style={{width:"4px",height:"4px",borderRadius:"50%",background:C.faint,flexShrink:0}}/>
-              <span style={{fontSize:"10px",color:C.faint}}>{f}</span>
-            </div>
-          ))}
-        </div>
 
         {/* Settings button at bottom */}
         <div style={{padding:"10px 12px 0",borderTop:`1px solid ${C.border}`}}>
@@ -1246,6 +1337,25 @@ export default function BudgetTracker() {
             </button>
           </div>
 
+          {/* Get the App */}
+          <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Get the App</div>
+            <div style={{background:C.navActive,borderRadius:"10px",padding:"14px",border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:"12px",color:C.accent,fontWeight:600,marginBottom:"8px"}}>📱 Install on Android</div>
+              {[
+                "Open budgetly-xldm.vercel.app in Chrome on your phone",
+                "Tap the 3-dot menu (⋮) in the top right",
+                `Tap "Add to Home screen"`,
+                `Tap "Add" — done`,
+              ].map((step, i) => (
+                <div key={i} style={{display:"flex",gap:"10px",marginBottom:"6px",alignItems:"flex-start"}}>
+                  <div style={{width:"18px",height:"18px",borderRadius:"50%",background:C.accent,color:"#fff",fontSize:"10px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px"}}>{i+1}</div>
+                  <div style={{fontSize:"11px",color:C.muted,lineHeight:1.6}}>{step}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Export */}
           <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Export Data</div>
@@ -1270,9 +1380,9 @@ export default function BudgetTracker() {
   }
 
   const ovProps: OvProps = { C,budget,cashFlowIn,cashFlowOut,totalEarnings,totalSavings,remaining,spentPct,editingBudget,tempBudget,setEditingBudget,setTempBudget,saveBudget,expenses,savings,categories,daysInMonth,todayDay,idealPerDay,idealSpentByToday,actualVsIdeal,moneyLeft,daysLeft,currentDailyAvg,currentIdealAvg };
-  const exProps: ExProps = { C,expenses,categories,totalExpenses:cashFlowOut,expAmt,expCat,expDesc,expDate,setExpAmt,setExpCat,setExpDesc,setExpDate,addExpense,deleteConfirm,setDeleteConfirm,deleteExpense };
-  const erProps: ErProps = { C,earnings,totalEarnings,earnAmt,earnDesc,earnDate,setEarnAmt,setEarnDesc,setEarnDate,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning };
-  const svProps: SvProps = { C,savings,totalSavings,cashFlowIn,savAmt,savDesc,savDate,setSavAmt,setSavDesc,setSavDate,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving };
+  const exProps: ExProps = { C,expenses,categories,totalExpenses:cashFlowOut,expAmt,expCat,expDesc,expDate,setExpAmt,setExpCat,setExpDesc,setExpDate,addExpense,deleteConfirm,setDeleteConfirm,deleteExpense,updateExpense };
+  const erProps: ErProps = { C,earnings,totalEarnings,earnAmt,earnDesc,earnDate,setEarnAmt,setEarnDesc,setEarnDate,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning,updateEarning };
+  const svProps: SvProps = { C,savings,totalSavings,cashFlowIn,savAmt,savDesc,savDate,setSavAmt,setSavDesc,setSavDate,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving,updateSaving };
   const caProps: CaProps = { C,categories,expenses,cashFlowOut,newCategory,setNewCategory,addCategory,deleteCategory };
   const trProps: TrProps = { C,allMonths,activeMK,categories };
   const crProps: CrProps = { C,credits,crAmt,crPerson,crDesc,crDate,crType,setCrAmt,setCrPerson,setCrDesc,setCrDate,setCrType,addCredit,toggleCleared,deleteCredit,deleteConfirm,setDeleteConfirm };
@@ -1308,6 +1418,8 @@ export default function BudgetTracker() {
         input:focus,select:focus{border-color:${C.accent}!important;box-shadow:0 0 0 3px ${C.accent}22;}
         input,select,option{color-scheme:${dark?"dark":"light"};}
         .mob-header{display:none;}
+        @keyframes slideInFromRight{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes slideInFromLeft{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:translateX(0)}}
         .mob-nav{display:none;}
         @media(max-width:768px){
           .mob-header{display:flex!important;position:fixed;top:0;left:0;right:0;z-index:100;background:${C.sidebar};border-bottom:1px solid ${C.border};padding:11px 15px;align-items:center;justify-content:space-between;}
@@ -1350,7 +1462,58 @@ export default function BudgetTracker() {
           <SidebarInner/>
         </aside>
 
-        <main className="main-wrap" style={{flex:1,padding:"28px",overflowY:"auto"}}>
+        <main className="main-wrap" style={{flex:1,padding:"28px",overflowY:"auto",overflow:"hidden"}}
+          onTouchStart={e=>{
+            const t=e.touches[0];
+            const el=e.currentTarget as HTMLElement;
+            el.dataset.touchX=String(t.clientX);
+            el.dataset.touchY=String(t.clientY);
+            el.dataset.dragging="1";
+          }}
+          onTouchMove={e=>{
+            const el=e.currentTarget as HTMLElement;
+            if(!el.dataset.dragging)return;
+            const startX=parseFloat(el.dataset.touchX||"0");
+            const startY=parseFloat(el.dataset.touchY||"0");
+            const dx=e.touches[0].clientX-startX;
+            const dy=e.touches[0].clientY-startY;
+            // only track if horizontal
+            if(Math.abs(dx)>Math.abs(dy)){
+              e.preventDefault();
+              setSwipeOffset(dx*0.4); // rubber-band feel
+            }
+          }}
+          onTouchEnd={e=>{
+            const el=e.currentTarget as HTMLElement;
+            el.dataset.dragging="";
+            const startX=parseFloat(el.dataset.touchX||"0");
+            const startY=parseFloat(el.dataset.touchY||"0");
+            const endX=e.changedTouches[0].clientX;
+            const endY=e.changedTouches[0].clientY;
+            const dx=endX-startX;
+            const dy=endY-startY;
+            setSwipeOffset(0);
+            if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy)*1.5)return;
+            const idx=SWIPE_TABS.indexOf(activeTab);
+            if(dx<0&&idx<SWIPE_TABS.length-1){
+              setSwipeAnim("in-left");
+              setActiveTab(SWIPE_TABS[idx+1]);
+              setTimeout(()=>setSwipeAnim(null),350);
+            }
+            if(dx>0&&idx>0){
+              setSwipeAnim("in-right");
+              setActiveTab(SWIPE_TABS[idx-1]);
+              setTimeout(()=>setSwipeAnim(null),350);
+            }
+          }}>
+          <div style={{
+            transform:`translateX(${swipeOffset}px)`,
+            transition:swipeOffset===0?"transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)":"none",
+            animation:swipeAnim==="in-left"?"slideInFromRight 0.32s cubic-bezier(0.25,0.46,0.45,0.94)":swipeAnim==="in-right"?"slideInFromLeft 0.32s cubic-bezier(0.25,0.46,0.45,0.94)":"none",
+            willChange:"transform",
+            overflowY:"auto",
+            height:"100%",
+          }}>
           <div style={{marginBottom:"18px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px"}}>
             <div>
               <h1 style={{fontSize:"clamp(18px,3.5vw,24px)",fontWeight:600,color:C.text,letterSpacing:"-0.3px"}}>
@@ -1374,6 +1537,7 @@ export default function BudgetTracker() {
           {activeTab==="categories" &&<CategoriesTab {...caProps}/>}
           {activeTab==="tutorial"   &&<TutorialTab C={C}/>}
           {activeTab==="trends"     &&<TrendsTab     {...trProps}/>}
+          </div>{/* end swipe animation wrapper */}
         </main>
       </div>
 
@@ -1386,6 +1550,8 @@ export default function BudgetTracker() {
             <span style={{fontSize:"9px",fontWeight:activeTab===item.id?600:400}}>{item.label}</span>
           </button>
         ))}
+
+
       </div>
     </>
   );
