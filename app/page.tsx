@@ -122,9 +122,9 @@ interface OvProps {
   idealSpentByToday:number; actualVsIdeal:number;
   moneyLeft:number; daysLeft:number; currentDailyAvg:number; currentIdealAvg:number;
 }
-interface ExProps { C:Theme; expenses:Expense[];categories:string[];totalExpenses:number;expAmt:string;expCat:string;expDesc:string;expDate:string;setExpAmt:(v:string)=>void;setExpCat:(v:string)=>void;setExpDesc:(v:string)=>void;setExpDate:(v:string)=>void;addExpense:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteExpense:(id:number)=>void; }
-interface ErProps { C:Theme; earnings:Entry[];totalEarnings:number;earnAmt:string;earnDesc:string;earnDate:string;setEarnAmt:(v:string)=>void;setEarnDesc:(v:string)=>void;setEarnDate:(v:string)=>void;addEarning:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteEarning:(id:number)=>void; }
-interface SvProps { C:Theme; savings:Entry[];totalSavings:number;cashFlowIn:number;savAmt:string;savDesc:string;savDate:string;setSavAmt:(v:string)=>void;setSavDesc:(v:string)=>void;setSavDate:(v:string)=>void;addSaving:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteSaving:(id:number)=>void; }
+interface ExProps { C:Theme; expenses:Expense[];categories:string[];totalExpenses:number;expAmt:string;expCat:string;expDesc:string;expDate:string;setExpAmt:(v:string)=>void;setExpCat:(v:string)=>void;setExpDesc:(v:string)=>void;setExpDate:(v:string)=>void;addExpense:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteExpense:(id:number)=>void;updateExpense:(id:number,u:Partial<Expense>)=>void; }
+interface ErProps { C:Theme; earnings:Entry[];totalEarnings:number;earnAmt:string;earnDesc:string;earnDate:string;setEarnAmt:(v:string)=>void;setEarnDesc:(v:string)=>void;setEarnDate:(v:string)=>void;addEarning:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteEarning:(id:number)=>void;updateEarning:(id:number,u:Partial<Entry>)=>void; }
+interface SvProps { C:Theme; savings:Entry[];totalSavings:number;cashFlowIn:number;savAmt:string;savDesc:string;savDate:string;setSavAmt:(v:string)=>void;setSavDesc:(v:string)=>void;setSavDate:(v:string)=>void;addSaving:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteSaving:(id:number)=>void;updateSaving:(id:number,u:Partial<Entry>)=>void; }
 interface CaProps { C:Theme; categories:string[];expenses:Expense[];cashFlowOut:number;newCategory:string;setNewCategory:(v:string)=>void;addCategory:()=>void;deleteCategory:(cat:string)=>void; }
 interface CreditEntry { id:number; person:string; amount:number; description:string; date:string; type:"owed_to_me"|"i_owe"; cleared:boolean; }
 interface CrProps { C:Theme; credits:CreditEntry[];crAmt:string;crPerson:string;crDesc:string;crDate:string;crType:"owed_to_me"|"i_owe";setCrAmt:(v:string)=>void;setCrPerson:(v:string)=>void;setCrDesc:(v:string)=>void;setCrDate:(v:string)=>void;setCrType:(v:"owed_to_me"|"i_owe")=>void;addCredit:()=>void;toggleCleared:(id:number)=>void;deleteCredit:(id:number)=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void; }
@@ -161,6 +161,40 @@ function DelBtn({ id,confirm,setConfirm,onDel,C }: { id:number;confirm:number|nu
       style={{background:"none",border:`1px solid ${C.border}`,color:C.faint,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}
       onMouseEnter={e=>{(e.currentTarget as HTMLButtonElement).style.color=C.red;(e.currentTarget as HTMLButtonElement).style.borderColor=C.red+"66";}}
       onMouseLeave={e=>{(e.currentTarget as HTMLButtonElement).style.color=C.faint;(e.currentTarget as HTMLButtonElement).style.borderColor=C.border;}}>✕</button>
+  );
+}
+
+// ─── Edit Modal ───────────────────────────────────────────────────────────────
+function EditModal({ C, title, fields, onSave, onClose }: {
+  C: Theme;
+  title: string;
+  fields: { label: string; value: string; onChange: (v: string) => void; type?: string; options?: string[] }[];
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif",padding:"16px"}}>
+      <div style={{background:C.card,borderRadius:"16px",padding:"24px",width:"100%",maxWidth:"420px",border:`1px solid ${C.border}`}}>
+        <div style={{fontSize:"16px",fontWeight:600,color:C.text,marginBottom:"18px"}}>{title}</div>
+        {fields.map((f,i) => (
+          <div key={i} style={{marginBottom:"12px"}}>
+            <label style={{display:"block",fontSize:"11px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"6px",fontWeight:500}}>{f.label}</label>
+            {f.options ? (
+              <select value={f.value} onChange={e=>f.onChange(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>
+                {f.options.map(o=><option key={o} value={o}>{o}</option>)}
+              </select>
+            ) : (
+              <input type={f.type||"text"} value={f.value} onChange={e=>f.onChange(e.target.value)} style={sInput}/>
+            )}
+          </div>
+        ))}
+        <div style={{display:"flex",gap:"10px",marginTop:"8px"}}>
+          <button onClick={onSave} style={{...{borderRadius:"9px",border:"none",fontWeight:600,fontSize:"13px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"10px 18px",transition:"opacity 0.15s"},background:"#6c5ce7",color:"#fff",flex:1}}>Save</button>
+          <button onClick={onClose} style={{...{borderRadius:"9px",border:"none",fontWeight:600,fontSize:"13px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"10px 18px",transition:"opacity 0.15s"},background:C.cancelBg,color:C.muted,flex:1}}>Cancel</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -295,13 +329,34 @@ function ExpensesTab(p: ExProps) {
       <div style={sCard}>
         <div style={sSecT}>All Expenses</div>
         {p.expenses.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"32px",fontSize:"13px"}}>No expenses yet</div>}
-        {[...p.expenses].reverse().map(exp=>{
-          const ci=p.categories.indexOf(exp.category); const col=CAT_COLORS[ci>=0?ci%CAT_COLORS.length:0];
-          return <EntryRow key={exp.id} C={C}
-            left={<><div style={{display:"flex",gap:"6px",marginBottom:"3px",flexWrap:"wrap",alignItems:"center"}}><span style={{fontSize:"10px",padding:"2px 7px",borderRadius:"20px",background:col+"22",color:col,fontWeight:600}}>{exp.category}</span><span style={{fontSize:"10px",color:C.faint}}>{exp.date}</span></div><div style={{fontSize:"13px",color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{exp.description||"—"}</div></>}
-            right={<><span style={{fontSize:"14px",fontWeight:600,color:C.red,whiteSpace:"nowrap"}}>-{fmt(exp.amount)}</span><DelBtn id={exp.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteExpense} C={C}/></>}
-          />;
-        })}
+        {(()=>{
+          const [editId,setEditId]=React.useState<number|null>(null);
+          const [editAmt,setEditAmt]=React.useState("");
+          const [editCat,setEditCat]=React.useState("");
+          const [editDesc,setEditDesc]=React.useState("");
+          const [editDate,setEditDate]=React.useState("");
+          return <>
+            {[...p.expenses].reverse().map(exp=>{
+              const ci=p.categories.indexOf(exp.category); const col=CAT_COLORS[ci>=0?ci%CAT_COLORS.length:0];
+              return <EntryRow key={exp.id} C={C}
+                left={<><div style={{display:"flex",gap:"6px",marginBottom:"3px",flexWrap:"wrap",alignItems:"center"}}><span style={{fontSize:"10px",padding:"2px 7px",borderRadius:"20px",background:col+"22",color:col,fontWeight:600}}>{exp.category}</span><span style={{fontSize:"10px",color:C.faint}}>{exp.date}</span></div><div style={{fontSize:"13px",color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{exp.description||"—"}</div></>}
+                right={<><span style={{fontSize:"14px",fontWeight:600,color:C.red,whiteSpace:"nowrap"}}>-{fmt(exp.amount)}</span>
+                  <button onClick={()=>{setEditId(exp.id);setEditAmt(String(exp.amount));setEditCat(exp.category);setEditDesc(exp.description);setEditDate(exp.date);}} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}>✎</button>
+                  <DelBtn id={exp.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteExpense} C={C}/></>}
+              />;
+            })}
+            {editId!==null&&<EditModal C={C} title="Edit Expense"
+              fields={[
+                {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+                {label:"Category",value:editCat,onChange:setEditCat,options:p.categories},
+                {label:"Description",value:editDesc,onChange:setEditDesc},
+                {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+              ]}
+              onSave={()=>{p.updateExpense(editId,{amount:+editAmt,category:editCat,description:editDesc,date:editDate});setEditId(null);}}
+              onClose={()=>setEditId(null)}
+            />}
+          </>;
+        })()}
       </div>
     </div>
   );
@@ -331,10 +386,29 @@ function EarningsTab(p: ErProps) {
       <div style={sCard}>
         <div style={sSecT}>All Income</div>
         {p.earnings.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"32px",fontSize:"13px"}}>No income yet</div>}
-        {[...p.earnings].reverse().map(earn=><EntryRow key={earn.id} C={C}
-          left={<><div style={{fontSize:"10px",color:C.faint,marginBottom:"3px"}}>{earn.date}</div><div style={{fontSize:"13px",color:C.text}}>{earn.description||"Income"}</div></>}
-          right={<><span style={{fontSize:"14px",fontWeight:600,color:C.green,whiteSpace:"nowrap"}}>+{fmt(earn.amount)}</span><DelBtn id={earn.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteEarning} C={C}/></>}
-        />)}
+        {(()=>{
+          const [editId,setEditId]=React.useState<number|null>(null);
+          const [editAmt,setEditAmt]=React.useState("");
+          const [editDesc,setEditDesc]=React.useState("");
+          const [editDate,setEditDate]=React.useState("");
+          return <>
+            {[...p.earnings].reverse().map(earn=><EntryRow key={earn.id} C={C}
+              left={<><div style={{fontSize:"10px",color:C.faint,marginBottom:"3px"}}>{earn.date}</div><div style={{fontSize:"13px",color:C.text}}>{earn.description||"Income"}</div></>}
+              right={<><span style={{fontSize:"14px",fontWeight:600,color:C.green,whiteSpace:"nowrap"}}>+{fmt(earn.amount)}</span>
+                <button onClick={()=>{setEditId(earn.id);setEditAmt(String(earn.amount));setEditDesc(earn.description);setEditDate(earn.date);}} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}>✎</button>
+                <DelBtn id={earn.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteEarning} C={C}/></>}
+            />)}
+            {editId!==null&&<EditModal C={C} title="Edit Income"
+              fields={[
+                {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+                {label:"Description",value:editDesc,onChange:setEditDesc},
+                {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+              ]}
+              onSave={()=>{p.updateEarning(editId,{amount:+editAmt,description:editDesc,date:editDate});setEditId(null);}}
+              onClose={()=>setEditId(null)}
+            />}
+          </>;
+        })()}
       </div>
     </div>
   );
@@ -364,10 +438,29 @@ function SavingsTab(p: SvProps) {
       <div style={sCard}>
         <div style={sSecT}>All Savings</div>
         {p.savings.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"32px",fontSize:"13px"}}>No savings yet</div>}
-        {[...p.savings].reverse().map(sav=><EntryRow key={sav.id} C={C}
-          left={<><div style={{fontSize:"10px",color:C.faint,marginBottom:"3px"}}>{sav.date}</div><div style={{fontSize:"13px",color:C.text}}>{sav.description||"Savings"}</div></>}
-          right={<><span style={{fontSize:"14px",fontWeight:600,color:C.amber,whiteSpace:"nowrap"}}>{fmt(sav.amount)}</span><DelBtn id={sav.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteSaving} C={C}/></>}
-        />)}
+        {(()=>{
+          const [editId,setEditId]=React.useState<number|null>(null);
+          const [editAmt,setEditAmt]=React.useState("");
+          const [editDesc,setEditDesc]=React.useState("");
+          const [editDate,setEditDate]=React.useState("");
+          return <>
+            {[...p.savings].reverse().map(sav=><EntryRow key={sav.id} C={C}
+              left={<><div style={{fontSize:"10px",color:C.faint,marginBottom:"3px"}}>{sav.date}</div><div style={{fontSize:"13px",color:C.text}}>{sav.description||"Savings"}</div></>}
+              right={<><span style={{fontSize:"14px",fontWeight:600,color:C.amber,whiteSpace:"nowrap"}}>{fmt(sav.amount)}</span>
+                <button onClick={()=>{setEditId(sav.id);setEditAmt(String(sav.amount));setEditDesc(sav.description);setEditDate(sav.date);}} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}>✎</button>
+                <DelBtn id={sav.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteSaving} C={C}/></>}
+            />)}
+            {editId!==null&&<EditModal C={C} title="Edit Saving"
+              fields={[
+                {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+                {label:"Description",value:editDesc,onChange:setEditDesc},
+                {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+              ]}
+              onSave={()=>{p.updateSaving(editId,{amount:+editAmt,description:editDesc,date:editDate});setEditId(null);}}
+              onClose={()=>setEditId(null)}
+            />}
+          </>;
+        })()}
       </div>
     </div>
   );
@@ -991,6 +1084,10 @@ export default function BudgetTracker() {
   const deleteExpense  = (id:number) => { setM(activeMK,{...md,expenses:expenses.filter(e=>e.id!==id)}); setDeleteConfirm(null); };
   const deleteEarning  = (id:number) => { setM(activeMK,{...md,earnings:earnings.filter(e=>e.id!==id)}); setDeleteConfirm(null); };
   const deleteSaving   = (id:number) => { setM(activeMK,{...md,savings: savings.filter (e=>e.id!==id)}); setDeleteConfirm(null); };
+  const updateExpense  = (id:number,u:Partial<Expense>) => setM(activeMK,{...md,expenses:expenses.map(e=>e.id===id?{...e,...u}:e)});
+  const updateEarning  = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,earnings:earnings.map(e=>e.id===id?{...e,...u}:e)});
+  const updateSaving   = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,savings: savings.map (e=>e.id===id?{...e,...u}:e)});
+  const updateCredit   = (id:number,u:Partial<CreditEntry>) => setCredits(prev=>prev.map(c=>c.id===id?{...c,...u}:c));
   const addCategory    = () => { const t=newCategory.trim(); if(!t||categories.includes(t))return; setCategories([...categories,t]); setNewCategory(""); };
   const deleteCategory = (cat:string) => { if(DEFAULT_CATS.includes(cat))return; setCategories(categories.filter(c=>c!==cat)); };
   const addCredit      = () => { if(!crAmt||isNaN(+crAmt)||!crPerson.trim())return; setCredits(prev=>[...prev,{id:Date.now(),person:crPerson.trim(),amount:+crAmt,description:crDesc,date:crDate,type:crType,cleared:false}]); setCrAmt(""); setCrPerson(""); setCrDesc(""); };
@@ -1283,9 +1380,9 @@ export default function BudgetTracker() {
   }
 
   const ovProps: OvProps = { C,budget,cashFlowIn,cashFlowOut,totalEarnings,totalSavings,remaining,spentPct,editingBudget,tempBudget,setEditingBudget,setTempBudget,saveBudget,expenses,savings,categories,daysInMonth,todayDay,idealPerDay,idealSpentByToday,actualVsIdeal,moneyLeft,daysLeft,currentDailyAvg,currentIdealAvg };
-  const exProps: ExProps = { C,expenses,categories,totalExpenses:cashFlowOut,expAmt,expCat,expDesc,expDate,setExpAmt,setExpCat,setExpDesc,setExpDate,addExpense,deleteConfirm,setDeleteConfirm,deleteExpense };
-  const erProps: ErProps = { C,earnings,totalEarnings,earnAmt,earnDesc,earnDate,setEarnAmt,setEarnDesc,setEarnDate,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning };
-  const svProps: SvProps = { C,savings,totalSavings,cashFlowIn,savAmt,savDesc,savDate,setSavAmt,setSavDesc,setSavDate,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving };
+  const exProps: ExProps = { C,expenses,categories,totalExpenses:cashFlowOut,expAmt,expCat,expDesc,expDate,setExpAmt,setExpCat,setExpDesc,setExpDate,addExpense,deleteConfirm,setDeleteConfirm,deleteExpense,updateExpense };
+  const erProps: ErProps = { C,earnings,totalEarnings,earnAmt,earnDesc,earnDate,setEarnAmt,setEarnDesc,setEarnDate,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning,updateEarning };
+  const svProps: SvProps = { C,savings,totalSavings,cashFlowIn,savAmt,savDesc,savDate,setSavAmt,setSavDesc,setSavDate,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving,updateSaving };
   const caProps: CaProps = { C,categories,expenses,cashFlowOut,newCategory,setNewCategory,addCategory,deleteCategory };
   const trProps: TrProps = { C,allMonths,activeMK,categories };
   const crProps: CrProps = { C,credits,crAmt,crPerson,crDesc,crDate,crType,setCrAmt,setCrPerson,setCrDesc,setCrDate,setCrType,addCredit,toggleCleared,deleteCredit,deleteConfirm,setDeleteConfirm };
