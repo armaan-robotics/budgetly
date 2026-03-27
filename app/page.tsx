@@ -10,7 +10,7 @@ const supabase = createClient(
 );
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface Entry    { id: number; amount: number; description: string; date: string; mode?: string; }
+interface Entry    { id: number; amount: number; description: string; date: string; mode?: string; account?: string; }
 interface Expense extends Entry { category: string; account?: string; }
 interface MonthData { budget: number; expenses: Expense[]; earnings: Entry[]; savings: Entry[]; }
 interface AllMonths { [mk: string]: MonthData; }
