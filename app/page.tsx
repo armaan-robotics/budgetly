@@ -197,32 +197,6 @@ function EditModal({ C, title, fields, onSave, onClose }: {
           <button onClick={onClose} style={{...{borderRadius:"9px",border:"none",fontWeight:600,fontSize:"13px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"10px 18px",transition:"opacity 0.15s"},background:C.cancelBg,color:C.muted,flex:1}}>Cancel</button>
         </div>
       </div>
-      {p.appMode==="household"&&p.accounts.length>0&&(()=>{
-        const accTotals=p.accounts.map((acc,i)=>({
-          name:acc,color:CAT_COLORS[i%CAT_COLORS.length],
-          totalOut:p.expenses.filter(e=>e.account===acc).reduce((s,e)=>s+e.amount,0),
-          totalIn:(p.savings as any[]).filter(e=>e.account===acc).reduce((s:number,e:any)=>s+e.amount,0),
-          count:p.expenses.filter(e=>e.account===acc).length,
-        })).filter(a=>a.totalOut>0||a.totalIn>0);
-        if(accTotals.length===0)return null;
-        return(
-          <div style={{...sCard,marginBottom:"12px"}}>
-            <div style={sSecT}>By Account</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"9px"}}>
-              {accTotals.map(acc=>(
-                <div key={acc.name} style={{background:C.cardAlt,borderRadius:"10px",padding:"12px",border:`1px solid ${C.border}`}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
-                    <div style={{width:"7px",height:"7px",borderRadius:"50%",background:acc.color}}/>
-                    <span style={{fontSize:"12px",fontWeight:500,color:C.text}}>{acc.name}</span>
-                  </div>
-                  <div style={{fontSize:"14px",fontWeight:600,color:acc.color}}>{fmt(acc.totalOut)}</div>
-                  <div style={{fontSize:"10px",color:C.faint,marginTop:"2px"}}>{acc.count} transactions</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }
@@ -330,6 +304,31 @@ function OverviewTab(p: OvProps) {
           </div>
         </div>
       )}
+      {p.appMode==="household"&&(()=>{
+        const accTotals=p.accounts.map((acc,i)=>({
+          name:acc,color:CAT_COLORS[i%CAT_COLORS.length],
+          totalOut:p.expenses.filter(e=>e.account===acc).reduce((s,e)=>s+e.amount,0),
+          count:p.expenses.filter(e=>e.account===acc).length,
+        })).filter(a=>a.totalOut>0);
+        if(accTotals.length===0)return null;
+        return(
+          <div style={{...sCard,marginBottom:"12px"}}>
+            <div style={sSecT}>By Account</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"9px"}}>
+              {accTotals.map(acc=>(
+                <div key={acc.name} style={{background:C.cardAlt,borderRadius:"10px",padding:"12px",border:`1px solid ${C.border}`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
+                    <div style={{width:"7px",height:"7px",borderRadius:"50%",background:acc.color}}/>
+                    <span style={{fontSize:"12px",fontWeight:500,color:C.text}}>{acc.name}</span>
+                  </div>
+                  <div style={{fontSize:"14px",fontWeight:600,color:acc.color}}>{fmt(acc.totalOut)}</div>
+                  <div style={{fontSize:"10px",color:C.faint,marginTop:"2px"}}>{acc.count} transactions</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
