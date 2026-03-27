@@ -104,8 +104,10 @@ function makeTheme(dark: boolean): Theme {
 const fmt     = (n: number) => new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(n);
 const todayS  = () => new Date().toISOString().split("T")[0];
 const curMK   = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; };
-const fmtMK   = (mk:string) => { const [y,m]=mk.split("-"); return new Date(+y,+m-1,1).toLocaleDateString("en-IN",{month:"long",year:"numeric"}); };
-const getDays = (mk:string) => { const [y,m]=mk.split("-").map(Number); return new Date(y,m,0).getDate(); };
+const modeMK  = (mk:string, mode:AppMode|null) => mode==="household" ? `h:${mk}` : mk;
+const stripMK = (mk:string) => mk.startsWith("h:") ? mk.slice(2) : mk;
+const fmtMK   = (mk:string) => { const clean=mk.startsWith("h:")?mk.slice(2):mk; const [y,m]=clean.split("-"); return new Date(+y,+m-1,1).toLocaleDateString("en-IN",{month:"long",year:"numeric"}); };
+const getDays = (mk:string) => { const clean=mk.startsWith("h:")?mk.slice(2):mk; const [y,m]=clean.split("-").map(Number); return new Date(y,m,0).getDate(); };
 const emptyMD = (): MonthData => ({ budget:10000, expenses:[], earnings:[], savings:[] });
 
 // ─── Shared button base ───────────────────────────────────────────────────────
@@ -348,8 +350,19 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
   const [sortDir, setSortDir] = useState<"asc"|"desc">("desc");
   const [expandId, setExpandId] = useState<number|null>(null);
   const [deleteId, setDeleteId] = useState<number|null>(null);
+  const [filterText, setFilterText] = useState("");
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
-  const sorted = [...entries].sort((a,b)=>{
+  const filtered = entries.filter(e=>{
+    if(filterText && !e.description?.toLowerCase().includes(filterText.toLowerCase())) return false;
+    if(filterFrom && e.date < filterFrom) return false;
+    if(filterTo && e.date > filterTo) return false;
+    return true;
+  });
+
+  const sorted = [...filtered].sort((a,b)=>{
     let av: any = (a as any)[sortKey]??"";
     let bv: any = (b as any)[sortKey]??"";
     if(sortKey==="amount"){av=+(av);bv=+(bv);}
@@ -357,6 +370,9 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
     if(av>bv)return sortDir==="asc"?1:-1;
     return 0;
   });
+
+  const sInput: CSSProperties = {padding:"7px 11px",borderRadius:"8px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"13px",outline:"none",fontFamily:"'DM Sans',sans-serif"};
+  const activeFilters = (filterText?1:0)+(filterFrom?1:0)+(filterTo?1:0);
 
   const toggleSort = (key: SortKey) => {
     if(sortKey===key) setSortDir(d=>d==="asc"?"desc":"asc");
@@ -374,6 +390,26 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
   };
 
   return (
+    <div>
+      {/* Filter controls */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px",gap:"8px",flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
+          <input placeholder="Search description…" value={filterText} onChange={e=>setFilterText(e.target.value)} style={{...sInput,width:"180px"}}/>
+          <button onClick={()=>setShowFilters(v=>!v)} style={{...sInput,cursor:"pointer",background:showFilters||activeFilters>0?C.navActive:C.inputBg,color:activeFilters>0?accentColor:C.muted,whiteSpace:"nowrap"}}>
+            ⚡ Filter{activeFilters>0?` (${activeFilters})`:""}
+          </button>
+          {activeFilters>0&&<button onClick={()=>{setFilterText("");setFilterFrom("");setFilterTo("");}} style={{...sInput,cursor:"pointer",background:C.delBg,color:C.red}}>✕ Clear</button>}
+        </div>
+        <div style={{fontSize:"12px",color:C.muted}}>{sorted.length} of {entries.length} entries</div>
+      </div>
+      {showFilters&&(
+        <div style={{display:"flex",gap:"10px",marginBottom:"10px",flexWrap:"wrap",background:C.cardAlt,padding:"12px",borderRadius:"10px",border:`1px solid ${C.border}`}}>
+          <div><label style={{display:"block",fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"4px"}}>From</label>
+          <input type="date" value={filterFrom} onChange={e=>setFilterFrom(e.target.value)} style={sInput}/></div>
+          <div><label style={{display:"block",fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"4px"}}>To</label>
+          <input type="date" value={filterTo} onChange={e=>setFilterTo(e.target.value)} style={sInput}/></div>
+        </div>
+      )}
     <div style={{overflowX:"auto"}}>
       <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"'DM Sans',sans-serif"}}>
         <thead>
@@ -435,6 +471,7 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
         </tbody>
       </table>
     </div>
+    </div>
   );
 }
 
@@ -462,8 +499,6 @@ function ExpensesTab(p: ExProps) {
       const ci=p.categories.indexOf(e.category); const col=CAT_COLORS[ci>=0?ci%CAT_COLORS.length:0];
       return <span style={{background:col+"22",color:col,padding:"2px 8px",borderRadius:"20px",fontSize:"11px",fontWeight:600}}>{e.category}</span>;
     }},
-    ...(p.appMode==="household"?[{key:"account" as SortKey, label:"Account", render:(e:Expense)=><span style={{color:C.muted,fontSize:"12px"}}>{e.account||"—"}</span>}]:[]),
-    {key:"mode" as SortKey, label:"Mode", render:(e:Expense)=><span style={{color:C.muted,fontSize:"12px"}}>{e.mode||"—"}</span>},
     {key:"amount" as SortKey, label:"Amount", render:(e:Expense)=><span style={{color:C.red,fontWeight:600}}>-{fmt(e.amount)}</span>},
   ];
 
@@ -537,8 +572,6 @@ function EarningsTab(p: ErProps) {
   const cols = [
     {key:"date" as SortKey, label:"Date", render:(e:Entry)=><span style={{color:C.muted,fontSize:"12px"}}>{e.date}</span>},
     {key:"description" as SortKey, label:"Description", render:(e:Entry)=><span>{e.description||"Income"}</span>},
-    ...(p.appMode==="household"?[{key:"account" as SortKey, label:"Account", render:(e:Entry)=><span style={{color:C.muted,fontSize:"12px"}}>{(e as any).account||"—"}</span>}]:[]),
-    {key:"mode" as SortKey, label:"Mode", render:(e:Entry)=><span style={{color:C.muted,fontSize:"12px"}}>{e.mode||"—"}</span>},
     {key:"amount" as SortKey, label:"Amount", render:(e:Entry)=><span style={{color:C.green,fontWeight:600}}>+{fmt(e.amount)}</span>},
   ];
 
@@ -610,8 +643,6 @@ function SavingsTab(p: SvProps) {
   const cols = [
     {key:"date" as SortKey, label:"Date", render:(e:Entry)=><span style={{color:C.muted,fontSize:"12px"}}>{e.date}</span>},
     {key:"description" as SortKey, label:"Description", render:(e:Entry)=><span>{e.description||"Savings"}</span>},
-    ...(p.appMode==="household"?[{key:"account" as SortKey, label:"Account", render:(e:Entry)=><span style={{color:C.muted,fontSize:"12px"}}>{(e as any).account||"—"}</span>}]:[]),
-    {key:"mode" as SortKey, label:"Mode", render:(e:Entry)=><span style={{color:C.muted,fontSize:"12px"}}>{e.mode||"—"}</span>},
     {key:"amount" as SortKey, label:"Amount", render:(e:Entry)=><span style={{color:C.amber,fontWeight:600}}>{fmt(e.amount)}</span>},
   ];
 
@@ -1244,7 +1275,9 @@ export default function BudgetTracker() {
   const [authReady,     setAuthReady]     = useState(false);
   const [showMigrate,   setShowMigrate]   = useState(false); // triggers after login if local data exists
   const [activeTab,     setActiveTab]     = useState<string>("overview");
-  const [activeMK,      setActiveMK]      = useState<string>(curMK());
+  const [activeMKRaw,   setActiveMKRaw]   = useState<string>(curMK());
+  const activeMK = modeMK(activeMKRaw, appMode);
+  const setActiveMK = (mk:string) => setActiveMKRaw(stripMK(mk));
   const [allMonths,     setAllMonthsRaw]  = useState<AllMonths>({});
   const [categories,    setCategories]    = useState<string[]>(DEFAULT_CATS);
   const [editingBudget, setEditingBudget] = useState(false);
@@ -1372,7 +1405,7 @@ export default function BudgetTracker() {
   const totalExpenses     = expenses.reduce((s,e)=>s+e.amount,0);
   const totalEarnings     = earnings.reduce((s,e)=>s+e.amount,0);
   const totalSavings      = savings.reduce ((s,e)=>s+e.amount,0);
-  const cashFlowIn        = budget + totalEarnings;
+  const cashFlowIn        = appMode==="household" ? totalEarnings : budget + totalEarnings;
   const cashFlowOut       = totalExpenses;
   const remaining         = cashFlowIn - cashFlowOut - totalSavings;
   const spentPct          = cashFlowIn>0 ? Math.min((cashFlowOut/(cashFlowIn-totalSavings))*100,100) : 0;
@@ -1385,7 +1418,12 @@ export default function BudgetTracker() {
   const actualVsIdeal     = cashFlowOut-idealSpentByToday;
   const currentDailyAvg   = todayDay>0 ? Math.round(cashFlowOut/todayDay) : 0;
   const currentIdealAvg   = Math.round(moneyLeft/daysLeft);
-  const allMKs = (() => { const k=Object.keys(allMonths); if(!k.includes(curMK()))k.push(curMK()); return k.sort().reverse(); })();
+  const modePrefix = appMode==="household" ? "h:" : "";
+  const allMKs = (() => {
+    const k=Object.keys(allMonths).filter(mk=>appMode==="household"?mk.startsWith("h:"):!mk.startsWith("h:"));
+    if(!k.includes(activeMK))k.push(activeMK);
+    return k.sort().reverse();
+  })();
 
   // Actions
   const setBudget      = (v:number) => setM(activeMK,{...md,budget:v});
@@ -1429,7 +1467,11 @@ export default function BudgetTracker() {
     }));
   };
   const deleteCredit   = (id:number) => { setCredits(prev=>prev.filter(c=>c.id!==id)); setDeleteConfirm(null); };
-  const addNextMonth   = () => { const [y,m]=activeMK.split("-").map(Number); const nd=new Date(y,m,1); const nk=`${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2,"0")}`; if(!allMonths[nk])setM(nk,emptyMD()); setActiveMK(nk); };
+  const addNextMonth   = () => {
+    const clean=stripMK(activeMK); const [y,m]=clean.split("-").map(Number);
+    const nd=new Date(y,m,1); const rawNk=`${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2,"0")}`;
+    const nk=modeMK(rawNk,appMode); if(!allMonths[nk])setM(nk,emptyMD()); setActiveMK(nk);
+  };
   const deleteMonth    = async () => { setDeleteMonthConfirm(false); setAllMonths(prev=>{const next={...prev};delete next[activeMK];return next;}); if(user) await supabase.from("month_data").delete().eq("user_id",user.id).eq("month_key",activeMK); setActiveMK(curMK()); };
   const handleMigrate  = async (migrate:boolean) => { setShowMigrate(false); if(!migrate||!user)return; const lsData=lsLoad<AllMonths>("budgetly_months",{}); for(const [mk,d] of Object.entries(lsData)) await saveToSupabase(mk,d); localStorage.removeItem("budgetly_months"); await loadFromSupabase(); };
   const logout         = async () => { await supabase.auth.signOut(); setUser(null); setAllMonthsRaw({}); };
