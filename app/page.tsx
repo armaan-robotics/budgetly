@@ -35,6 +35,7 @@ function lsSave(key: string, val: unknown): void {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_CATS: string[] = ["Food","Transport","College","Entertainment","Health","Shopping","Other"];
+const DEFAULT_HOUSEHOLD_CATS: string[] = ["Groceries","Electricity","Water","Gas","Rent","Internet","Transport","Medical","School Fees","Dining Out","Shopping","Maintenance","Other"];
 const DEFAULT_ACCOUNTS: string[] = ["Main Account","Cash","Savings Account"];
 const PAYMENT_MODES: string[] = ["UPI","Cash","Card","Bank Transfer","Other"];
 const CAT_COLORS: string[]   = ["#f97316","#06b6d4","#8b5cf6","#10b981","#f43f5e","#eab308","#6366f1","#ec4899","#14b8a6","#84cc16","#ef4444","#3b82f6"];
@@ -714,7 +715,7 @@ function CategoriesTab(p: CaProps) {
           {p.categories.map((cat,i)=>{
             const total=p.expenses.filter(e=>e.category===cat).reduce((s,e)=>s+e.amount,0);
             const count=p.expenses.filter(e=>e.category===cat).length;
-            const color=CAT_COLORS[i%CAT_COLORS.length]; const isDef=DEFAULT_CATS.includes(cat);
+            const color=CAT_COLORS[i%CAT_COLORS.length]; const isDef=DEFAULT_CATS.includes(cat)||DEFAULT_HOUSEHOLD_CATS.includes(cat);
             return(
               <div key={cat} style={{background:C.cardAlt,borderRadius:"10px",padding:"12px",border:`1px solid ${C.border}`}}>
                 <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"7px"}}>
@@ -926,55 +927,120 @@ function TrendsTab(p: TrProps) {
 }
 
 // ─── Tutorial Tab ────────────────────────────────────────────────────────────
-function TutorialTab({ C }: { C:Theme }) {
-  const sCard: CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}`,marginBottom:"14px" };
+function TutorialTab({ C, appMode }: { C:Theme; appMode:AppMode }) {
   const steps = [
     {
-      icon:"◎", title:"Overview",
-      body:"Your command centre. See Cash Flow In (budget + extra earnings), Cash Flow Out (expenses), Total Savings, and To Spend (what's left). The Daily Averages section shows your ideal spend per day, how much you should spend per day from today to finish the month on track, and your actual average spend so far.",
+      icon:"◎", title:"Overview — your financial snapshot",
+      body:"This is your home screen. At a glance you'll see: Cash Flow In (your budget + any extra income), Cash Flow Out (total expenses), Total Savings, and To Spend (what's left for the month).",
+      tips:[
+        appMode==="student"?"The Daily Averages section is powerful — it tells you your ideal spend per day, how much you should spend each day from today to finish on track, and what you've actually been spending per day.":"The Overview shows your total income, total spending, and savings across all accounts for the month.",
+        "The category breakdown shows which areas are eating most of your money — great for spotting habits you didn't know you had.",
+        appMode==="student"?"When 'To Spend' turns red, you've gone over budget. Fix it by adding less expenses or increasing your budget.":"Use the account breakdown to see which bank account or wallet is being used the most.",
+      ],
     },
     {
-      icon:"↓", title:"Expenses",
-      body:"Log every purchase here — amount, category, description, and date. Use categories to organise spending (Food, Transport, etc.). You can see a breakdown by category on the Overview tab.",
+      icon:"↓", title:"Expenses — log every payment",
+      body:"Record every purchase here. Add the amount, pick a category, write a short description, and set the date. Hit + to open the form.",
+      tips:[
+        "Be specific with descriptions — 'Zomato - Dominos' is more useful than 'Food' when you review the month later.",
+        "Click any row in the table to expand it and see the full details including payment mode and account.",
+        "Use the filter bar to search by description or filter by date range — useful when looking up a specific transaction.",
+        "You can sort the table by any column — click the column header. Click again to reverse the order.",
+        "Made a mistake? Click the ✎ edit button on any row to fix the amount, category, description, or date.",
+      ],
     },
     {
-      icon:"↑", title:"Cash In",
-      body:"Record any money that comes in beyond your base budget — freelance income, pocket money top-ups, selling something. This adds to your Cash Flow In.",
+      icon:"↑", title:"Cash In — record money coming in",
+      body:appMode==="student"?"Anything beyond your base monthly budget goes here — freelance work, selling old stuff, pocket money top-ups, gifts. This increases your Cash Flow In.":"Record all income here — salary, rent received, any money coming into the household. Each entry can be tagged to a specific account.",
+      tips:[
+        "This is separate from your budget. The budget is your fixed allowance — Cash In is extra money you actually received.",
+        appMode==="household"?"Tag each income entry to an account so you can track which account received what money.":"Even small amounts count — a ₹200 freelance job still affects your remaining balance.",
+        "UPI payments received will auto-appear here if you have the Android app installed.",
+      ],
     },
     {
-      icon:"⬡", title:"Savings",
-      body:"Track money you're setting aside. Savings are subtracted from your spendable balance so you're not tempted to spend them. The ideal daily average also accounts for your savings goal.",
+      icon:"⬡", title:"Savings — protect your money",
+      body:"Any amount you mark as savings is locked away from your spending balance. It's subtracted from To Spend so you're not tempted to use it.",
+      tips:[
+        "Set a savings target at the start of each month — add it as a single savings entry on day 1.",
+        "The savings percentage on the Overview shows you what fraction of your Cash Flow In you're saving — aim for at least 10-20%.",
+        "Savings entries work like a commitment — once added, the balance adjusts immediately.",
+      ],
     },
     {
-      icon:"⇄", title:"Credit",
-      body:"Track debts and loans. 'They Owe Me' — someone borrowed money from you. 'I Owe Them' — you owe someone. Add the person's name, amount, what it's for, and date. Mark entries as Cleared once settled. Cleared entries are dimmed but kept for your records.",
+      icon:"⇄", title:"Credit — track who owes who",
+      body:"'They Owe Me' is money someone borrowed from you. 'I Owe Them' is money you owe someone. Both show as pending until you mark them Cleared.",
+      tips:[
+        "When you mark a credit as Cleared — it automatically adds an entry to Cash In (if they paid you) or Expenses (if you paid them). No double entry needed.",
+        "Add a description like 'Dinner split' or 'Borrowed for auto' so you remember what the money was for.",
+        "Pending credits are highlighted in green (owed to you) and red (you owe) so you never forget.",
+      ],
     },
     {
-      icon:"📅", title:"Months",
-      body:"Each month is tracked separately. Use the month selector in the sidebar to switch between months. Click '+ New Month' to start a new one. Your budget resets each month — set it once and it carries over as the default.",
+      icon:"∿", title:"Trends — see your patterns",
+      body:"The Trends tab shows a bar chart of your daily spending over the last 7 or 30 days, plus a category breakdown for that period.",
+      tips:[
+        "Switch between 7-day and 30-day view using the toggle at the top.",
+        "The category breakdown in Trends shows percentages — so you can see if Food is 60% of your spending this week.",
+        "Today's bar is highlighted in purple so you can see how today compares to recent days.",
+        "Highest day stat helps you spot outlier spending events — a shopping trip, a medical bill, etc.",
+      ],
     },
     {
-      icon:"⚙", title:"Settings",
-      body:"Access dark mode, manage categories, export your data as a spreadsheet, delete a month, and log out — all from the Settings panel at the bottom of the sidebar.",
+      icon:"📅", title:"Months — one month at a time",
+      body:"Each month is completely separate. Switch months using the dropdown in the sidebar. At the start of a new month, add it from Settings.",
+      tips:[
+        "Past months are read-only in terms of budget — but you can still add or edit entries in them.",
+        "Use the month selector to review how last month went — compare your category breakdown month over month.",
+        "Delete a month from Settings if you made a test month or want to start fresh.",
+      ],
     },
     {
-      icon:"☁", title:"Sync",
-      body:"If you're signed in with an account, your data syncs across all your devices automatically. Guest mode only saves data in your current browser — create an account to keep your data safe.",
+      icon:"⚙", title:"Settings — customise everything",
+      body:"Dark mode, bold text, manage categories, manage accounts (household), export data, switch modes, and log out — all here.",
+      tips:[
+        "Export CSV downloads all your data for the active month as a spreadsheet — open it in Excel or Google Sheets.",
+        "Bold text mode makes all text heavier and easier to read — great if you use Budgetly on a small screen.",
+        "Manage Categories lets you add your own spending categories and delete ones you don't use.",
+        appMode==="household"?"Manage Accounts lets you add bank accounts, wallets, or cash buckets and tag every transaction to them.":"Switch to Household mode from Settings if your needs change — your student data stays separate.",
+      ],
+    },
+    {
+      icon:"☁", title:"Sync — your data everywhere",
+      body:"Budgetly syncs across all your devices automatically. Log in on your phone, tablet, and computer — everything stays in sync in real time.",
+      tips:[
+        "Install the Android app for automatic UPI expense tracking — every payment you make gets logged instantly.",
+        "Your data is stored securely on Supabase servers — it won't disappear if you clear your browser.",
+        "Student data and Household data are stored separately under the same account — switching modes never mixes them.",
+      ],
     },
   ];
+
   return (
-    <div style={{maxWidth:"680px"}}>
+    <div style={{maxWidth:"720px"}}>
       <div style={{marginBottom:"20px"}}>
         <h2 style={{fontSize:"20px",fontWeight:600,color:C.text,marginBottom:"6px"}}>How to use Budgetly</h2>
-        <p style={{fontSize:"13px",color:C.muted,lineHeight:1.7}}>A quick walkthrough of every feature so you can get the most out of the app.</p>
+        <p style={{fontSize:"13px",color:C.muted,lineHeight:1.7}}>Everything you need to know — tips, tricks, and feature explanations.</p>
       </div>
       {steps.map((s,i)=>(
-        <div key={i} style={{background:C.card,borderRadius:"14px",padding:"18px 20px",border:`1px solid ${C.border}`,marginBottom:"10px",display:"flex",gap:"14px",alignItems:"flex-start"}}>
-          <div style={{width:"36px",height:"36px",borderRadius:"10px",background:C.navActive,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",flexShrink:0}}>{s.icon}</div>
-          <div>
-            <div style={{fontSize:"14px",fontWeight:600,color:C.text,marginBottom:"5px"}}>{s.title}</div>
-            <div style={{fontSize:"13px",color:C.muted,lineHeight:1.7}}>{s.body}</div>
+        <div key={i} style={{background:C.card,borderRadius:"14px",padding:"18px 20px",border:`1px solid ${C.border}`,marginBottom:"10px"}}>
+          <div style={{display:"flex",gap:"14px",alignItems:"flex-start",marginBottom:s.tips.length>0?"12px":"0"}}>
+            <div style={{width:"36px",height:"36px",borderRadius:"10px",background:C.navActive,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",flexShrink:0}}>{s.icon}</div>
+            <div>
+              <div style={{fontSize:"14px",fontWeight:700,color:C.text,marginBottom:"5px"}}>{s.title}</div>
+              <div style={{fontSize:"13px",color:C.muted,lineHeight:1.7}}>{s.body}</div>
+            </div>
           </div>
+          {s.tips.length>0&&(
+            <div style={{borderTop:`1px solid ${C.border}`,paddingTop:"10px",display:"flex",flexDirection:"column",gap:"6px"}}>
+              {s.tips.filter(Boolean).map((tip,j)=>(
+                <div key={j} style={{display:"flex",gap:"8px",alignItems:"flex-start"}}>
+                  <span style={{color:C.accent,fontSize:"12px",marginTop:"1px",flexShrink:0}}>💡</span>
+                  <span style={{fontSize:"12px",color:C.muted,lineHeight:1.6}}>{tip}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -1199,24 +1265,34 @@ function MigrateModal({ onDecide, C }: { onDecide:(migrate:boolean)=>void; C:The
 function ModeSelectScreen({ C, onSelect }: { C:Theme; onSelect:(m:AppMode)=>void }) {
   return (
     <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif",padding:"20px"}}>
-      <div style={{maxWidth:"400px",width:"100%"}}>
+      <div style={{maxWidth:"420px",width:"100%"}}>
         <div style={{textAlign:"center",marginBottom:"32px"}}>
           <div style={{fontSize:"24px",fontWeight:700,color:C.text,marginBottom:"6px"}}><span style={{color:C.accent}}>Budget</span>ly</div>
-          <div style={{fontSize:"14px",color:C.muted}}>How will you use Budgetly?</div>
+          <div style={{fontSize:"14px",color:C.muted}}>Choose how you want to use Budgetly</div>
         </div>
-        <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
-          <button onClick={()=>onSelect("student")} style={{background:C.card,border:`2px solid ${C.accent}`,borderRadius:"14px",padding:"22px 20px",cursor:"pointer",textAlign:"left",fontFamily:"'DM Sans',sans-serif",transition:"box-shadow 0.15s"}}>
+        <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+          <button onClick={()=>onSelect("student")} style={{background:C.card,border:`2px solid ${C.accent}`,borderRadius:"14px",padding:"22px 20px",cursor:"pointer",textAlign:"left",fontFamily:"'DM Sans',sans-serif"}}>
             <div style={{fontSize:"22px",marginBottom:"8px"}}>🎓</div>
-            <div style={{fontSize:"16px",fontWeight:600,color:C.text,marginBottom:"4px"}}>Student</div>
-            <div style={{fontSize:"13px",color:C.muted,lineHeight:1.6}}>Monthly budget tracking, expense categories, spending insights. Best for personal finance management.</div>
+            <div style={{fontSize:"16px",fontWeight:700,color:C.text,marginBottom:"6px"}}>Student</div>
+            <div style={{fontSize:"13px",color:C.muted,lineHeight:1.7,marginBottom:"10px"}}>Set a monthly budget and track every rupee you spend. Get daily spend targets, budget progress, and category breakdowns so you always know where your money went.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:"4px"}}>
+              {["✓ Monthly budget with daily averages","✓ Spending categories (Food, Transport, etc.)","✓ Trends and spending insights","✓ Credit tracker — who owes who"].map((f,i)=>(
+                <div key={i} style={{fontSize:"12px",color:C.green}}>{f}</div>
+              ))}
+            </div>
           </button>
-          <button onClick={()=>onSelect("household")} style={{background:C.card,border:`2px solid ${C.border}`,borderRadius:"14px",padding:"22px 20px",cursor:"pointer",textAlign:"left",fontFamily:"'DM Sans',sans-serif",transition:"box-shadow 0.15s"}}>
+          <button onClick={()=>onSelect("household")} style={{background:C.card,border:`2px solid ${C.border}`,borderRadius:"14px",padding:"22px 20px",cursor:"pointer",textAlign:"left",fontFamily:"'DM Sans',sans-serif"}}>
             <div style={{fontSize:"22px",marginBottom:"8px"}}>🏠</div>
-            <div style={{fontSize:"16px",fontWeight:600,color:C.text,marginBottom:"4px"}}>Household</div>
-            <div style={{fontSize:"13px",color:C.muted,lineHeight:1.6}}>Multi-account tracking, no budget cap. Track transactions across accounts like HDFC, Cash, Joint Account.</div>
+            <div style={{fontSize:"16px",fontWeight:700,color:C.text,marginBottom:"6px"}}>Household</div>
+            <div style={{fontSize:"13px",color:C.muted,lineHeight:1.7,marginBottom:"10px"}}>Manage your family's finances across multiple bank accounts. Track electricity bills, groceries, rent, and more. See exactly how much each account is spending — no budget limits.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:"4px"}}>
+              {["✓ Multiple accounts (HDFC, Cash, Joint, etc.)","✓ Household categories (Electricity, Rent, etc.)","✓ Track income and expenses per account","✓ No budget cap — pure transaction tracking"].map((f,i)=>(
+                <div key={i} style={{fontSize:"12px",color:C.accent}}>{f}</div>
+              ))}
+            </div>
           </button>
         </div>
-        <div style={{marginTop:"16px",fontSize:"12px",color:C.faint,textAlign:"center"}}>You can change this anytime from Settings</div>
+        <div style={{marginTop:"16px",fontSize:"12px",color:C.faint,textAlign:"center"}}>You can switch modes anytime from Settings · Your data stays separate per mode</div>
       </div>
     </div>
   );
@@ -1268,6 +1344,8 @@ function AccountsTab({ C, accounts, expenses, earnings, savings, newAccount, set
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function BudgetTracker() {
   const [dark,          setDark]          = useState<boolean>(() => lsLoad<boolean>("budgetly_dark", false));
+  const [bold,          setBold]          = useState<boolean>(() => lsLoad<boolean>("budgetly_bold", false));
+  const [tutorialVisits,setTutorialVisits]= useState<number>(() => lsLoad<number>("budgetly_tutorial_visits", 0));
   const [appMode,       setAppMode]       = useState<AppMode|null>(() => lsLoad<AppMode|null>("budgetly_mode", null));
   const [showModeSelect,setShowModeSelect]= useState(false);
   const [accounts,      setAccounts]      = useState<string[]>(() => lsLoad<string[]>("budgetly_accounts", DEFAULT_ACCOUNTS));
@@ -1279,7 +1357,13 @@ export default function BudgetTracker() {
   const activeMK = modeMK(activeMKRaw, appMode);
   const setActiveMK = (mk:string) => setActiveMKRaw(stripMK(mk));
   const [allMonths,     setAllMonthsRaw]  = useState<AllMonths>({});
-  const [categories,    setCategories]    = useState<string[]>(DEFAULT_CATS);
+  const [categories,    setCategories]    = useState<string[]>(() => {
+    const saved = lsLoad<string[]>("budgetly_cats", null as any);
+    if (saved && saved.length > 0) return saved;
+    // No saved cats — use defaults based on current mode
+    const mode = lsLoad<AppMode|null>("budgetly_mode", null);
+    return mode==="household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
+  });
   const [editingBudget, setEditingBudget] = useState(false);
   const [tempBudget,    setTempBudget]    = useState("10000");
   const [deleteConfirm, setDeleteConfirm] = useState<number|null>(null);
@@ -1302,7 +1386,21 @@ export default function BudgetTracker() {
   const switchMode = (m: AppMode) => {
     setAppMode(m);
     lsSave("budgetly_mode", m);
+    // Auto-switch categories to match mode defaults if still on defaults
+    const currentDef = appMode==="household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
+    const newDef = m==="household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
+    if (JSON.stringify(categories.slice().sort()) === JSON.stringify(currentDef.slice().sort())) {
+      setCategories(newDef);
+    }
     setShowModeSelect(false);
+  };
+
+  const toggleBold = () => {
+    setBold(b => { lsSave("budgetly_bold", !b); return !b; });
+  };
+
+  const incrementTutorialVisits = () => {
+    setTutorialVisits(v => { const n=v+1; lsSave("budgetly_tutorial_visits", n); return n; });
   };
 
   const saveAccounts = (acc: string[]) => {
@@ -1438,8 +1536,11 @@ export default function BudgetTracker() {
   const updateEarning  = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,earnings:earnings.map(e=>e.id===id?{...e,...u}:e)});
   const updateSaving   = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,savings: savings.map (e=>e.id===id?{...e,...u}:e)});
   const updateCredit   = (id:number,u:Partial<CreditEntry>) => setCredits(prev=>prev.map(c=>c.id===id?{...c,...u}:c));
-  const addCategory    = () => { const t=newCategory.trim(); if(!t||categories.includes(t))return; setCategories([...categories,t]); setNewCategory(""); };
-  const deleteCategory = (cat:string) => { if(DEFAULT_CATS.includes(cat))return; setCategories(categories.filter(c=>c!==cat)); };
+  const addCategory    = () => { const t=newCategory.trim(); if(!t||categories.includes(t))return; const n=[...categories,t]; setCategories(n); lsSave("budgetly_cats",n); setNewCategory(""); };
+  const deleteCategory = (cat:string) => {
+    const def = appMode==="household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
+    if(def.includes(cat))return; const n=categories.filter(c=>c!==cat); setCategories(n); lsSave("budgetly_cats",n);
+  };
   const addAccount     = () => { const t=newAccount.trim(); if(!t||accounts.includes(t))return; saveAccounts([...accounts,t]); setNewAccount(""); };
   const deleteAccount  = (acc:string) => { if(DEFAULT_ACCOUNTS.includes(acc))return; saveAccounts(accounts.filter(a=>a!==acc)); };
   const addCredit      = () => { if(!crAmt||isNaN(+crAmt)||!crPerson.trim())return; setCredits(prev=>[...prev,{id:Date.now(),person:crPerson.trim(),amount:+crAmt,description:crDesc,date:crDate,type:crType,cleared:false}]); setCrAmt(""); setCrPerson(""); setCrDesc(""); };
@@ -1487,6 +1588,8 @@ export default function BudgetTracker() {
   );
   if (!user) return <AuthScreen onAuth={u=>setUser(u)} dark={dark}/>;
   if (!appMode || showModeSelect) return <ModeSelectScreen C={C} onSelect={switchMode}/>;
+
+  const showTutorialStrip = tutorialVisits < 5;
 
   function SidebarInner() {
     return (
@@ -1648,16 +1751,25 @@ export default function BudgetTracker() {
               </>
           </div>
 
-          {/* Dark mode */}
+          {/* Dark mode + Bold */}
           <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Appearance</div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.cardAlt,padding:"12px 14px",borderRadius:"10px",border:`1px solid ${C.border}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.cardAlt,padding:"12px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,marginBottom:"8px"}}>
               <div>
                 <div style={{fontSize:"13px",color:C.text,fontWeight:500}}>{dark?"Dark Mode":"Light Mode"}</div>
                 <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>Switch appearance</div>
               </div>
               <button onClick={toggleDark} style={{background:dark?C.accent:"#d1cfe8",border:"none",borderRadius:"20px",width:"44px",height:"24px",cursor:"pointer",position:"relative",flexShrink:0}}>
                 <div style={{position:"absolute",top:"3px",left:dark?"23px":"3px",width:"18px",height:"18px",borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,0.25)"}}/>
+              </button>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.cardAlt,padding:"12px 14px",borderRadius:"10px",border:`1px solid ${C.border}`}}>
+              <div>
+                <div style={{fontSize:"13px",color:C.text,fontWeight:500}}>Bold Text</div>
+                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>Makes all text heavier and easier to read</div>
+              </div>
+              <button onClick={toggleBold} style={{background:bold?C.accent:"#d1cfe8",border:"none",borderRadius:"20px",width:"44px",height:"24px",cursor:"pointer",position:"relative",flexShrink:0}}>
+                <div style={{position:"absolute",top:"3px",left:bold?"23px":"3px",width:"18px",height:"18px",borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,0.25)"}}/>
               </button>
             </div>
           </div>
@@ -1758,6 +1870,10 @@ export default function BudgetTracker() {
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+      <style dangerouslySetInnerHTML={{__html:bold?`
+        body, button, input, select, textarea { font-weight: 600 !important; }
+        .bold-text-override { font-weight: 700 !important; }
+      `:``}}/>
       <link rel="manifest" href="/manifest.json"/>
       <meta name="theme-color" content="#6c5ce7"/>
       <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -1897,13 +2013,27 @@ export default function BudgetTracker() {
             </div>
           </div>
 
+          {showTutorialStrip&&activeTab!=="tutorial"&&(
+            <div style={{background:C.navActive,borderRadius:"10px",padding:"10px 14px",marginBottom:"14px",display:"flex",justifyContent:"space-between",alignItems:"center",border:`1px solid ${C.border}`,gap:"10px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                <span style={{fontSize:"14px"}}>💡</span>
+                <span style={{fontSize:"12px",color:C.muted,lineHeight:1.5}}>New to Budgetly? Check out tips and tricks to get the most out of the app.</span>
+              </div>
+              <div style={{display:"flex",gap:"6px",flexShrink:0}}>
+                <button onClick={()=>{setActiveTab("tutorial");incrementTutorialVisits();}}
+                  style={{...btnP,padding:"5px 12px",fontSize:"12px",whiteSpace:"nowrap"}}>How to use →</button>
+                <button onClick={incrementTutorialVisits}
+                  style={{background:"none",border:"none",color:C.faint,cursor:"pointer",fontSize:"16px",padding:"0 4px"}} title="Dismiss">✕</button>
+              </div>
+            </div>
+          )}
           {activeTab==="overview"   &&<OverviewTab   {...ovProps}/>}
           {activeTab==="expenses"   &&<ExpensesTab   {...exProps}/>}
           {activeTab==="earnings"   &&<EarningsTab   {...erProps}/>}
           {activeTab==="savings"    &&<SavingsTab    {...svProps}/>}
           {activeTab==="credit"     &&<CreditTab     {...crProps}/>}
           {activeTab==="categories" &&<CategoriesTab {...caProps}/>}
-          {activeTab==="tutorial"   &&<TutorialTab C={C}/>}
+          {activeTab==="tutorial"   &&<TutorialTab C={C} appMode={appMode}/>}
           {activeTab==="trends"     &&<TrendsTab     {...trProps}/>}
           {activeTab==="accounts"   &&<AccountsTab C={C} accounts={accounts} expenses={expenses} earnings={earnings} savings={savings} newAccount={newAccount} setNewAccount={setNewAccount} addAccount={addAccount} deleteAccount={deleteAccount}/>}
           </div>{/* end swipe animation wrapper */}
