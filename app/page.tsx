@@ -10,10 +10,11 @@ const supabase = createClient(
 );
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface Entry    { id: number; amount: number; description: string; date: string; }
-interface Expense extends Entry { category: string; }
+interface Entry    { id: number; amount: number; description: string; date: string; mode?: string; }
+interface Expense extends Entry { category: string; account?: string; }
 interface MonthData { budget: number; expenses: Expense[]; earnings: Entry[]; savings: Entry[]; }
 interface AllMonths { [mk: string]: MonthData; }
+type AppMode = "student" | "household";
 interface Theme {
   bg: string; sidebar: string; card: string; cardAlt: string;
   border: string; text: string; muted: string; faint: string;
@@ -34,6 +35,8 @@ function lsSave(key: string, val: unknown): void {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_CATS: string[] = ["Food","Transport","College","Entertainment","Health","Shopping","Other"];
+const DEFAULT_ACCOUNTS: string[] = ["Main Account","Cash","Savings Account"];
+const PAYMENT_MODES: string[] = ["UPI","Cash","Card","Bank Transfer","Other"];
 const CAT_COLORS: string[]   = ["#f97316","#06b6d4","#8b5cf6","#10b981","#f43f5e","#eab308","#6366f1","#ec4899","#14b8a6","#84cc16","#ef4444","#3b82f6"];
 const NAV = [
   { id:"overview",   label:"Overview",   icon:"◎" },
@@ -117,14 +120,14 @@ interface OvProps {
   totalSavings:number; remaining:number; spentPct:number;
   editingBudget:boolean; tempBudget:string;
   setEditingBudget:(v:boolean)=>void; setTempBudget:(v:string)=>void; saveBudget:()=>void;
-  expenses:Expense[]; savings:Entry[]; categories:string[];
+  expenses:Expense[]; savings:Entry[]; categories:string[]; accounts:string[]; appMode:AppMode;
   daysInMonth:number; todayDay:number; idealPerDay:number;
   idealSpentByToday:number; actualVsIdeal:number;
   moneyLeft:number; daysLeft:number; currentDailyAvg:number; currentIdealAvg:number;
 }
-interface ExProps { C:Theme; expenses:Expense[];categories:string[];totalExpenses:number;expAmt:string;expCat:string;expDesc:string;expDate:string;setExpAmt:(v:string)=>void;setExpCat:(v:string)=>void;setExpDesc:(v:string)=>void;setExpDate:(v:string)=>void;addExpense:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteExpense:(id:number)=>void;updateExpense:(id:number,u:Partial<Expense>)=>void; }
-interface ErProps { C:Theme; earnings:Entry[];totalEarnings:number;earnAmt:string;earnDesc:string;earnDate:string;setEarnAmt:(v:string)=>void;setEarnDesc:(v:string)=>void;setEarnDate:(v:string)=>void;addEarning:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteEarning:(id:number)=>void;updateEarning:(id:number,u:Partial<Entry>)=>void; }
-interface SvProps { C:Theme; savings:Entry[];totalSavings:number;cashFlowIn:number;savAmt:string;savDesc:string;savDate:string;setSavAmt:(v:string)=>void;setSavDesc:(v:string)=>void;setSavDate:(v:string)=>void;addSaving:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteSaving:(id:number)=>void;updateSaving:(id:number,u:Partial<Entry>)=>void; }
+interface ExProps { C:Theme; expenses:Expense[];categories:string[];accounts:string[];appMode:AppMode;totalExpenses:number;expAmt:string;expCat:string;expDesc:string;expDate:string;expMode:string;expAcc:string;setExpAmt:(v:string)=>void;setExpCat:(v:string)=>void;setExpDesc:(v:string)=>void;setExpDate:(v:string)=>void;setExpMode:(v:string)=>void;setExpAcc:(v:string)=>void;addExpense:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteExpense:(id:number)=>void;updateExpense:(id:number,u:Partial<Expense>)=>void; }
+interface ErProps { C:Theme; earnings:Entry[];accounts:string[];appMode:AppMode;totalEarnings:number;earnAmt:string;earnDesc:string;earnDate:string;earnMode:string;earnAcc:string;setEarnAmt:(v:string)=>void;setEarnDesc:(v:string)=>void;setEarnDate:(v:string)=>void;setEarnMode:(v:string)=>void;setEarnAcc:(v:string)=>void;addEarning:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteEarning:(id:number)=>void;updateEarning:(id:number,u:Partial<Entry>)=>void; }
+interface SvProps { C:Theme; savings:Entry[];accounts:string[];appMode:AppMode;totalSavings:number;cashFlowIn:number;savAmt:string;savDesc:string;savDate:string;savMode:string;savAcc:string;setSavAmt:(v:string)=>void;setSavDesc:(v:string)=>void;setSavDate:(v:string)=>void;setSavMode:(v:string)=>void;setSavAcc:(v:string)=>void;addSaving:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteSaving:(id:number)=>void;updateSaving:(id:number,u:Partial<Entry>)=>void; }
 interface CaProps { C:Theme; categories:string[];expenses:Expense[];cashFlowOut:number;newCategory:string;setNewCategory:(v:string)=>void;addCategory:()=>void;deleteCategory:(cat:string)=>void; }
 interface CreditEntry { id:number; person:string; amount:number; description:string; date:string; type:"owed_to_me"|"i_owe"; cleared:boolean; }
 interface CrProps { C:Theme; credits:CreditEntry[];crAmt:string;crPerson:string;crDesc:string;crDate:string;crType:"owed_to_me"|"i_owe";setCrAmt:(v:string)=>void;setCrPerson:(v:string)=>void;setCrDesc:(v:string)=>void;setCrDate:(v:string)=>void;setCrType:(v:"owed_to_me"|"i_owe")=>void;addCredit:()=>void;toggleCleared:(id:number)=>void;deleteCredit:(id:number)=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void; }
@@ -194,8 +197,106 @@ function EditModal({ C, title, fields, onSave, onClose }: {
           <button onClick={onClose} style={{...{borderRadius:"9px",border:"none",fontWeight:600,fontSize:"13px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"10px 18px",transition:"opacity 0.15s"},background:C.cancelBg,color:C.muted,flex:1}}>Cancel</button>
         </div>
       </div>
+      {p.appMode==="household"&&p.accounts.length>0&&(()=>{
+        const accTotals=p.accounts.map((acc,i)=>({
+          name:acc,color:CAT_COLORS[i%CAT_COLORS.length],
+          totalOut:p.expenses.filter(e=>e.account===acc).reduce((s,e)=>s+e.amount,0),
+          totalIn:(p.savings as any[]).filter(e=>e.account===acc).reduce((s:number,e:any)=>s+e.amount,0),
+          count:p.expenses.filter(e=>e.account===acc).length,
+        })).filter(a=>a.totalOut>0||a.totalIn>0);
+        if(accTotals.length===0)return null;
+        return(
+          <div style={{...sCard,marginBottom:"12px"}}>
+            <div style={sSecT}>By Account</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"9px"}}>
+              {accTotals.map(acc=>(
+                <div key={acc.name} style={{background:C.cardAlt,borderRadius:"10px",padding:"12px",border:`1px solid ${C.border}`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
+                    <div style={{width:"7px",height:"7px",borderRadius:"50%",background:acc.color}}/>
+                    <span style={{fontSize:"12px",fontWeight:500,color:C.text}}>{acc.name}</span>
+                  </div>
+                  <div style={{fontSize:"14px",fontWeight:600,color:acc.color}}>{fmt(acc.totalOut)}</div>
+                  <div style={{fontSize:"10px",color:C.faint,marginTop:"2px"}}>{acc.count} transactions</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
+}
+
+// ─── Entry List Sub-components (with edit) ───────────────────────────────────
+function ExpenseList({expenses,categories,deleteConfirm,setDeleteConfirm,deleteExpense,updateExpense,C}:{expenses:Expense[];categories:string[];deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteExpense:(id:number)=>void;updateExpense:(id:number,u:Partial<Expense>)=>void;C:Theme}) {
+  const [editId,setEditId]=useState<number|null>(null);
+  const [editAmt,setEditAmt]=useState("");
+  const [editCat,setEditCat]=useState("");
+  const [editDesc,setEditDesc]=useState("");
+  const [editDate,setEditDate]=useState("");
+  return <>{[...expenses].reverse().map(exp=>{
+    const ci=categories.indexOf(exp.category); const col=CAT_COLORS[ci>=0?ci%CAT_COLORS.length:0];
+    return <EntryRow key={exp.id} C={C}
+      left={<><div style={{display:"flex",gap:"6px",marginBottom:"3px",flexWrap:"wrap",alignItems:"center"}}><span style={{fontSize:"10px",padding:"2px 7px",borderRadius:"20px",background:col+"22",color:col,fontWeight:600}}>{exp.category}</span><span style={{fontSize:"10px",color:C.faint}}>{exp.date}</span></div><div style={{fontSize:"13px",color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{exp.description||"—"}</div></>}
+      right={<><span style={{fontSize:"14px",fontWeight:600,color:C.red,whiteSpace:"nowrap"}}>-{fmt(exp.amount)}</span>
+        <button onClick={()=>{setEditId(exp.id);setEditAmt(String(exp.amount));setEditCat(exp.category);setEditDesc(exp.description);setEditDate(exp.date);}} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}>✎</button>
+        <DelBtn id={exp.id} confirm={deleteConfirm} setConfirm={setDeleteConfirm} onDel={deleteExpense} C={C}/></>}
+    />;
+  })}
+  {editId!==null&&<EditModal C={C} title="Edit Expense"
+    fields={[
+      {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+      {label:"Category",value:editCat,onChange:setEditCat,options:categories},
+      {label:"Description",value:editDesc,onChange:setEditDesc},
+      {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+    ]}
+    onSave={()=>{updateExpense(editId,{amount:+editAmt,category:editCat,description:editDesc,date:editDate});setEditId(null);}}
+    onClose={()=>setEditId(null)}
+  /></>;
+}
+
+function EarningList({earnings,deleteConfirm,setDeleteConfirm,deleteEarning,updateEarning,C}:{earnings:Entry[];deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteEarning:(id:number)=>void;updateEarning:(id:number,u:Partial<Entry>)=>void;C:Theme}) {
+  const [editId,setEditId]=useState<number|null>(null);
+  const [editAmt,setEditAmt]=useState("");
+  const [editDesc,setEditDesc]=useState("");
+  const [editDate,setEditDate]=useState("");
+  return <>{[...earnings].reverse().map(earn=><EntryRow key={earn.id} C={C}
+    left={<><div style={{fontSize:"10px",color:C.faint,marginBottom:"3px"}}>{earn.date}</div><div style={{fontSize:"13px",color:C.text}}>{earn.description||"Income"}</div></>}
+    right={<><span style={{fontSize:"14px",fontWeight:600,color:C.green,whiteSpace:"nowrap"}}>+{fmt(earn.amount)}</span>
+      <button onClick={()=>{setEditId(earn.id);setEditAmt(String(earn.amount));setEditDesc(earn.description);setEditDate(earn.date);}} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}>✎</button>
+      <DelBtn id={earn.id} confirm={deleteConfirm} setConfirm={setDeleteConfirm} onDel={deleteEarning} C={C}/></>}
+  />)}
+  {editId!==null&&<EditModal C={C} title="Edit Income"
+    fields={[
+      {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+      {label:"Description",value:editDesc,onChange:setEditDesc},
+      {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+    ]}
+    onSave={()=>{updateEarning(editId,{amount:+editAmt,description:editDesc,date:editDate});setEditId(null);}}
+    onClose={()=>setEditId(null)}
+  /></>;
+}
+
+function SavingList({savings,deleteConfirm,setDeleteConfirm,deleteSaving,updateSaving,C}:{savings:Entry[];deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteSaving:(id:number)=>void;updateSaving:(id:number,u:Partial<Entry>)=>void;C:Theme}) {
+  const [editId,setEditId]=useState<number|null>(null);
+  const [editAmt,setEditAmt]=useState("");
+  const [editDesc,setEditDesc]=useState("");
+  const [editDate,setEditDate]=useState("");
+  return <>{[...savings].reverse().map(sav=><EntryRow key={sav.id} C={C}
+    left={<><div style={{fontSize:"10px",color:C.faint,marginBottom:"3px"}}>{sav.date}</div><div style={{fontSize:"13px",color:C.text}}>{sav.description||"Savings"}</div></>}
+    right={<><span style={{fontSize:"14px",fontWeight:600,color:C.amber,whiteSpace:"nowrap"}}>{fmt(sav.amount)}</span>
+      <button onClick={()=>{setEditId(sav.id);setEditAmt(String(sav.amount));setEditDesc(sav.description);setEditDate(sav.date);}} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}>✎</button>
+      <DelBtn id={sav.id} confirm={deleteConfirm} setConfirm={setDeleteConfirm} onDel={deleteSaving} C={C}/></>}
+  />)}
+  {editId!==null&&<EditModal C={C} title="Edit Saving"
+    fields={[
+      {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+      {label:"Description",value:editDesc,onChange:setEditDesc},
+      {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+    ]}
+    onSave={()=>{updateSaving(editId,{amount:+editAmt,description:editDesc,date:editDate});setEditId(null);}}
+    onClose={()=>setEditId(null)}
+  /></>;
 }
 
 // ─── Tab components (module-level — stable references, no typing bug) ─────────
@@ -225,7 +326,7 @@ function OverviewTab(p: OvProps) {
         ))}
       </div>
 
-      <div style={{...sCard,marginBottom:"12px"}}>
+      {p.appMode==="student"&&<div style={{...sCard,marginBottom:"12px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px",flexWrap:"wrap",gap:"8px"}}>
           <div>
             <div style={sSecT}>Monthly Budget</div>
@@ -257,9 +358,9 @@ function OverviewTab(p: OvProps) {
           <span style={{fontSize:"11px",color:C.muted}}>Spent {fmt(p.cashFlowOut)}</span>
           <span style={{fontSize:"11px",color:C.muted}}>of {fmt(p.cashFlowIn)}</span>
         </div>
-      </div>
+      </div>}
 
-      <div style={{...sCard,marginBottom:"12px"}}>
+      {p.appMode==="student"&&<div style={{...sCard,marginBottom:"12px"}}>
         <div style={sSecT}>Daily Averages</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)"}}>
           {([
@@ -275,10 +376,10 @@ function OverviewTab(p: OvProps) {
           ))}
         </div>
 
-      </div>
+      </div>}
 
       {catTotals.length>0&&(
-        <div style={sCard}>
+        <div style={{...sCard,marginBottom:"12px"}}>
           <div style={sSecT}>Spending by Category</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"9px"}}>
             {catTotals.map(cat=>(
@@ -304,60 +405,187 @@ function OverviewTab(p: OvProps) {
   );
 }
 
+
+// ─── Entry Table (sortable, clickable rows) ───────────────────────────────────
+type SortKey = "date"|"amount"|"description"|"category"|"mode"|"account";
+function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onDelete, C}: {
+  entries: T[];
+  columns: {key: SortKey; label: string; render: (e:T)=>React.ReactNode; sortable?: boolean}[];
+  accentColor: string;
+  onEdit: (e:T)=>void;
+  onDelete: (id:number)=>void;
+  C: Theme;
+}) {
+  const [sortKey, setSortKey] = useState<SortKey>("date");
+  const [sortDir, setSortDir] = useState<"asc"|"desc">("desc");
+  const [expandId, setExpandId] = useState<number|null>(null);
+  const [deleteId, setDeleteId] = useState<number|null>(null);
+
+  const sorted = [...entries].sort((a,b)=>{
+    let av: any = (a as any)[sortKey]??"";
+    let bv: any = (b as any)[sortKey]??"";
+    if(sortKey==="amount"){av=+(av);bv=+(bv);}
+    if(av<bv)return sortDir==="asc"?-1:1;
+    if(av>bv)return sortDir==="asc"?1:-1;
+    return 0;
+  });
+
+  const toggleSort = (key: SortKey) => {
+    if(sortKey===key) setSortDir(d=>d==="asc"?"desc":"asc");
+    else { setSortKey(key); setSortDir("desc"); }
+  };
+
+  const thStyle: CSSProperties = {
+    padding:"8px 10px", fontSize:"10px", color:C.muted, textTransform:"uppercase",
+    letterSpacing:"1.2px", fontWeight:600, cursor:"pointer", userSelect:"none",
+    borderBottom:`1px solid ${C.border}`, textAlign:"left", whiteSpace:"nowrap",
+  };
+  const tdStyle: CSSProperties = {
+    padding:"9px 10px", fontSize:"13px", color:C.text, borderBottom:`1px solid ${C.border}`,
+    verticalAlign:"middle",
+  };
+
+  return (
+    <div style={{overflowX:"auto"}}>
+      <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"'DM Sans',sans-serif"}}>
+        <thead>
+          <tr style={{background:C.cardAlt}}>
+            {columns.map(col=>(
+              <th key={col.key} style={thStyle} onClick={()=>col.sortable!==false&&toggleSort(col.key)}>
+                {col.label}{sortKey===col.key?(sortDir==="asc"?" ↑":" ↓"):""}
+              </th>
+            ))}
+            <th style={{...thStyle,cursor:"default",width:"60px"}}>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.length===0&&(
+            <tr><td colSpan={columns.length+1} style={{...tdStyle,textAlign:"center",color:C.faint,padding:"32px"}}>No entries yet</td></tr>
+          )}
+          {sorted.map(entry=>(
+            <>
+              <tr key={entry.id} style={{cursor:"pointer",transition:"background 0.1s"}}
+                onClick={()=>setExpandId(expandId===entry.id?null:entry.id)}
+                onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=C.cardAlt}
+                onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=""}>
+                {columns.map(col=>(
+                  <td key={col.key} style={tdStyle}>{col.render(entry)}</td>
+                ))}
+                <td style={{...tdStyle,whiteSpace:"nowrap"}}>
+                  {deleteId===entry.id?(
+                    <span style={{display:"flex",gap:"4px"}}>
+                      <button onClick={e=>{e.stopPropagation();onDelete(entry.id);setDeleteId(null);}}
+                        style={{...btnB,background:"#e17055",color:"#fff",padding:"3px 8px",fontSize:"11px"}}>Del</button>
+                      <button onClick={e=>{e.stopPropagation();setDeleteId(null);}}
+                        style={{...btnB,background:C.cancelBg,color:C.muted,padding:"3px 8px",fontSize:"11px"}}>No</button>
+                    </span>
+                  ):(
+                    <span style={{display:"flex",gap:"4px"}}>
+                      <button onClick={e=>{e.stopPropagation();onEdit(entry);}}
+                        style={{...btnB,background:C.navActive,color:C.accent,padding:"3px 8px",fontSize:"11px"}}>✎</button>
+                      <button onClick={e=>{e.stopPropagation();setDeleteId(entry.id);}}
+                        style={{...btnB,background:C.delBg,color:C.red,padding:"3px 8px",fontSize:"11px"}}>✕</button>
+                    </span>
+                  )}
+                </td>
+              </tr>
+              {expandId===entry.id&&(
+                <tr key={entry.id+"_exp"}>
+                  <td colSpan={columns.length+1} style={{background:C.cardAlt,padding:"10px 14px",borderBottom:`1px solid ${C.border}`}}>
+                    <div style={{display:"flex",gap:"20px",flexWrap:"wrap",fontSize:"12px",color:C.muted}}>
+                      <span><strong style={{color:C.text}}>Date:</strong> {entry.date}</span>
+                      <span><strong style={{color:C.text}}>Mode:</strong> {entry.mode||"—"}</span>
+                      {(entry as any).category&&<span><strong style={{color:C.text}}>Category:</strong> {(entry as any).category}</span>}
+                      {(entry as any).account&&<span><strong style={{color:C.text}}>Account:</strong> {(entry as any).account}</span>}
+                      <span><strong style={{color:C.text}}>Description:</strong> {entry.description||"—"}</span>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function ExpensesTab(p: ExProps) {
   const { C } = p;
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
   const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
   const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+  const [showForm, setShowForm] = useState(false);
+  const [editEntry, setEditEntry] = useState<Expense|null>(null);
+  const [editAmt, setEditAmt] = useState(""); const [editCat, setEditCat] = useState("");
+  const [editDesc, setEditDesc] = useState(""); const [editDate, setEditDate] = useState("");
+  const [editMode, setEditMode] = useState(""); const [editAcc, setEditAcc] = useState("");
+
+  const openEdit = (e: Expense) => {
+    setEditEntry(e); setEditAmt(String(e.amount)); setEditCat(e.category);
+    setEditDesc(e.description); setEditDate(e.date);
+    setEditMode(e.mode||""); setEditAcc(e.account||"");
+  };
+
+  const cols = [
+    {key:"date" as SortKey, label:"Date", render:(e:Expense)=><span style={{color:C.muted,fontSize:"12px"}}>{e.date}</span>},
+    {key:"description" as SortKey, label:"Description", render:(e:Expense)=><span>{e.description||"—"}</span>},
+    {key:"category" as SortKey, label:"Category", render:(e:Expense)=>{
+      const ci=p.categories.indexOf(e.category); const col=CAT_COLORS[ci>=0?ci%CAT_COLORS.length:0];
+      return <span style={{background:col+"22",color:col,padding:"2px 8px",borderRadius:"20px",fontSize:"11px",fontWeight:600}}>{e.category}</span>;
+    }},
+    ...(p.appMode==="household"?[{key:"account" as SortKey, label:"Account", render:(e:Expense)=><span style={{color:C.muted,fontSize:"12px"}}>{e.account||"—"}</span>}]:[]),
+    {key:"mode" as SortKey, label:"Mode", render:(e:Expense)=><span style={{color:C.muted,fontSize:"12px"}}>{e.mode||"—"}</span>},
+    {key:"amount" as SortKey, label:"Amount", render:(e:Expense)=><span style={{color:C.red,fontWeight:600}}>-{fmt(e.amount)}</span>},
+  ];
+
   return (
-    <div className="two-col-grid" style={{display:"grid",gridTemplateColumns:"clamp(240px,30%,300px) 1fr",gap:"16px"}}>
-      <div>
-        <div style={sCard}>
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+        <div style={{...sCard,padding:"12px 16px",display:"inline-flex",gap:"16px",alignItems:"center"}}>
+          <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Total</div>
+          <div style={{fontSize:"18px",fontWeight:600,color:C.red}}>{fmt(p.totalExpenses)}</div></div>
+          <div style={{width:"1px",height:"36px",background:C.border}}/>
+          <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Entries</div>
+          <div style={{fontSize:"18px",fontWeight:600,color:C.text}}>{p.expenses.length}</div></div>
+        </div>
+        <button onClick={()=>setShowForm(v=>!v)} style={{...btnP,padding:"10px 18px",fontSize:"20px",lineHeight:1}}>+</button>
+      </div>
+
+      {showForm&&(
+        <div style={{...sCard,marginBottom:"14px"}}>
           <div style={{...sSecT,marginBottom:"14px"}}>Add Expense</div>
-          <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.expAmt} onChange={e=>p.setExpAmt(e.target.value)} style={sInput}/></FF>
-          <FF label="Category" C={C}><select value={p.expCat} onChange={e=>p.setExpCat(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>{p.categories.map(c=><option key={c} value={c}>{c}</option>)}</select></FF>
-          <FF label="Description" C={C}><input type="text" placeholder="What did you spend on?" value={p.expDesc} onChange={e=>p.setExpDesc(e.target.value)} style={sInput}/></FF>
-          <FF label="Date" C={C}><input type="date" value={p.expDate} onChange={e=>p.setExpDate(e.target.value)} style={sInput}/></FF>
-          <button onClick={p.addExpense} style={{...btnP,width:"100%",padding:"11px"}}>+ Add Expense</button>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px"}}>
+            <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.expAmt} onChange={e=>p.setExpAmt(e.target.value)} style={sInput}/></FF>
+            <FF label="Category" C={C}><select value={p.expCat} onChange={e=>p.setExpCat(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>{p.categories.map(c=><option key={c} value={c}>{c}</option>)}</select></FF>
+            <FF label="Description" C={C}><input type="text" placeholder="What did you spend on?" value={p.expDesc} onChange={e=>p.setExpDesc(e.target.value)} style={sInput}/></FF>
+            <FF label="Date" C={C}><input type="date" value={p.expDate} onChange={e=>p.setExpDate(e.target.value)} style={sInput}/></FF>
+            <FF label="Payment Mode" C={C}><select value={p.expMode} onChange={e=>p.setExpMode(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>{PAYMENT_MODES.map(m=><option key={m} value={m}>{m}</option>)}</select></FF>
+            {p.appMode==="household"&&<FF label="Account" C={C}><select value={p.expAcc} onChange={e=>p.setExpAcc(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}><option value="">—</option>{p.accounts.map(a=><option key={a} value={a}>{a}</option>)}</select></FF>}
+          </div>
+          <div style={{display:"flex",gap:"8px",marginTop:"4px"}}>
+            <button onClick={()=>{p.addExpense();setShowForm(false);}} style={{...btnP,flex:1,padding:"11px"}}>+ Add Expense</button>
+            <button onClick={()=>setShowForm(false)} style={{...btnB,background:C.cancelBg,color:C.muted,padding:"11px 18px"}}>Cancel</button>
+          </div>
         </div>
-        <div style={{...sCard,marginTop:"12px",textAlign:"center"}}>
-          <div style={sSecT}>Total Expenses</div>
-          <div style={{fontSize:"22px",fontWeight:600,color:C.red}}>{fmt(p.totalExpenses)}</div>
-          <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{p.expenses.length} entries</div>
-        </div>
-      </div>
+      )}
+
       <div style={sCard}>
-        <div style={sSecT}>All Expenses</div>
-        {p.expenses.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"32px",fontSize:"13px"}}>No expenses yet</div>}
-        {(()=>{
-          const [editId,setEditId]=React.useState<number|null>(null);
-          const [editAmt,setEditAmt]=React.useState("");
-          const [editCat,setEditCat]=React.useState("");
-          const [editDesc,setEditDesc]=React.useState("");
-          const [editDate,setEditDate]=React.useState("");
-          return <>
-            {[...p.expenses].reverse().map(exp=>{
-              const ci=p.categories.indexOf(exp.category); const col=CAT_COLORS[ci>=0?ci%CAT_COLORS.length:0];
-              return <EntryRow key={exp.id} C={C}
-                left={<><div style={{display:"flex",gap:"6px",marginBottom:"3px",flexWrap:"wrap",alignItems:"center"}}><span style={{fontSize:"10px",padding:"2px 7px",borderRadius:"20px",background:col+"22",color:col,fontWeight:600}}>{exp.category}</span><span style={{fontSize:"10px",color:C.faint}}>{exp.date}</span></div><div style={{fontSize:"13px",color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{exp.description||"—"}</div></>}
-                right={<><span style={{fontSize:"14px",fontWeight:600,color:C.red,whiteSpace:"nowrap"}}>-{fmt(exp.amount)}</span>
-                  <button onClick={()=>{setEditId(exp.id);setEditAmt(String(exp.amount));setEditCat(exp.category);setEditDesc(exp.description);setEditDate(exp.date);}} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}>✎</button>
-                  <DelBtn id={exp.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteExpense} C={C}/></>}
-              />;
-            })}
-            {editId!==null&&<EditModal C={C} title="Edit Expense"
-              fields={[
-                {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
-                {label:"Category",value:editCat,onChange:setEditCat,options:p.categories},
-                {label:"Description",value:editDesc,onChange:setEditDesc},
-                {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
-              ]}
-              onSave={()=>{p.updateExpense(editId,{amount:+editAmt,category:editCat,description:editDesc,date:editDate});setEditId(null);}}
-              onClose={()=>setEditId(null)}
-            />}
-          </>;
-        })()}
+        <EntryTable entries={p.expenses} columns={cols} accentColor={C.red} onEdit={openEdit} onDelete={p.deleteExpense} C={C}/>
       </div>
+
+      {editEntry&&<EditModal C={C} title="Edit Expense"
+        fields={[
+          {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+          {label:"Category",value:editCat,onChange:setEditCat,options:p.categories},
+          {label:"Description",value:editDesc,onChange:setEditDesc},
+          {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+          {label:"Payment Mode",value:editMode,onChange:setEditMode,options:PAYMENT_MODES},
+          ...(p.appMode==="household"?[{label:"Account",value:editAcc,onChange:setEditAcc,options:["—",...p.accounts]}]:[]),
+        ]}
+        onSave={()=>{p.updateExpense(editEntry.id,{amount:+editAmt,category:editCat,description:editDesc,date:editDate,mode:editMode,account:editAcc||undefined});setEditEntry(null);}}
+        onClose={()=>setEditEntry(null)}
+      />}
     </div>
   );
 }
@@ -367,49 +595,70 @@ function EarningsTab(p: ErProps) {
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
   const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
   const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+  const [showForm, setShowForm] = useState(false);
+  const [editEntry, setEditEntry] = useState<Entry|null>(null);
+  const [editAmt, setEditAmt] = useState(""); const [editDesc, setEditDesc] = useState("");
+  const [editDate, setEditDate] = useState(""); const [editMode, setEditMode] = useState("");
+  const [editAcc, setEditAcc] = useState("");
+
+  const openEdit = (e: Entry) => {
+    setEditEntry(e); setEditAmt(String(e.amount)); setEditDesc(e.description);
+    setEditDate(e.date); setEditMode(e.mode||""); setEditAcc((e as any).account||"");
+  };
+
+  const cols = [
+    {key:"date" as SortKey, label:"Date", render:(e:Entry)=><span style={{color:C.muted,fontSize:"12px"}}>{e.date}</span>},
+    {key:"description" as SortKey, label:"Description", render:(e:Entry)=><span>{e.description||"Income"}</span>},
+    ...(p.appMode==="household"?[{key:"account" as SortKey, label:"Account", render:(e:Entry)=><span style={{color:C.muted,fontSize:"12px"}}>{(e as any).account||"—"}</span>}]:[]),
+    {key:"mode" as SortKey, label:"Mode", render:(e:Entry)=><span style={{color:C.muted,fontSize:"12px"}}>{e.mode||"—"}</span>},
+    {key:"amount" as SortKey, label:"Amount", render:(e:Entry)=><span style={{color:C.green,fontWeight:600}}>+{fmt(e.amount)}</span>},
+  ];
+
   return (
-    <div className="two-col-grid" style={{display:"grid",gridTemplateColumns:"clamp(240px,30%,300px) 1fr",gap:"16px"}}>
-      <div>
-        <div style={sCard}>
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+        <div style={{...sCard,padding:"12px 16px",display:"inline-flex",gap:"16px",alignItems:"center"}}>
+          <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Total</div>
+          <div style={{fontSize:"18px",fontWeight:600,color:C.green}}>{fmt(p.totalEarnings)}</div></div>
+          <div style={{width:"1px",height:"36px",background:C.border}}/>
+          <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Entries</div>
+          <div style={{fontSize:"18px",fontWeight:600,color:C.text}}>{p.earnings.length}</div></div>
+        </div>
+        <button onClick={()=>setShowForm(v=>!v)} style={{...btnG,padding:"10px 18px",fontSize:"20px",lineHeight:1}}>+</button>
+      </div>
+
+      {showForm&&(
+        <div style={{...sCard,marginBottom:"14px"}}>
           <div style={{...sSecT,marginBottom:"14px"}}>Add Income</div>
-          <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.earnAmt} onChange={e=>p.setEarnAmt(e.target.value)} style={sInput}/></FF>
-          <FF label="Description" C={C}><input type="text" placeholder="Source of income" value={p.earnDesc} onChange={e=>p.setEarnDesc(e.target.value)} style={sInput}/></FF>
-          <FF label="Date" C={C}><input type="date" value={p.earnDate} onChange={e=>p.setEarnDate(e.target.value)} style={sInput}/></FF>
-          <button onClick={p.addEarning} style={{...btnG,width:"100%",padding:"11px"}}>+ Add Income</button>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px"}}>
+            <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.earnAmt} onChange={e=>p.setEarnAmt(e.target.value)} style={sInput}/></FF>
+            <FF label="Description" C={C}><input type="text" placeholder="Source of income" value={p.earnDesc} onChange={e=>p.setEarnDesc(e.target.value)} style={sInput}/></FF>
+            <FF label="Date" C={C}><input type="date" value={p.earnDate} onChange={e=>p.setEarnDate(e.target.value)} style={sInput}/></FF>
+            <FF label="Payment Mode" C={C}><select value={p.earnMode} onChange={e=>p.setEarnMode(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>{PAYMENT_MODES.map(m=><option key={m} value={m}>{m}</option>)}</select></FF>
+            {p.appMode==="household"&&<FF label="Account" C={C}><select value={p.earnAcc} onChange={e=>p.setEarnAcc(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}><option value="">—</option>{p.accounts.map(a=><option key={a} value={a}>{a}</option>)}</select></FF>}
+          </div>
+          <div style={{display:"flex",gap:"8px",marginTop:"4px"}}>
+            <button onClick={()=>{p.addEarning();setShowForm(false);}} style={{...btnG,flex:1,padding:"11px"}}>+ Add Income</button>
+            <button onClick={()=>setShowForm(false)} style={{...btnB,background:C.cancelBg,color:C.muted,padding:"11px 18px"}}>Cancel</button>
+          </div>
         </div>
-        <div style={{...sCard,marginTop:"12px",textAlign:"center"}}>
-          <div style={sSecT}>Total Earnings</div>
-          <div style={{fontSize:"22px",fontWeight:600,color:C.green}}>{fmt(p.totalEarnings)}</div>
-          <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{p.earnings.length} entries</div>
-        </div>
-      </div>
+      )}
+
       <div style={sCard}>
-        <div style={sSecT}>All Income</div>
-        {p.earnings.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"32px",fontSize:"13px"}}>No income yet</div>}
-        {(()=>{
-          const [editId,setEditId]=React.useState<number|null>(null);
-          const [editAmt,setEditAmt]=React.useState("");
-          const [editDesc,setEditDesc]=React.useState("");
-          const [editDate,setEditDate]=React.useState("");
-          return <>
-            {[...p.earnings].reverse().map(earn=><EntryRow key={earn.id} C={C}
-              left={<><div style={{fontSize:"10px",color:C.faint,marginBottom:"3px"}}>{earn.date}</div><div style={{fontSize:"13px",color:C.text}}>{earn.description||"Income"}</div></>}
-              right={<><span style={{fontSize:"14px",fontWeight:600,color:C.green,whiteSpace:"nowrap"}}>+{fmt(earn.amount)}</span>
-                <button onClick={()=>{setEditId(earn.id);setEditAmt(String(earn.amount));setEditDesc(earn.description);setEditDate(earn.date);}} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}>✎</button>
-                <DelBtn id={earn.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteEarning} C={C}/></>}
-            />)}
-            {editId!==null&&<EditModal C={C} title="Edit Income"
-              fields={[
-                {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
-                {label:"Description",value:editDesc,onChange:setEditDesc},
-                {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
-              ]}
-              onSave={()=>{p.updateEarning(editId,{amount:+editAmt,description:editDesc,date:editDate});setEditId(null);}}
-              onClose={()=>setEditId(null)}
-            />}
-          </>;
-        })()}
+        <EntryTable entries={p.earnings} columns={cols} accentColor={C.green} onEdit={openEdit} onDelete={p.deleteEarning} C={C}/>
       </div>
+
+      {editEntry&&<EditModal C={C} title="Edit Income"
+        fields={[
+          {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+          {label:"Description",value:editDesc,onChange:setEditDesc},
+          {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+          {label:"Payment Mode",value:editMode,onChange:setEditMode,options:PAYMENT_MODES},
+          ...(p.appMode==="household"?[{label:"Account",value:editAcc,onChange:setEditAcc,options:["—",...p.accounts]}]:[]),
+        ]}
+        onSave={()=>{p.updateEarning(editEntry.id,{amount:+editAmt,description:editDesc,date:editDate,mode:editMode,account:editAcc||undefined} as any);setEditEntry(null);}}
+        onClose={()=>setEditEntry(null)}
+      />}
     </div>
   );
 }
@@ -419,49 +668,70 @@ function SavingsTab(p: SvProps) {
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
   const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
   const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+  const [showForm, setShowForm] = useState(false);
+  const [editEntry, setEditEntry] = useState<Entry|null>(null);
+  const [editAmt, setEditAmt] = useState(""); const [editDesc, setEditDesc] = useState("");
+  const [editDate, setEditDate] = useState(""); const [editMode, setEditMode] = useState("");
+  const [editAcc, setEditAcc] = useState("");
+
+  const openEdit = (e: Entry) => {
+    setEditEntry(e); setEditAmt(String(e.amount)); setEditDesc(e.description);
+    setEditDate(e.date); setEditMode(e.mode||""); setEditAcc((e as any).account||"");
+  };
+
+  const cols = [
+    {key:"date" as SortKey, label:"Date", render:(e:Entry)=><span style={{color:C.muted,fontSize:"12px"}}>{e.date}</span>},
+    {key:"description" as SortKey, label:"Description", render:(e:Entry)=><span>{e.description||"Savings"}</span>},
+    ...(p.appMode==="household"?[{key:"account" as SortKey, label:"Account", render:(e:Entry)=><span style={{color:C.muted,fontSize:"12px"}}>{(e as any).account||"—"}</span>}]:[]),
+    {key:"mode" as SortKey, label:"Mode", render:(e:Entry)=><span style={{color:C.muted,fontSize:"12px"}}>{e.mode||"—"}</span>},
+    {key:"amount" as SortKey, label:"Amount", render:(e:Entry)=><span style={{color:C.amber,fontWeight:600}}>{fmt(e.amount)}</span>},
+  ];
+
   return (
-    <div className="two-col-grid" style={{display:"grid",gridTemplateColumns:"clamp(240px,30%,300px) 1fr",gap:"16px"}}>
-      <div>
-        <div style={sCard}>
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+        <div style={{...sCard,padding:"12px 16px",display:"inline-flex",gap:"16px",alignItems:"center"}}>
+          <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Total</div>
+          <div style={{fontSize:"18px",fontWeight:600,color:C.amber}}>{fmt(p.totalSavings)}</div></div>
+          <div style={{width:"1px",height:"36px",background:C.border}}/>
+          <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Entries</div>
+          <div style={{fontSize:"18px",fontWeight:600,color:C.text}}>{p.savings.length}</div></div>
+        </div>
+        <button onClick={()=>setShowForm(v=>!v)} style={{...btnA,padding:"10px 18px",fontSize:"20px",lineHeight:1}}>+</button>
+      </div>
+
+      {showForm&&(
+        <div style={{...sCard,marginBottom:"14px"}}>
           <div style={{...sSecT,marginBottom:"14px"}}>Add Saving</div>
-          <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.savAmt} onChange={e=>p.setSavAmt(e.target.value)} style={sInput}/></FF>
-          <FF label="Description" C={C}><input type="text" placeholder="What are you saving for?" value={p.savDesc} onChange={e=>p.setSavDesc(e.target.value)} style={sInput}/></FF>
-          <FF label="Date" C={C}><input type="date" value={p.savDate} onChange={e=>p.setSavDate(e.target.value)} style={sInput}/></FF>
-          <button onClick={p.addSaving} style={{...btnA,width:"100%",padding:"11px"}}>+ Add Saving</button>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px"}}>
+            <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.savAmt} onChange={e=>p.setSavAmt(e.target.value)} style={sInput}/></FF>
+            <FF label="Description" C={C}><input type="text" placeholder="What are you saving for?" value={p.savDesc} onChange={e=>p.setSavDesc(e.target.value)} style={sInput}/></FF>
+            <FF label="Date" C={C}><input type="date" value={p.savDate} onChange={e=>p.setSavDate(e.target.value)} style={sInput}/></FF>
+            <FF label="Payment Mode" C={C}><select value={p.savMode} onChange={e=>p.setSavMode(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>{PAYMENT_MODES.map(m=><option key={m} value={m}>{m}</option>)}</select></FF>
+            {p.appMode==="household"&&<FF label="Account" C={C}><select value={p.savAcc} onChange={e=>p.setSavAcc(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}><option value="">—</option>{p.accounts.map(a=><option key={a} value={a}>{a}</option>)}</select></FF>}
+          </div>
+          <div style={{display:"flex",gap:"8px",marginTop:"4px"}}>
+            <button onClick={()=>{p.addSaving();setShowForm(false);}} style={{...btnA,flex:1,padding:"11px"}}>+ Add Saving</button>
+            <button onClick={()=>setShowForm(false)} style={{...btnB,background:C.cancelBg,color:C.muted,padding:"11px 18px"}}>Cancel</button>
+          </div>
         </div>
-        <div style={{...sCard,marginTop:"12px",textAlign:"center"}}>
-          <div style={sSecT}>Total Saved</div>
-          <div style={{fontSize:"22px",fontWeight:600,color:C.amber}}>{fmt(p.totalSavings)}</div>
-          <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{p.cashFlowIn>0?((p.totalSavings/p.cashFlowIn)*100).toFixed(1):0}% of cash flow in</div>
-        </div>
-      </div>
+      )}
+
       <div style={sCard}>
-        <div style={sSecT}>All Savings</div>
-        {p.savings.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"32px",fontSize:"13px"}}>No savings yet</div>}
-        {(()=>{
-          const [editId,setEditId]=React.useState<number|null>(null);
-          const [editAmt,setEditAmt]=React.useState("");
-          const [editDesc,setEditDesc]=React.useState("");
-          const [editDate,setEditDate]=React.useState("");
-          return <>
-            {[...p.savings].reverse().map(sav=><EntryRow key={sav.id} C={C}
-              left={<><div style={{fontSize:"10px",color:C.faint,marginBottom:"3px"}}>{sav.date}</div><div style={{fontSize:"13px",color:C.text}}>{sav.description||"Savings"}</div></>}
-              right={<><span style={{fontSize:"14px",fontWeight:600,color:C.amber,whiteSpace:"nowrap"}}>{fmt(sav.amount)}</span>
-                <button onClick={()=>{setEditId(sav.id);setEditAmt(String(sav.amount));setEditDesc(sav.description);setEditDate(sav.date);}} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}>✎</button>
-                <DelBtn id={sav.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteSaving} C={C}/></>}
-            />)}
-            {editId!==null&&<EditModal C={C} title="Edit Saving"
-              fields={[
-                {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
-                {label:"Description",value:editDesc,onChange:setEditDesc},
-                {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
-              ]}
-              onSave={()=>{p.updateSaving(editId,{amount:+editAmt,description:editDesc,date:editDate});setEditId(null);}}
-              onClose={()=>setEditId(null)}
-            />}
-          </>;
-        })()}
+        <EntryTable entries={p.savings} columns={cols} accentColor={C.amber} onEdit={openEdit} onDelete={p.deleteSaving} C={C}/>
       </div>
+
+      {editEntry&&<EditModal C={C} title="Edit Saving"
+        fields={[
+          {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+          {label:"Description",value:editDesc,onChange:setEditDesc},
+          {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+          {label:"Payment Mode",value:editMode,onChange:setEditMode,options:PAYMENT_MODES},
+          ...(p.appMode==="household"?[{label:"Account",value:editAcc,onChange:setEditAcc,options:["—",...p.accounts]}]:[]),
+        ]}
+        onSave={()=>{p.updateSaving(editEntry.id,{amount:+editAmt,description:editDesc,date:editDate,mode:editMode,account:editAcc||undefined} as any);setEditEntry(null);}}
+        onClose={()=>setEditEntry(null)}
+      />}
     </div>
   );
 }
@@ -871,6 +1141,7 @@ function AuthScreen({ onAuth, dark }: { onAuth:(user:User)=>void; dark:boolean }
   const [mode,     setMode]     = useState<"login"|"signup">("login");
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
+  const [showPw,   setShowPw]   = useState(false);
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
   const [done,     setDone]     = useState(false);
@@ -903,14 +1174,22 @@ function AuthScreen({ onAuth, dark }: { onAuth:(user:User)=>void; dark:boolean }
   );
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>
-      <div style={{...sCard,maxWidth:"380px",width:"90%"}}>
+    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif",padding:"20px"}}>
+      <div style={{...sCard,maxWidth:"380px",width:"100%"}}>
         <div style={{marginBottom:"24px"}}>
           <div style={{fontSize:"22px",fontWeight:700,color:C.text,marginBottom:"4px"}}><span style={{color:C.accent}}>Budget</span>ly</div>
           <div style={{fontSize:"13px",color:C.muted}}>{mode==="login"?"Welcome back":"Create your account"}</div>
         </div>
         <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} style={sInput}/>
-        <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handle()} style={sInput}/>
+        <div style={{position:"relative",marginBottom:"12px"}}>
+          <input type={showPw?"text":"password"} placeholder="Password" value={password}
+            onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handle()}
+            style={{...sInput,marginBottom:"0",paddingRight:"48px"}}/>
+          <button onClick={()=>setShowPw(v=>!v)}
+            style={{position:"absolute",right:"12px",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif"}}>
+            {showPw?"Hide":"Show"}
+          </button>
+        </div>
         {error&&<div style={{fontSize:"12px",color:C.red,marginBottom:"10px",padding:"8px 10px",background:C.pillRed,borderRadius:"7px"}}>{error}</div>}
         <button onClick={handle} disabled={loading} style={{...btnP,width:"100%",padding:"12px",fontSize:"14px",opacity:loading?0.7:1}}>
           {loading?"...":(mode==="login"?"Log In":"Sign Up")}
@@ -922,6 +1201,20 @@ function AuthScreen({ onAuth, dark }: { onAuth:(user:User)=>void; dark:boolean }
             {mode==="login"?"Sign Up":"Log In"}
           </button>
         </div>
+      </div>
+      {/* Install app instructions */}
+      <div style={{maxWidth:"380px",width:"100%",marginTop:"16px",background:C.card,borderRadius:"14px",padding:"16px 20px",border:`1px solid ${C.border}`}}>
+        <div style={{fontSize:"11px",color:C.accent,fontWeight:600,marginBottom:"8px"}}>📱 Install Budgetly on Android</div>
+        {["Open this page in Chrome","Tap ⋮ → Add to Home screen","Tap Add — done"].map((step,i)=>(
+          <div key={i} style={{display:"flex",gap:"8px",marginBottom:"5px",alignItems:"flex-start"}}>
+            <div style={{width:"16px",height:"16px",borderRadius:"50%",background:C.accent,color:"#fff",fontSize:"9px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px"}}>{i+1}</div>
+            <div style={{fontSize:"11px",color:C.muted,lineHeight:1.5}}>{step}</div>
+          </div>
+        ))}
+      </div>
+      {/* Credit */}
+      <div style={{marginTop:"20px",fontSize:"12px",color:C.faint,textAlign:"center",fontFamily:"'DM Sans',sans-serif"}}>
+        Made by <span style={{color:C.muted,fontWeight:500}}>Armaan Gupta</span>
       </div>
     </div>
   );
@@ -943,9 +1236,82 @@ function MigrateModal({ onDecide, C }: { onDecide:(migrate:boolean)=>void; C:The
   );
 }
 
+// ─── Mode Select Screen ───────────────────────────────────────────────────────
+function ModeSelectScreen({ C, onSelect }: { C:Theme; onSelect:(m:AppMode)=>void }) {
+  return (
+    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif",padding:"20px"}}>
+      <div style={{maxWidth:"400px",width:"100%"}}>
+        <div style={{textAlign:"center",marginBottom:"32px"}}>
+          <div style={{fontSize:"24px",fontWeight:700,color:C.text,marginBottom:"6px"}}><span style={{color:C.accent}}>Budget</span>ly</div>
+          <div style={{fontSize:"14px",color:C.muted}}>How will you use Budgetly?</div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+          <button onClick={()=>onSelect("student")} style={{background:C.card,border:`2px solid ${C.accent}`,borderRadius:"14px",padding:"22px 20px",cursor:"pointer",textAlign:"left",fontFamily:"'DM Sans',sans-serif",transition:"box-shadow 0.15s"}}>
+            <div style={{fontSize:"22px",marginBottom:"8px"}}>🎓</div>
+            <div style={{fontSize:"16px",fontWeight:600,color:C.text,marginBottom:"4px"}}>Student</div>
+            <div style={{fontSize:"13px",color:C.muted,lineHeight:1.6}}>Monthly budget tracking, expense categories, spending insights. Best for personal finance management.</div>
+          </button>
+          <button onClick={()=>onSelect("household")} style={{background:C.card,border:`2px solid ${C.border}`,borderRadius:"14px",padding:"22px 20px",cursor:"pointer",textAlign:"left",fontFamily:"'DM Sans',sans-serif",transition:"box-shadow 0.15s"}}>
+            <div style={{fontSize:"22px",marginBottom:"8px"}}>🏠</div>
+            <div style={{fontSize:"16px",fontWeight:600,color:C.text,marginBottom:"4px"}}>Household</div>
+            <div style={{fontSize:"13px",color:C.muted,lineHeight:1.6}}>Multi-account tracking, no budget cap. Track transactions across accounts like HDFC, Cash, Joint Account.</div>
+          </button>
+        </div>
+        <div style={{marginTop:"16px",fontSize:"12px",color:C.faint,textAlign:"center"}}>You can change this anytime from Settings</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Accounts Tab (household) ─────────────────────────────────────────────────
+function AccountsTab({ C, accounts, expenses, earnings, savings, newAccount, setNewAccount, addAccount, deleteAccount }: {
+  C:Theme; accounts:string[]; expenses:Expense[]; earnings:Entry[]; savings:Entry[];
+  newAccount:string; setNewAccount:(v:string)=>void; addAccount:()=>void; deleteAccount:(a:string)=>void;
+}) {
+  const DEFAULT_ACCS = ["Main Account","Cash","Savings Account"];
+  const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
+  const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
+  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+  return (
+    <div style={{maxWidth:"680px"}}>
+      <div style={{...sCard,marginBottom:"14px"}}>
+        <div style={sSecT}>Add Account</div>
+        <FF label="Account Name" C={C}><input type="text" placeholder="e.g. HDFC Savings, Cash…" value={newAccount} onChange={e=>setNewAccount(e.target.value)} style={sInput}/></FF>
+        <button onClick={addAccount} style={{...btnP,width:"100%",padding:"11px"}}>+ Add Account</button>
+        <div style={{fontSize:"11px",color:C.faint,marginTop:"10px"}}>Default accounts cannot be deleted.</div>
+      </div>
+      <div style={sCard}>
+        <div style={sSecT}>{accounts.length} Accounts</div>
+        {accounts.map((acc,i)=>{
+          const color = CAT_COLORS[i%CAT_COLORS.length];
+          const totalOut = expenses.filter(e=>e.account===acc).reduce((s,e)=>s+e.amount,0);
+          const totalIn  = earnings.filter(e=>(e as any).account===acc).reduce((s,e)=>s+e.amount,0);
+          const totalSav = savings.filter(e=>(e as any).account===acc).reduce((s,e)=>s+e.amount,0);
+          const isDef = DEFAULT_ACCS.includes(acc);
+          return (
+            <div key={acc} style={{display:"flex",alignItems:"center",gap:"10px",background:C.cardAlt,borderRadius:"10px",padding:"12px 14px",border:`1px solid ${C.border}`,marginBottom:"8px"}}>
+              <div style={{width:"10px",height:"10px",borderRadius:"50%",background:color,flexShrink:0}}/>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:"13px",fontWeight:500,color:C.text}}>{acc}</div>
+                <div style={{fontSize:"11px",color:C.faint,marginTop:"2px"}}>
+                  Out: {fmt(totalOut)} · In: {fmt(totalIn)} · Saved: {fmt(totalSav)}{isDef?" · default":""}
+                </div>
+              </div>
+              {!isDef&&<button onClick={()=>deleteAccount(acc)} style={{...btnB,background:C.delBg,color:C.red,padding:"5px 10px",fontSize:"11px"}}>✕</button>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function BudgetTracker() {
   const [dark,          setDark]          = useState<boolean>(() => lsLoad<boolean>("budgetly_dark", false));
+  const [appMode,       setAppMode]       = useState<AppMode|null>(() => lsLoad<AppMode|null>("budgetly_mode", null));
+  const [showModeSelect,setShowModeSelect]= useState(false);
+  const [accounts,      setAccounts]      = useState<string[]>(() => lsLoad<string[]>("budgetly_accounts", DEFAULT_ACCOUNTS));
   const [user,          setUser]          = useState<User|null>(null);
   const [authReady,     setAuthReady]     = useState(false);
   const [showMigrate,   setShowMigrate]   = useState(false); // triggers after login if local data exists
@@ -972,17 +1338,35 @@ export default function BudgetTracker() {
     setDark(d => { lsSave("budgetly_dark", !d); return !d; });
   };
 
+  const switchMode = (m: AppMode) => {
+    setAppMode(m);
+    lsSave("budgetly_mode", m);
+    setShowModeSelect(false);
+  };
+
+  const saveAccounts = (acc: string[]) => {
+    setAccounts(acc);
+    lsSave("budgetly_accounts", acc);
+  };
+
   const today = todayS();
   const [expAmt,   setExpAmt]   = useState("");
   const [expCat,   setExpCat]   = useState(DEFAULT_CATS[0]);
   const [expDesc,  setExpDesc]  = useState("");
   const [expDate,  setExpDate]  = useState(today);
+  const [expMode,  setExpMode]  = useState(PAYMENT_MODES[0]);
+  const [expAcc,   setExpAcc]   = useState("");
+  const [earnMode, setEarnMode] = useState(PAYMENT_MODES[0]);
+  const [earnAcc,  setEarnAcc]  = useState("");
+  const [savMode,  setSavMode]  = useState(PAYMENT_MODES[0]);
+  const [savAcc,   setSavAcc]   = useState("");
   const [earnAmt,  setEarnAmt]  = useState("");
   const [earnDesc, setEarnDesc] = useState("");
   const [earnDate, setEarnDate] = useState(today);
   const [savAmt,   setSavAmt]   = useState("");
   const [savDesc,  setSavDesc]  = useState("");
   const [savDate,  setSavDate]  = useState(today);
+  const [newAccount,   setNewAccount]   = useState("");
   const [credits,      setCredits]      = useState<CreditEntry[]>([]);
   const [creditsLoaded, setCreditsLoaded] = useState(false);
   const [crAmt,        setCrAmt]        = useState("");
@@ -1078,9 +1462,9 @@ export default function BudgetTracker() {
   // Actions
   const setBudget      = (v:number) => setM(activeMK,{...md,budget:v});
   const saveBudget     = () => { const v=parseFloat(tempBudget); if(!isNaN(v)&&v>0)setBudget(v); setEditingBudget(false); };
-  const addExpense     = () => { if(!expAmt||isNaN(+expAmt))return; setM(activeMK,{...md,expenses:[...expenses,{id:Date.now(),amount:+expAmt,category:expCat,description:expDesc,date:expDate}]}); setExpAmt(""); setExpDesc(""); };
-  const addEarning     = () => { if(!earnAmt||isNaN(+earnAmt))return; setM(activeMK,{...md,earnings:[...earnings,{id:Date.now(),amount:+earnAmt,description:earnDesc,date:earnDate}]}); setEarnAmt(""); setEarnDesc(""); };
-  const addSaving      = () => { if(!savAmt||isNaN(+savAmt))return; setM(activeMK,{...md,savings:[...savings,{id:Date.now(),amount:+savAmt,description:savDesc,date:savDate}]}); setSavAmt(""); setSavDesc(""); };
+  const addExpense     = () => { if(!expAmt||isNaN(+expAmt))return; setM(activeMK,{...md,expenses:[...expenses,{id:Date.now(),amount:+expAmt,category:expCat,description:expDesc,date:expDate,mode:expMode,account:expAcc||undefined}]}); setExpAmt(""); setExpDesc(""); };
+  const addEarning     = () => { if(!earnAmt||isNaN(+earnAmt))return; setM(activeMK,{...md,earnings:[...earnings,{id:Date.now(),amount:+earnAmt,description:earnDesc,date:earnDate,mode:earnMode,account:earnAcc||undefined}]}); setEarnAmt(""); setEarnDesc(""); };
+  const addSaving      = () => { if(!savAmt||isNaN(+savAmt))return; setM(activeMK,{...md,savings:[...savings,{id:Date.now(),amount:+savAmt,description:savDesc,date:savDate,mode:savMode,account:savAcc||undefined}]}); setSavAmt(""); setSavDesc(""); };
   const deleteExpense  = (id:number) => { setM(activeMK,{...md,expenses:expenses.filter(e=>e.id!==id)}); setDeleteConfirm(null); };
   const deleteEarning  = (id:number) => { setM(activeMK,{...md,earnings:earnings.filter(e=>e.id!==id)}); setDeleteConfirm(null); };
   const deleteSaving   = (id:number) => { setM(activeMK,{...md,savings: savings.filter (e=>e.id!==id)}); setDeleteConfirm(null); };
@@ -1090,6 +1474,8 @@ export default function BudgetTracker() {
   const updateCredit   = (id:number,u:Partial<CreditEntry>) => setCredits(prev=>prev.map(c=>c.id===id?{...c,...u}:c));
   const addCategory    = () => { const t=newCategory.trim(); if(!t||categories.includes(t))return; setCategories([...categories,t]); setNewCategory(""); };
   const deleteCategory = (cat:string) => { if(DEFAULT_CATS.includes(cat))return; setCategories(categories.filter(c=>c!==cat)); };
+  const addAccount     = () => { const t=newAccount.trim(); if(!t||accounts.includes(t))return; saveAccounts([...accounts,t]); setNewAccount(""); };
+  const deleteAccount  = (acc:string) => { if(DEFAULT_ACCOUNTS.includes(acc))return; saveAccounts(accounts.filter(a=>a!==acc)); };
   const addCredit      = () => { if(!crAmt||isNaN(+crAmt)||!crPerson.trim())return; setCredits(prev=>[...prev,{id:Date.now(),person:crPerson.trim(),amount:+crAmt,description:crDesc,date:crDate,type:crType,cleared:false}]); setCrAmt(""); setCrPerson(""); setCrDesc(""); };
   const toggleCleared  = (id:number) => {
     setCredits(prev => prev.map(c => {
@@ -1130,6 +1516,7 @@ export default function BudgetTracker() {
     </div>
   );
   if (!user) return <AuthScreen onAuth={u=>setUser(u)} dark={dark}/>;
+  if (!appMode || showModeSelect) return <ModeSelectScreen C={C} onSelect={switchMode}/>;
 
   function SidebarInner() {
     return (
@@ -1329,9 +1716,20 @@ export default function BudgetTracker() {
           {/* App */}
           <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>App</div>
+            {/* Mode switcher */}
+            <div style={{background:C.cardAlt,borderRadius:"10px",padding:"12px 14px",border:`1px solid ${C.border}`,marginBottom:"8px"}}>
+              <div style={{fontSize:"12px",color:C.muted,marginBottom:"8px"}}>Current mode: <strong style={{color:C.text}}>{appMode==="student"?"🎓 Student":"🏠 Household"}</strong></div>
+              <div style={{display:"flex",gap:"6px"}}>
+                <button onClick={()=>switchMode("student")} style={{flex:1,padding:"7px",borderRadius:"8px",border:`1.5px solid ${appMode==="student"?C.accent:C.border}`,background:appMode==="student"?C.navActive:"transparent",color:appMode==="student"?C.accent:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>🎓 Student</button>
+                <button onClick={()=>switchMode("household")} style={{flex:1,padding:"7px",borderRadius:"8px",border:`1.5px solid ${appMode==="household"?C.accent:C.border}`,background:appMode==="household"?C.navActive:"transparent",color:appMode==="household"?C.accent:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>🏠 Household</button>
+              </div>
+            </div>
             <button onClick={()=>{setShowSettings(false);setActiveTab("categories");}} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:500,textAlign:"left",marginBottom:"8px",display:"flex",alignItems:"center",gap:"10px"}}>
               <span style={{fontSize:"15px"}}>▦</span> Manage Categories
             </button>
+            {appMode==="household"&&<button onClick={()=>{setShowSettings(false);setActiveTab("accounts");}} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:500,textAlign:"left",marginBottom:"8px",display:"flex",alignItems:"center",gap:"10px"}}>
+              <span style={{fontSize:"15px"}}>🏦</span> Manage Accounts
+            </button>}
             <button onClick={()=>{setShowSettings(false);setActiveTab("tutorial");}} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:500,textAlign:"left",display:"flex",alignItems:"center",gap:"10px"}}>
               <span style={{fontSize:"15px"}}>?</span> How to use Budgetly
             </button>
@@ -1379,10 +1777,10 @@ export default function BudgetTracker() {
     );
   }
 
-  const ovProps: OvProps = { C,budget,cashFlowIn,cashFlowOut,totalEarnings,totalSavings,remaining,spentPct,editingBudget,tempBudget,setEditingBudget,setTempBudget,saveBudget,expenses,savings,categories,daysInMonth,todayDay,idealPerDay,idealSpentByToday,actualVsIdeal,moneyLeft,daysLeft,currentDailyAvg,currentIdealAvg };
-  const exProps: ExProps = { C,expenses,categories,totalExpenses:cashFlowOut,expAmt,expCat,expDesc,expDate,setExpAmt,setExpCat,setExpDesc,setExpDate,addExpense,deleteConfirm,setDeleteConfirm,deleteExpense,updateExpense };
-  const erProps: ErProps = { C,earnings,totalEarnings,earnAmt,earnDesc,earnDate,setEarnAmt,setEarnDesc,setEarnDate,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning,updateEarning };
-  const svProps: SvProps = { C,savings,totalSavings,cashFlowIn,savAmt,savDesc,savDate,setSavAmt,setSavDesc,setSavDate,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving,updateSaving };
+  const ovProps: OvProps = { C,budget,cashFlowIn,cashFlowOut,totalEarnings,totalSavings,remaining,spentPct,editingBudget,tempBudget,setEditingBudget,setTempBudget,saveBudget,expenses,savings,categories,accounts,appMode,daysInMonth,todayDay,idealPerDay,idealSpentByToday,actualVsIdeal,moneyLeft,daysLeft,currentDailyAvg,currentIdealAvg };
+  const exProps: ExProps = { C,expenses,categories,accounts,appMode,totalExpenses:cashFlowOut,expAmt,expCat,expDesc,expDate,expMode,expAcc,setExpAmt,setExpCat,setExpDesc,setExpDate,setExpMode,setExpAcc,addExpense,deleteConfirm,setDeleteConfirm,deleteExpense,updateExpense };
+  const erProps: ErProps = { C,earnings,accounts,appMode,totalEarnings,earnAmt,earnDesc,earnDate,earnMode,earnAcc,setEarnAmt,setEarnDesc,setEarnDate,setEarnMode,setEarnAcc,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning,updateEarning };
+  const svProps: SvProps = { C,savings,accounts,appMode,totalSavings,cashFlowIn,savAmt,savDesc,savDate,savMode,savAcc,setSavAmt,setSavDesc,setSavDate,setSavMode,setSavAcc,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving,updateSaving };
   const caProps: CaProps = { C,categories,expenses,cashFlowOut,newCategory,setNewCategory,addCategory,deleteCategory };
   const trProps: TrProps = { C,allMonths,activeMK,categories };
   const crProps: CrProps = { C,credits,crAmt,crPerson,crDesc,crDate,crType,setCrAmt,setCrPerson,setCrDesc,setCrDate,setCrType,addCredit,toggleCleared,deleteCredit,deleteConfirm,setDeleteConfirm };
@@ -1517,7 +1915,7 @@ export default function BudgetTracker() {
           <div style={{marginBottom:"18px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px"}}>
             <div>
               <h1 style={{fontSize:"clamp(18px,3.5vw,24px)",fontWeight:600,color:C.text,letterSpacing:"-0.3px"}}>
-                {activeTab==="categories"?"Categories":activeTab==="tutorial"?"How to use Budgetly":activeTab==="trends"?"Trends":NAV.find(n=>n.id===activeTab)?.label}
+                {activeTab==="categories"?"Categories":activeTab==="tutorial"?"How to use Budgetly":activeTab==="trends"?"Trends":activeTab==="accounts"?"Accounts":NAV.find(n=>n.id===activeTab)?.label}
               </h1>
               <div style={{fontSize:"11px",color:C.muted,marginTop:"3px"}}>
                 {fmtMK(activeMK)}{activeMK!==curMK()&&" · past month"}
@@ -1537,6 +1935,7 @@ export default function BudgetTracker() {
           {activeTab==="categories" &&<CategoriesTab {...caProps}/>}
           {activeTab==="tutorial"   &&<TutorialTab C={C}/>}
           {activeTab==="trends"     &&<TrendsTab     {...trProps}/>}
+          {activeTab==="accounts"   &&<AccountsTab C={C} accounts={accounts} expenses={expenses} earnings={earnings} savings={savings} newAccount={newAccount} setNewAccount={setNewAccount} addAccount={addAccount} deleteAccount={deleteAccount}/>}
           </div>{/* end swipe animation wrapper */}
         </main>
       </div>
