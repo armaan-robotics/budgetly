@@ -460,12 +460,12 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
                 {col.label}{sortKey===col.key?(sortDir==="asc"?" ↑":" ↓"):""}
               </th>
             ))}
-            <th className="col-actions-mobile" style={{...thStyle,cursor:"default",width:"60px"}}>Actions</th>
+
           </tr>
         </thead>
         <tbody>
           {sorted.length===0&&(
-            <tr><td colSpan={columns.length+1} style={{...tdStyle,textAlign:"center",color:C.faint,padding:"32px"}}>No entries yet</td></tr>
+            <tr><td colSpan={columns.length} style={{...tdStyle,textAlign:"center",color:C.faint,padding:"32px"}}>No entries yet</td></tr>
           )}
           {sorted.map(entry=>(
             <>
@@ -476,27 +476,11 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
                 {columns.map(col=>(
                   <td key={col.key} className={col.key==="date"||col.key==="mode"||col.key==="account"?"col-hide-mobile":""} style={tdStyle}>{col.render(entry)}</td>
                 ))}
-                <td style={{...tdStyle,whiteSpace:"nowrap"}}>
-                  {deleteId===entry.id?(
-                    <span style={{display:"flex",gap:"4px"}}>
-                      <button onClick={e=>{e.stopPropagation();onDelete(entry.id);setDeleteId(null);}}
-                        style={{...btnB,background:"#e17055",color:"#fff",padding:"3px 8px",fontSize:"11px"}}>Del</button>
-                      <button onClick={e=>{e.stopPropagation();setDeleteId(null);}}
-                        style={{...btnB,background:C.cancelBg,color:C.muted,padding:"3px 8px",fontSize:"11px"}}>No</button>
-                    </span>
-                  ):(
-                    <span style={{display:"flex",gap:"4px"}}>
-                      <button onClick={e=>{e.stopPropagation();onEdit(entry);}}
-                        style={{...btnB,background:C.navActive,color:C.accent,padding:"3px 8px",fontSize:"11px"}}>✎</button>
-                      <button onClick={e=>{e.stopPropagation();setDeleteId(entry.id);}}
-                        style={{...btnB,background:C.delBg,color:C.red,padding:"3px 8px",fontSize:"11px"}}>✕</button>
-                    </span>
-                  )}
-                </td>
+
               </tr>
               {expandId===entry.id&&(
                 <tr key={entry.id+"_exp"}>
-                  <td colSpan={columns.length+1} style={{background:C.cardAlt,padding:"10px 14px",borderBottom:`1px solid ${C.border}`}}>
+                  <td colSpan={columns.length} style={{background:C.cardAlt,padding:"10px 14px",borderBottom:`1px solid ${C.border}`}}>
                     <div style={{display:"flex",gap:"16px",flexWrap:"wrap",fontSize:"12px",color:C.muted,marginBottom:"8px"}}>
                       <span><strong style={{color:C.text}}>Date:</strong> {entry.date}</span>
                       <span><strong style={{color:C.text}}>Mode:</strong> {entry.mode||"—"}</span>
@@ -1148,65 +1132,43 @@ function CreditTab(p: CrProps) {
           <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"'DM Sans',sans-serif"}}>
             <thead>
               <tr>
-                <th style={thS} onClick={()=>sortH("date")}>Date{sortKey==="date"?(sortDir==="asc"?" ↑":" ↓"):""}</th>
-                <th style={thS} onClick={()=>sortH("person")}>Person{sortKey==="person"?(sortDir==="asc"?" ↑":" ↓"):""}</th>
-                <th style={thS}>Type</th>
-                <th style={thS}>Status</th>
-                <th style={{...thS,cursor:"default"}}>Description</th>
+                <th style={thS} onClick={()=>sortH("person")}>Name{sortKey==="person"?(sortDir==="asc"?" ↑":" ↓"):""}</th>
                 <th style={thS} onClick={()=>sortH("amount")}>Amount{sortKey==="amount"?(sortDir==="asc"?" ↑":" ↓"):""}</th>
-                <th style={{...thS,cursor:"default",width:"120px"}}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {allCredits.length===0&&<tr><td colSpan={7} style={{...tdS,textAlign:"center",color:C.faint,padding:"32px"}}>No entries yet</td></tr>}
+              {allCredits.length===0&&<tr><td colSpan={2} style={{...tdS,textAlign:"center",color:C.faint,padding:"32px"}}>No entries yet</td></tr>}
               {allCredits.map(c=>(
                 <>
                   <tr key={c.id} style={{cursor:"pointer",opacity:c.cleared?0.6:1}}
                     onClick={()=>setExpandId(expandId===c.id?null:c.id)}
                     onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=C.cardAlt}
                     onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=""}>
-                    <td style={{...tdS,color:C.muted,fontSize:"12px"}}>{c.date}</td>
-                    <td style={{...tdS,fontWeight:700}}>{c.person}</td>
-                    <td style={tdS}>
-                      <span style={{background:(c.type==="owed_to_me"?C.green:C.red)+"22",color:c.type==="owed_to_me"?C.green:C.red,padding:"2px 8px",borderRadius:"20px",fontSize:"11px",fontWeight:700,whiteSpace:"nowrap"}}>
-                        {c.type==="owed_to_me"?"They Owe Me":"I Owe"}
-                      </span>
+                    <td style={{...tdS,fontWeight:700}}>
+                      <div>{c.person}</div>
+                      <div style={{fontSize:"11px",marginTop:"2px"}}>
+                        <span style={{background:(c.type==="owed_to_me"?C.green:C.red)+"22",color:c.type==="owed_to_me"?C.green:C.red,padding:"1px 6px",borderRadius:"20px",fontSize:"10px",fontWeight:700,marginRight:"4px"}}>{c.type==="owed_to_me"?"They Owe":"I Owe"}</span>
+                        <span style={{background:c.cleared?C.green+"22":C.amber+"22",color:c.cleared?C.green:C.amber,padding:"1px 6px",borderRadius:"20px",fontSize:"10px",fontWeight:700}}>{c.cleared?"Cleared":"Pending"}</span>
+                      </div>
                     </td>
-                    <td style={tdS}>
-                      <span style={{background:c.cleared?C.green+"22":C.amber+"22",color:c.cleared?C.green:C.amber,padding:"2px 8px",borderRadius:"20px",fontSize:"11px",fontWeight:700}}>
-                        {c.cleared?"Cleared":"Pending"}
-                      </span>
-                    </td>
-                    <td style={{...tdS,color:C.muted,fontSize:"12px"}}>{c.description||"—"}</td>
                     <td style={{...tdS,fontWeight:700,color:c.type==="owed_to_me"?C.green:C.red,whiteSpace:"nowrap"}}>
                       {c.type==="owed_to_me"?"+":"-"}{fmt(c.amount)}
-                    </td>
-                    <td style={{...tdS,whiteSpace:"nowrap"}}>
-                      {deleteId===c.id?(
-                        <span style={{display:"flex",gap:"4px"}}>
-                          <button onClick={e=>{e.stopPropagation();p.deleteCredit(c.id);setDeleteId(null);}} style={{...{borderRadius:"7px",border:"none",fontWeight:700,fontSize:"11px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"3px 8px"},background:C.delBg,color:C.red}}>Del</button>
-                          <button onClick={e=>{e.stopPropagation();setDeleteId(null);}} style={{...{borderRadius:"7px",border:"none",fontWeight:600,fontSize:"11px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"3px 8px"},background:C.cancelBg,color:C.muted}}>No</button>
-                        </span>
-                      ):(
-                        <span style={{display:"flex",gap:"4px"}}>
-                          <button onClick={e=>{e.stopPropagation();p.toggleCleared(c.id);}} title={c.cleared?"Mark pending":"Mark cleared"}
-                            style={{...{borderRadius:"7px",border:"none",fontWeight:700,fontSize:"11px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"3px 8px"},background:c.cleared?C.green+"22":C.navActive,color:c.cleared?C.green:C.muted}}>
-                            {c.cleared?"✓":"○"}
-                          </button>
-                          <button onClick={e=>{e.stopPropagation();openEdit(c);}} style={{...{borderRadius:"7px",border:"none",fontWeight:700,fontSize:"11px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"3px 8px"},background:C.navActive,color:C.accent}}>✎</button>
-                          <button onClick={e=>{e.stopPropagation();setDeleteId(c.id);}} style={{...{borderRadius:"7px",border:"none",fontWeight:700,fontSize:"11px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"3px 8px"},background:C.delBg,color:C.red}}>✕</button>
-                        </span>
-                      )}
                     </td>
                   </tr>
                   {expandId===c.id&&(
                     <tr key={c.id+"_exp"}>
-                      <td colSpan={7} style={{background:C.cardAlt,padding:"10px 14px",borderBottom:`1px solid ${C.border}`,fontSize:"12px",color:C.muted}}>
-                        <strong style={{color:C.text}}>Person:</strong> {c.person} &nbsp;·&nbsp;
-                        <strong style={{color:C.text}}>Amount:</strong> {fmt(c.amount)} &nbsp;·&nbsp;
-                        <strong style={{color:C.text}}>Date:</strong> {c.date} &nbsp;·&nbsp;
-                        <strong style={{color:C.text}}>Note:</strong> {c.description||"—"} &nbsp;·&nbsp;
-                        <strong style={{color:C.text}}>Status:</strong> {c.cleared?"Cleared":"Pending"}
+                      <td colSpan={2} style={{background:C.cardAlt,padding:"10px 14px",borderBottom:`1px solid ${C.border}`,fontSize:"12px",color:C.muted}}>
+                        <div style={{display:"flex",gap:"16px",flexWrap:"wrap",marginBottom:"8px"}}>
+                          <span><strong style={{color:C.text}}>Date:</strong> {c.date}</span>
+                          <span><strong style={{color:C.text}}>Note:</strong> {c.description||"—"}</span>
+                          <span><strong style={{color:C.text}}>Type:</strong> {c.type==="owed_to_me"?"They Owe Me":"I Owe Them"}</span>
+                          <span><strong style={{color:C.text}}>Status:</strong> {c.cleared?"Cleared":"Pending"}</span>
+                        </div>
+                        <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+                          <button onClick={e=>{e.stopPropagation();p.toggleCleared(c.id);}} style={{...{borderRadius:"7px",border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"5px 12px",fontSize:"12px"},background:c.cleared?C.green+"22":C.navActive,color:c.cleared?C.green:C.muted}}>{c.cleared?"✓ Cleared":"○ Mark Cleared"}</button>
+                          <button onClick={e=>{e.stopPropagation();openEdit(c);setExpandId(null);}} style={{...{borderRadius:"7px",border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"5px 12px",fontSize:"12px"},background:C.navActive,color:C.accent}}>✎ Edit</button>
+                          <button onClick={e=>{e.stopPropagation();p.deleteCredit(c.id);}} style={{...{borderRadius:"7px",border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"5px 12px",fontSize:"12px"},background:C.delBg,color:C.red}}>✕ Delete</button>
+                        </div>
                       </td>
                     </tr>
                   )}
