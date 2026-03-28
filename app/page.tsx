@@ -59,8 +59,8 @@ function makeTheme(dark: boolean): Theme {
     cardAlt:        "#16161a",
     border:         "#2c2c34",
     text:           "#ffffff",
-    muted:          "#68667a",
-    faint:          "#3c3a4c",
+    muted:          "#ffffff",
+    faint:          "#cccccc",
     accent:         "#7c6fd4",
     green:          "#3aaa80",
     red:            "#b86050",
@@ -82,8 +82,8 @@ function makeTheme(dark: boolean): Theme {
     cardAlt:        "#faf9f7",
     border:         "#e8e5e0",
     text:           "#000000",
-    muted:          "#9c9589",
-    faint:          "#c8c3bc",
+    muted:          "#000000",
+    faint:          "#444444",
     accent:         "#6c5ce7",
     green:          "#00b894",
     red:            "#e17055",
@@ -296,24 +296,40 @@ function OverviewTab(p: OvProps) {
 
       {catTotals.length>0&&(
         <div style={{...sCard,marginBottom:"12px"}}>
-          <div style={sSecT}>Spending by Category</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"9px"}}>
-            {catTotals.map(cat=>(
-              <div key={cat.name} style={{background:C.cardAlt,borderRadius:"10px",padding:"12px",border:`1px solid ${C.border}`}}>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px",alignItems:"center"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                    <div style={{width:"7px",height:"7px",borderRadius:"50%",background:cat.color}}/>
-                    <span style={{fontSize:"12px",fontWeight:500,color:C.text}}>{cat.name}</span>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+            <div style={sSecT}>Spending by Category</div>
+            <div style={{fontSize:"11px",color:C.muted}}>{fmt(p.cashFlowOut)} total</div>
+          </div>
+          {/* Stacked bar */}
+          <div style={{height:"14px",borderRadius:"8px",overflow:"hidden",display:"flex",marginBottom:"18px",background:C.progressTrack}}>
+            {catTotals.map(cat=>{
+              const pct=p.cashFlowOut>0?(cat.total/p.cashFlowOut)*100:0;
+              return pct>0?<div key={cat.name} title={`${cat.name}: ${fmt(cat.total)} (${pct.toFixed(1)}%)`} style={{height:"100%",width:`${pct}%`,background:cat.color,transition:"width 0.5s ease"}}/>:null;
+            })}
+          </div>
+          {/* Horizontal bars per category */}
+          <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+            {catTotals.map(cat=>{
+              const pct=p.cashFlowOut>0?Math.min((cat.total/p.cashFlowOut)*100,100):0;
+              return(
+                <div key={cat.name}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"7px"}}>
+                      <div style={{width:"9px",height:"9px",borderRadius:"50%",background:cat.color,flexShrink:0}}/>
+                      <span style={{fontSize:"13px",fontWeight:600,color:C.text}}>{cat.name}</span>
+                      <span style={{fontSize:"11px",color:C.muted}}>({cat.count})</span>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                      <span style={{fontSize:"11px",color:C.muted}}>{pct.toFixed(1)}%</span>
+                      <span style={{fontSize:"14px",fontWeight:700,color:cat.color}}>{fmt(cat.total)}</span>
+                    </div>
                   </div>
-                  <span style={{fontSize:"10px",color:C.faint}}>{cat.count}</span>
+                  <div style={{height:"8px",borderRadius:"6px",background:C.progressTrack,overflow:"hidden"}}>
+                    <div style={{height:"100%",borderRadius:"6px",background:cat.color,width:`${pct}%`,transition:"width 0.5s ease"}}/>
+                  </div>
                 </div>
-                <div style={{fontSize:"16px",fontWeight:600,color:cat.color,marginBottom:"5px"}}>{fmt(cat.total)}</div>
-                <div style={{background:C.progressTrack,borderRadius:"5px",height:"3px"}}>
-                  <div style={{height:"100%",borderRadius:"5px",background:cat.color,width:`${p.cashFlowOut>0?Math.min((cat.total/p.cashFlowOut)*100,100):0}%`}}/>
-                </div>
-                <div style={{fontSize:"10px",color:C.faint,marginTop:"3px"}}>{p.cashFlowOut>0?((cat.total/p.cashFlowOut)*100).toFixed(1):0}%</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -1504,7 +1520,9 @@ export default function BudgetTracker() {
     });
     setAllMonthsRaw(rebuilt);
     if (!cError && cData && cData.length > 0) {
-      setCredits((cData[0] as {credits:CreditEntry[]}).credits ?? []);
+      const row = cData[0] as {credits?:CreditEntry[];household_credits?:CreditEntry[]};
+      const modeCredits = appMode==="household" ? (row.household_credits??[]) : (row.credits??[]);
+      setCredits(modeCredits);
     }
     setCreditsLoaded(true);
     setDbLoading(false);
@@ -1517,12 +1535,27 @@ export default function BudgetTracker() {
 
   const saveCreditsToSupabase = useCallback(async (c: CreditEntry[]) => {
     if (!user) return;
-    await supabase.from("user_credits").upsert({ user_id:user.id, credits:c, updated_at:new Date().toISOString() },{ onConflict:"user_id" });
-  }, [user, isGuest]);
+    const field = appMode==="household" ? "household_credits" : "credits";
+    await supabase.from("user_credits").upsert({ user_id:user.id, [field]:c, updated_at:new Date().toISOString() },{ onConflict:"user_id" });
+  }, [user, isGuest, appMode]);
 
   const setAllMonths = useCallback((updater: AllMonths|((prev:AllMonths)=>AllMonths)) => {
     setAllMonthsRaw(prev => { const next=typeof updater==="function"?updater(prev):updater; return next; });
   }, [isGuest]);
+
+  // Reload credits when mode switches
+  useEffect(() => {
+    if (!user || !appMode) return;
+    setCreditsLoaded(false);
+    setCredits([]);
+    supabase.from("user_credits").select("*").eq("user_id",user.id).then(({data}) => {
+      if (data && data.length > 0) {
+        const row = data[0] as any;
+        setCredits(appMode==="household" ? (row.household_credits??[]) : (row.credits??[]));
+      }
+      setCreditsLoaded(true);
+    });
+  }, [appMode, user]);
 
   const getM = (mk:string): MonthData => allMonths[mk]??emptyMD();
   const setM = useCallback(async (mk:string,d:MonthData) => { setAllMonths(prev=>({...prev,[mk]:d})); await saveToSupabase(mk,d); }, [setAllMonths,saveToSupabase]);
