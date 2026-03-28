@@ -58,7 +58,7 @@ function makeTheme(dark: boolean): Theme {
     card:           "#1e1e23",
     cardAlt:        "#16161a",
     border:         "#2c2c34",
-    text:           "#c8c6d0",
+    text:           "#ffffff",
     muted:          "#68667a",
     faint:          "#3c3a4c",
     accent:         "#7c6fd4",
@@ -81,7 +81,7 @@ function makeTheme(dark: boolean): Theme {
     card:           "#ffffff",
     cardAlt:        "#faf9f7",
     border:         "#e8e5e0",
-    text:           "#2d2926",
+    text:           "#000000",
     muted:          "#9c9589",
     faint:          "#c8c3bc",
     accent:         "#6c5ce7",
@@ -123,7 +123,7 @@ interface OvProps {
   totalSavings:number; remaining:number; spentPct:number;
   editingBudget:boolean; tempBudget:string;
   setEditingBudget:(v:boolean)=>void; setTempBudget:(v:string)=>void; saveBudget:()=>void;
-  expenses:Expense[]; savings:Entry[]; categories:string[]; accounts:string[]; appMode:AppMode;
+  expenses:Expense[]; earnings:Entry[]; savings:Entry[]; categories:string[]; accounts:string[]; appMode:AppMode;
   daysInMonth:number; todayDay:number; idealPerDay:number;
   idealSpentByToday:number; actualVsIdeal:number;
   moneyLeft:number; daysLeft:number; currentDailyAvg:number; currentIdealAvg:number;
@@ -133,7 +133,7 @@ interface ErProps { C:Theme; earnings:Entry[];accounts:string[];appMode:AppMode;
 interface SvProps { C:Theme; savings:Entry[];accounts:string[];appMode:AppMode;totalSavings:number;cashFlowIn:number;savAmt:string;savDesc:string;savDate:string;savMode:string;savAcc:string;setSavAmt:(v:string)=>void;setSavDesc:(v:string)=>void;setSavDate:(v:string)=>void;setSavMode:(v:string)=>void;setSavAcc:(v:string)=>void;addSaving:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteSaving:(id:number)=>void;updateSaving:(id:number,u:Partial<Entry>)=>void; }
 interface CaProps { C:Theme; categories:string[];expenses:Expense[];cashFlowOut:number;newCategory:string;setNewCategory:(v:string)=>void;addCategory:()=>void;deleteCategory:(cat:string)=>void; }
 interface CreditEntry { id:number; person:string; amount:number; description:string; date:string; type:"owed_to_me"|"i_owe"; cleared:boolean; }
-interface CrProps { C:Theme; credits:CreditEntry[];crAmt:string;crPerson:string;crDesc:string;crDate:string;crType:"owed_to_me"|"i_owe";setCrAmt:(v:string)=>void;setCrPerson:(v:string)=>void;setCrDesc:(v:string)=>void;setCrDate:(v:string)=>void;setCrType:(v:"owed_to_me"|"i_owe")=>void;addCredit:()=>void;toggleCleared:(id:number)=>void;deleteCredit:(id:number)=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void; }
+interface CrProps { C:Theme; credits:CreditEntry[];crAmt:string;crPerson:string;crDesc:string;crDate:string;crType:"owed_to_me"|"i_owe";setCrAmt:(v:string)=>void;setCrPerson:(v:string)=>void;setCrDesc:(v:string)=>void;setCrDate:(v:string)=>void;setCrType:(v:"owed_to_me"|"i_owe")=>void;addCredit:()=>void;toggleCleared:(id:number)=>void;deleteCredit:(id:number)=>void;updateCredit:(id:number,u:Partial<CreditEntry>)=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void; }
 interface TrProps { C:Theme; allMonths:AllMonths; activeMK:string; categories:string[]; }
 
 // ─── Primitives (module-level) ────────────────────────────────────────────────
@@ -218,18 +218,28 @@ function OverviewTab(p: OvProps) {
   return (
     <div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"10px",marginBottom:"12px"}}>
-        {([
-          {label:"Cash Flow In", val:fmt(p.cashFlowIn),  color:C.green,  sub:`Budget + ${fmt(p.totalEarnings)} earned`},
-          {label:"Cash Flow Out",val:fmt(p.cashFlowOut), color:C.red,    sub:`${p.expenses.length} expense${p.expenses.length!==1?"s":""}`},
-          {label:"Total Savings",val:fmt(p.totalSavings),color:C.amber,  sub:`${p.savings.length} entr${p.savings.length!==1?"ies":"y"}`},
-          {label:"To Spend",     val:fmt(p.remaining),   color:p.remaining>=0?C.green:C.red, sub:p.remaining>=0?"On track":"Over budget ⚠"},
-        ] as {label:string;val:string;color:string;sub:string}[]).map(s=>(
-          <div key={s.label} style={{...sCard,borderTop:`3px solid ${s.color}`,padding:"14px"}}>
-            <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"5px"}}>{s.label}</div>
-            <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:600,color:s.color}}>{s.val}</div>
-            <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{s.sub}</div>
-          </div>
-        ))}
+        {(()=>{
+          const studentCards = [
+            {label:"Cash Flow In", val:fmt(p.cashFlowIn),  color:C.green,  sub:`${p.earnings?.length??0} income entr${(p.earnings?.length??0)!==1?"ies":"y"}`},
+            {label:"Cash Flow Out",val:fmt(p.cashFlowOut), color:C.red,    sub:`${p.expenses.length} expense${p.expenses.length!==1?"s":""}`},
+            {label:"Total Savings",val:fmt(p.totalSavings),color:C.amber,  sub:`${p.savings.length} entr${p.savings.length!==1?"ies":"y"}`},
+            {label:"To Spend",     val:fmt(p.remaining),   color:p.remaining>=0?C.green:C.red, sub:p.remaining>=0?"On track":"Over budget ⚠"},
+          ];
+          const householdCards = [
+            {label:"Cash Flow In", val:fmt(p.cashFlowIn),  color:C.green, sub:`${p.earnings.length??0} income entr${(p.earnings.length??0)!==1?"ies":"y"}`},
+            {label:"Cash Flow Out",val:fmt(p.cashFlowOut), color:C.red,   sub:`${p.expenses.length} expense${p.expenses.length!==1?"s":""}`},
+            {label:"Total Savings",val:fmt(p.totalSavings),color:C.amber, sub:`${p.savings.length} entr${p.savings.length!==1?"ies":"y"}`},
+            {label:"Net",          val:fmt(p.cashFlowIn-p.cashFlowOut), color:(p.cashFlowIn-p.cashFlowOut)>=0?C.green:C.red, sub:(p.cashFlowIn-p.cashFlowOut)>=0?"Surplus":"Deficit"},
+          ];
+          const cards = p.appMode==="household" ? householdCards : studentCards;
+          return cards.map(s=>(
+            <div key={s.label} style={{...sCard,borderTop:`3px solid ${s.color}`,padding:"14px"}}>
+              <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"5px"}}>{s.label}</div>
+              <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:700,color:s.color}}>{s.val}</div>
+              <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{s.sub}</div>
+            </div>
+          ));
+        })()}
       </div>
 
       {p.appMode==="student"&&<div style={{...sCard,marginBottom:"12px"}}>
@@ -928,124 +938,65 @@ function TrendsTab(p: TrProps) {
 
 // ─── Tutorial Tab ────────────────────────────────────────────────────────────
 function TutorialTab({ C, appMode }: { C:Theme; appMode:AppMode }) {
-  const steps = [
-    {
-      icon:"◎", title:"Overview — your financial snapshot",
-      body:"This is your home screen. At a glance you'll see: Cash Flow In (your budget + any extra income), Cash Flow Out (total expenses), Total Savings, and To Spend (what's left for the month).",
-      tips:[
-        appMode==="student"?"The Daily Averages section is powerful — it tells you your ideal spend per day, how much you should spend each day from today to finish on track, and what you've actually been spending per day.":"The Overview shows your total income, total spending, and savings across all accounts for the month.",
-        "The category breakdown shows which areas are eating most of your money — great for spotting habits you didn't know you had.",
-        appMode==="student"?"When 'To Spend' turns red, you've gone over budget. Fix it by adding less expenses or increasing your budget.":"Use the account breakdown to see which bank account or wallet is being used the most.",
-      ],
-    },
-    {
-      icon:"↓", title:"Expenses — log every payment",
-      body:"Record every purchase here. Add the amount, pick a category, write a short description, and set the date. Hit + to open the form.",
-      tips:[
-        "Be specific with descriptions — 'Zomato - Dominos' is more useful than 'Food' when you review the month later.",
-        "Click any row in the table to expand it and see the full details including payment mode and account.",
-        "Use the filter bar to search by description or filter by date range — useful when looking up a specific transaction.",
-        "You can sort the table by any column — click the column header. Click again to reverse the order.",
-        "Made a mistake? Click the ✎ edit button on any row to fix the amount, category, description, or date.",
-      ],
-    },
-    {
-      icon:"↑", title:"Cash In — record money coming in",
-      body:appMode==="student"?"Anything beyond your base monthly budget goes here — freelance work, selling old stuff, pocket money top-ups, gifts. This increases your Cash Flow In.":"Record all income here — salary, rent received, any money coming into the household. Each entry can be tagged to a specific account.",
-      tips:[
-        "This is separate from your budget. The budget is your fixed allowance — Cash In is extra money you actually received.",
-        appMode==="household"?"Tag each income entry to an account so you can track which account received what money.":"Even small amounts count — a ₹200 freelance job still affects your remaining balance.",
-        "UPI payments received will auto-appear here if you have the Android app installed.",
-      ],
-    },
-    {
-      icon:"⬡", title:"Savings — protect your money",
-      body:"Any amount you mark as savings is locked away from your spending balance. It's subtracted from To Spend so you're not tempted to use it.",
-      tips:[
-        "Set a savings target at the start of each month — add it as a single savings entry on day 1.",
-        "The savings percentage on the Overview shows you what fraction of your Cash Flow In you're saving — aim for at least 10-20%.",
-        "Savings entries work like a commitment — once added, the balance adjusts immediately.",
-      ],
-    },
-    {
-      icon:"⇄", title:"Credit — track who owes who",
-      body:"'They Owe Me' is money someone borrowed from you. 'I Owe Them' is money you owe someone. Both show as pending until you mark them Cleared.",
-      tips:[
-        "When you mark a credit as Cleared — it automatically adds an entry to Cash In (if they paid you) or Expenses (if you paid them). No double entry needed.",
-        "Add a description like 'Dinner split' or 'Borrowed for auto' so you remember what the money was for.",
-        "Pending credits are highlighted in green (owed to you) and red (you owe) so you never forget.",
-      ],
-    },
-    {
-      icon:"∿", title:"Trends — see your patterns",
-      body:"The Trends tab shows a bar chart of your daily spending over the last 7 or 30 days, plus a category breakdown for that period.",
-      tips:[
-        "Switch between 7-day and 30-day view using the toggle at the top.",
-        "The category breakdown in Trends shows percentages — so you can see if Food is 60% of your spending this week.",
-        "Today's bar is highlighted in purple so you can see how today compares to recent days.",
-        "Highest day stat helps you spot outlier spending events — a shopping trip, a medical bill, etc.",
-      ],
-    },
-    {
-      icon:"📅", title:"Months — one month at a time",
-      body:"Each month is completely separate. Switch months using the dropdown in the sidebar. At the start of a new month, add it from Settings.",
-      tips:[
-        "Past months are read-only in terms of budget — but you can still add or edit entries in them.",
-        "Use the month selector to review how last month went — compare your category breakdown month over month.",
-        "Delete a month from Settings if you made a test month or want to start fresh.",
-      ],
-    },
-    {
-      icon:"⚙", title:"Settings — customise everything",
-      body:"Dark mode, bold text, manage categories, manage accounts (household), export data, switch modes, and log out — all here.",
-      tips:[
-        "Export CSV downloads all your data for the active month as a spreadsheet — open it in Excel or Google Sheets.",
-        "Bold text mode makes all text heavier and easier to read — great if you use Budgetly on a small screen.",
-        "Manage Categories lets you add your own spending categories and delete ones you don't use.",
-        appMode==="household"?"Manage Accounts lets you add bank accounts, wallets, or cash buckets and tag every transaction to them.":"Switch to Household mode from Settings if your needs change — your student data stays separate.",
-      ],
-    },
-    {
-      icon:"☁", title:"Sync — your data everywhere",
-      body:"Budgetly syncs across all your devices automatically. Log in on your phone, tablet, and computer — everything stays in sync in real time.",
-      tips:[
-        "Install the Android app for automatic UPI expense tracking — every payment you make gets logged instantly.",
-        "Your data is stored securely on Supabase servers — it won't disappear if you clear your browser.",
-        "Student data and Household data are stored separately under the same account — switching modes never mixes them.",
-      ],
-    },
-  ];
-
-  return (
-    <div style={{maxWidth:"720px"}}>
-      <div style={{marginBottom:"20px"}}>
-        <h2 style={{fontSize:"20px",fontWeight:600,color:C.text,marginBottom:"6px"}}>How to use Budgetly</h2>
-        <p style={{fontSize:"13px",color:C.muted,lineHeight:1.7}}>Everything you need to know — tips, tricks, and feature explanations.</p>
-      </div>
-      {steps.map((s,i)=>(
-        <div key={i} style={{background:C.card,borderRadius:"14px",padding:"18px 20px",border:`1px solid ${C.border}`,marginBottom:"10px"}}>
-          <div style={{display:"flex",gap:"14px",alignItems:"flex-start",marginBottom:s.tips.length>0?"12px":"0"}}>
-            <div style={{width:"36px",height:"36px",borderRadius:"10px",background:C.navActive,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",flexShrink:0}}>{s.icon}</div>
-            <div>
-              <div style={{fontSize:"14px",fontWeight:700,color:C.text,marginBottom:"5px"}}>{s.title}</div>
-              <div style={{fontSize:"13px",color:C.muted,lineHeight:1.7}}>{s.body}</div>
-            </div>
-          </div>
-          {s.tips.length>0&&(
-            <div style={{borderTop:`1px solid ${C.border}`,paddingTop:"10px",display:"flex",flexDirection:"column",gap:"6px"}}>
-              {s.tips.filter(Boolean).map((tip,j)=>(
-                <div key={j} style={{display:"flex",gap:"8px",alignItems:"flex-start"}}>
-                  <span style={{color:C.accent,fontSize:"12px",marginTop:"1px",flexShrink:0}}>💡</span>
-                  <span style={{fontSize:"12px",color:C.muted,lineHeight:1.6}}>{tip}</span>
-                </div>
-              ))}
-            </div>
-          )}
+  const sCard: CSSProperties = { background:C.card,borderRadius:"14px",padding:"18px 20px",border:`1px solid ${C.border}`,marginBottom:"10px" };
+  const tag = (txt:string, color:string) => (
+    <span style={{background:color+"22",color,fontSize:"11px",padding:"2px 8px",borderRadius:"20px",fontWeight:700,marginRight:"4px"}}>{txt}</span>
+  );
+  const row = (icon:string, title:string, desc:string, tags:React.ReactNode, tips:string[]) => (
+    <div style={sCard}>
+      <div style={{display:"flex",gap:"12px",alignItems:"flex-start",marginBottom:"10px"}}>
+        <div style={{width:"38px",height:"38px",borderRadius:"10px",background:C.navActive,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px",flexShrink:0}}>{icon}</div>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:700,fontSize:"15px",color:C.text,marginBottom:"4px"}}>{title}</div>
+          <div style={{fontSize:"13px",color:C.muted,lineHeight:1.6,marginBottom:"6px"}}>{desc}</div>
+          <div>{tags}</div>
         </div>
-      ))}
+      </div>
+      {tips.length>0&&<div style={{borderTop:`1px solid ${C.border}`,paddingTop:"8px",display:"flex",flexDirection:"column",gap:"4px"}}>
+        {tips.map((t,i)=><div key={i} style={{fontSize:"12px",color:C.muted,display:"flex",gap:"6px"}}><span style={{color:C.accent,flexShrink:0}}>→</span>{t}</div>)}
+      </div>}
+    </div>
+  );
+  return (
+    <div style={{maxWidth:"680px"}}>
+      <div style={{marginBottom:"16px"}}>
+        <div style={{fontSize:"18px",fontWeight:700,color:C.text,marginBottom:"4px"}}>How to use Budgetly</div>
+        <div style={{fontSize:"13px",color:C.muted}}>Quick guide · {appMode==="student"?"🎓 Student mode":"🏠 Household mode"}</div>
+      </div>
+      {row("◎","Overview","Your financial snapshot for the month.",
+        <>{tag("Stats","#6c5ce7")}{tag("Trends","#00b894")}{appMode==="student"&&tag("Budget","#e0a800")}</>,
+        appMode==="student"
+          ? ["4 cards: Cash In, Cash Out, Savings, To Spend","Progress bar shows % of budget used","Daily Averages: ideal vs actual spend per day","Category cards show where money is going"]
+          : ["Cash In = total income logged","Net = Income − Expenses","Account breakdown shows per-account spend","No budget limit — pure tracking"]
+      )}
+      {row("↓","Expenses","Log every payment you make.",
+        <>{tag("Table","#e17055")}{tag("Sortable","#06b6d4")}{tag("Filterable","#8b5cf6")}</>,
+        ["Tap + to open the add form","Click any row to see full details (mode, account)","Sort by any column header","Search or filter by date range using the filter bar","✎ to edit any entry"]
+      )}
+      {row("↑","Cash In","Record money you receive.",
+        <>{tag("Income","#00b894")}{tag("Auto-UPI","#6c5ce7")}</>,
+        ["Manual entry or auto-detected from UPI SMS (Android app)","Each entry has date, description, payment mode",appMode==="household"?"Tag to an account to track per-account income":"Adds to Cash Flow In on Overview"]
+      )}
+      {row("⬡","Savings","Lock away money you don't want to spend.",
+        <>{tag("Savings","#e0a800")}</>,
+        ["Savings are deducted from To Spend immediately","Add a savings entry at the start of the month as a commitment","View % of income saved on Overview"]
+      )}
+      {row("⇄","Credit","Track who owes who.",
+        <>{tag("They Owe Me","#00b894")}{tag("I Owe","#e17055")}</>,
+        ["Mark as Cleared when settled — auto-adds to Cash In or Expenses","Pending entries stay highlighted","Table view — sort, filter, edit same as other tabs"]
+      )}
+      {row("∿","Trends","See your spending patterns.",
+        <>{tag("7 days","#6c5ce7")}{tag("30 days","#8b5cf6")}</>,
+        ["Bar chart of daily spending","Switch between 7-day and 30-day view","Category breakdown shows % of spend per category","Today's bar is highlighted"]
+      )}
+      {row("⚙","Settings","Customise Budgetly.",
+        <>{tag("Mode","#6c5ce7")}{tag("Categories","#e0a800")}{appMode==="household"&&tag("Accounts","#06b6d4")}</>,
+        ["Switch between Student and Household mode anytime","Manage Categories — add or remove spending categories",appMode==="household"?"Manage Accounts — add bank accounts, wallets, cash":"Export month data as CSV spreadsheet","Dark mode toggle"]
+      )}
     </div>
   );
 }
+
 
 // ─── Credit Tab ──────────────────────────────────────────────────────────────
 function CreditTab(p: CrProps) {
@@ -1058,107 +1009,198 @@ function CreditTab(p: CrProps) {
   const iOwe     = p.credits.filter(c=>c.type==="i_owe");
   const totalOwedToMe = owedToMe.filter(c=>!c.cleared).reduce((s,c)=>s+c.amount,0);
   const totalIOwe     = iOwe.filter(c=>!c.cleared).reduce((s,c)=>s+c.amount,0);
+  const [showForm, setShowForm] = useState(false);
+  const [editEntry, setEditEntry] = useState<CreditEntry|null>(null);
+  const [editPerson, setEditPerson] = useState("");
+  const [editAmt, setEditAmt] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editDate, setEditDate] = useState("");
+
+  const [sortKey, setSortKey] = useState<"date"|"amount"|"person">("date");
+  const [sortDir, setSortDir] = useState<"asc"|"desc">("desc");
+  const [filterText, setFilterText] = useState("");
+  const [filterType, setFilterType] = useState<"all"|"owed_to_me"|"i_owe">("all");
+  const [filterStatus, setFilterStatus] = useState<"all"|"pending"|"cleared">("all");
+  const [expandId, setExpandId] = useState<number|null>(null);
+  const [deleteId, setDeleteId] = useState<number|null>(null);
+
+  const openEdit = (c: CreditEntry) => {
+    setEditEntry(c); setEditPerson(c.person); setEditAmt(String(c.amount));
+    setEditDesc(c.description); setEditDate(c.date);
+  };
+
+  const allCredits = [...p.credits]
+    .filter(c => {
+      if(filterType!=="all" && c.type!==filterType) return false;
+      if(filterStatus==="pending" && c.cleared) return false;
+      if(filterStatus==="cleared" && !c.cleared) return false;
+      if(filterText && !c.person.toLowerCase().includes(filterText.toLowerCase()) && !c.description.toLowerCase().includes(filterText.toLowerCase())) return false;
+      return true;
+    })
+    .sort((a,b)=>{
+      let av:any=sortKey==="amount"?a.amount:sortKey==="person"?a.person:a.date;
+      let bv:any=sortKey==="amount"?b.amount:sortKey==="person"?b.person:b.date;
+      if(av<bv)return sortDir==="asc"?-1:1;
+      if(av>bv)return sortDir==="asc"?1:-1;
+      return 0;
+    });
+
+  const thS: CSSProperties = {padding:"8px 10px",fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1.2px",fontWeight:600,cursor:"pointer",userSelect:"none",borderBottom:`1px solid ${C.border}`,textAlign:"left",whiteSpace:"nowrap",background:C.cardAlt};
+  const tdS: CSSProperties = {padding:"9px 10px",fontSize:"13px",color:C.text,borderBottom:`1px solid ${C.border}`,verticalAlign:"middle"};
+  const sortH = (k:"date"|"amount"|"person") => { if(sortKey===k)setSortDir(d=>d==="asc"?"desc":"asc"); else{setSortKey(k);setSortDir("desc");} };
 
   return (
     <div>
-      {/* Summary pills */}
+      {/* Summary */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"16px"}}>
         <div style={{...sCard,borderTop:`3px solid ${C.green}`,padding:"14px"}}>
           <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"5px"}}>People Owe Me</div>
-          <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:600,color:C.green}}>{new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(totalOwedToMe)}</div>
+          <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:700,color:C.green}}>{fmt(totalOwedToMe)}</div>
           <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{owedToMe.filter(c=>!c.cleared).length} pending</div>
         </div>
         <div style={{...sCard,borderTop:`3px solid ${C.red}`,padding:"14px"}}>
           <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"5px"}}>I Owe</div>
-          <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:600,color:C.red}}>{new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(totalIOwe)}</div>
+          <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:700,color:C.red}}>{fmt(totalIOwe)}</div>
           <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{iOwe.filter(c=>!c.cleared).length} pending</div>
         </div>
       </div>
 
-      <div className="two-col-grid" style={{display:"grid",gridTemplateColumns:"clamp(240px,30%,300px) 1fr",gap:"16px"}}>
-        {/* Add form */}
-        <div style={sCard}>
-          <div style={{...sSecT,marginBottom:"14px"}}>Add Credit Entry</div>
-          {/* Type toggle */}
-          <div style={{display:"flex",gap:"6px",marginBottom:"14px"}}>
-            <button onClick={()=>p.setCrType("owed_to_me")} style={{flex:1,padding:"8px",borderRadius:"8px",border:`1.5px solid ${p.crType==="owed_to_me"?C.green:C.border}`,background:p.crType==="owed_to_me"?C.green+"18":"transparent",color:p.crType==="owed_to_me"?C.green:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>
-              They Owe Me
+      {/* Add form */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+        <div style={{display:"flex",gap:"6px",alignItems:"center",flexWrap:"wrap"}}>
+          <input placeholder="Search person or note…" value={filterText} onChange={e=>setFilterText(e.target.value)}
+            style={{padding:"7px 11px",borderRadius:"8px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"13px",outline:"none",fontFamily:"'DM Sans',sans-serif",width:"180px"}}/>
+          {(["all","owed_to_me","i_owe"] as const).map(t=>(
+            <button key={t} onClick={()=>setFilterType(t)} style={{padding:"6px 12px",borderRadius:"20px",border:`1px solid ${filterType===t?C.accent:C.border}`,background:filterType===t?C.navActive:"transparent",color:filterType===t?C.accent:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>
+              {t==="all"?"All":t==="owed_to_me"?"They Owe Me":"I Owe"}
             </button>
-            <button onClick={()=>p.setCrType("i_owe")} style={{flex:1,padding:"8px",borderRadius:"8px",border:`1.5px solid ${p.crType==="i_owe"?C.red:C.border}`,background:p.crType==="i_owe"?C.red+"18":"transparent",color:p.crType==="i_owe"?C.red:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>
-              I Owe Them
+          ))}
+          {(["all","pending","cleared"] as const).map(s=>(
+            <button key={s} onClick={()=>setFilterStatus(s)} style={{padding:"6px 12px",borderRadius:"20px",border:`1px solid ${filterStatus===s?C.accent:C.border}`,background:filterStatus===s?C.navActive:"transparent",color:filterStatus===s?C.accent:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>
+              {s==="all"?"All Status":s==="pending"?"Pending":"Cleared"}
             </button>
-          </div>
-          <FF label="Person's Name *" C={C}><input type="text" placeholder="Who?" value={p.crPerson} onChange={e=>p.setCrPerson(e.target.value)} style={sInput}/></FF>
-          <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.crAmt} onChange={e=>p.setCrAmt(e.target.value)} style={sInput}/></FF>
-          <FF label="Description" C={C}><input type="text" placeholder="What for?" value={p.crDesc} onChange={e=>p.setCrDesc(e.target.value)} style={sInput}/></FF>
-          <FF label="Date" C={C}><input type="date" value={p.crDate} onChange={e=>p.setCrDate(e.target.value)} style={sInput}/></FF>
-          <button onClick={p.addCredit} style={{width:"100%",padding:"11px",borderRadius:"9px",border:"none",background:p.crType==="owed_to_me"?C.green:C.red,color:"#fff",fontWeight:600,fontSize:"13px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
-            + Add Entry
-          </button>
+          ))}
         </div>
+        <button onClick={()=>setShowForm(v=>!v)} style={{...{borderRadius:"9px",border:"none",fontWeight:700,fontSize:"20px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"8px 16px",lineHeight:1,transition:"opacity 0.15s"},background:"#6c5ce7",color:"#fff"}}>+</button>
+      </div>
 
-        {/* Lists */}
-        <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
-          {/* They owe me */}
-          <div style={sCard}>
-            <div style={sSecT}>They Owe Me</div>
-            {owedToMe.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"20px",fontSize:"13px"}}>No entries yet</div>}
-            {[...owedToMe].reverse().map(c=>(
-              <div key={c.id} style={{background:C.cardAlt,borderRadius:"10px",padding:"11px 13px",border:`1px solid ${c.cleared?C.border:C.green+"44"}`,marginBottom:"6px",opacity:c.cleared?0.55:1}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px"}}>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"2px",flexWrap:"wrap"}}>
-                      <span style={{fontSize:"13px",fontWeight:600,color:C.text}}>{c.person}</span>
-                      {c.cleared&&<span style={{fontSize:"10px",padding:"1px 6px",borderRadius:"20px",background:C.green+"22",color:C.green,fontWeight:600}}>Cleared</span>}
-                    </div>
-                    <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>{c.description||"—"}</div>
-                    <div style={{fontSize:"10px",color:C.faint}}>{c.date}</div>
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
-                    <span style={{fontSize:"14px",fontWeight:600,color:C.green,whiteSpace:"nowrap"}}>+{new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(c.amount)}</span>
-                    <button onClick={()=>p.toggleCleared(c.id)} title={c.cleared?"Mark pending":"Mark cleared"}
-                      style={{background:c.cleared?C.green+"22":C.navActive,border:`1px solid ${c.cleared?C.green+"44":C.border}`,borderRadius:"6px",padding:"3px 7px",cursor:"pointer",fontSize:"11px",color:c.cleared?C.green:C.muted}}>
-                      {c.cleared?"✓":"○"}
-                    </button>
-                    <DelBtn id={c.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteCredit} C={C}/>
-                  </div>
-                </div>
-              </div>
-            ))}
+      {showForm&&(
+        <div style={{...sCard,marginBottom:"14px"}}>
+          <div style={{...sSecT,marginBottom:"14px"}}>Add Credit Entry</div>
+          <div style={{display:"flex",gap:"6px",marginBottom:"14px"}}>
+            <button onClick={()=>p.setCrType("owed_to_me")} style={{flex:1,padding:"8px",borderRadius:"8px",border:`1.5px solid ${p.crType==="owed_to_me"?C.green:C.border}`,background:p.crType==="owed_to_me"?C.green+"18":"transparent",color:p.crType==="owed_to_me"?C.green:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"'DM Sans',sans-serif"}}>They Owe Me</button>
+            <button onClick={()=>p.setCrType("i_owe")} style={{flex:1,padding:"8px",borderRadius:"8px",border:`1.5px solid ${p.crType==="i_owe"?C.red:C.border}`,background:p.crType==="i_owe"?C.red+"18":"transparent",color:p.crType==="i_owe"?C.red:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"'DM Sans',sans-serif"}}>I Owe Them</button>
           </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px"}}>
+            <FF label="Person's Name *" C={C}><input type="text" placeholder="Who?" value={p.crPerson} onChange={e=>p.setCrPerson(e.target.value)} style={sInput}/></FF>
+            <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.crAmt} onChange={e=>p.setCrAmt(e.target.value)} style={sInput}/></FF>
+            <FF label="Description" C={C}><input type="text" placeholder="What for?" value={p.crDesc} onChange={e=>p.setCrDesc(e.target.value)} style={sInput}/></FF>
+            <FF label="Date" C={C}><input type="date" value={p.crDate} onChange={e=>p.setCrDate(e.target.value)} style={sInput}/></FF>
+          </div>
+          <div style={{display:"flex",gap:"8px",marginTop:"4px"}}>
+            <button onClick={()=>{p.addCredit();setShowForm(false);}} style={{flex:1,padding:"11px",borderRadius:"9px",border:"none",background:p.crType==="owed_to_me"?C.green:C.red,color:"#fff",fontWeight:700,fontSize:"13px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>+ Add Entry</button>
+            <button onClick={()=>setShowForm(false)} style={{...{borderRadius:"9px",border:"none",fontWeight:600,fontSize:"13px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"11px 18px"},background:C.cancelBg,color:C.muted}}>Cancel</button>
+          </div>
+        </div>
+      )}
 
-          {/* I owe */}
-          <div style={sCard}>
-            <div style={sSecT}>I Owe</div>
-            {iOwe.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"20px",fontSize:"13px"}}>No entries yet</div>}
-            {[...iOwe].reverse().map(c=>(
-              <div key={c.id} style={{background:C.cardAlt,borderRadius:"10px",padding:"11px 13px",border:`1px solid ${c.cleared?C.border:C.red+"44"}`,marginBottom:"6px",opacity:c.cleared?0.55:1}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px"}}>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"2px",flexWrap:"wrap"}}>
-                      <span style={{fontSize:"13px",fontWeight:600,color:C.text}}>{c.person}</span>
-                      {c.cleared&&<span style={{fontSize:"10px",padding:"1px 6px",borderRadius:"20px",background:C.green+"22",color:C.green,fontWeight:600}}>Cleared</span>}
-                    </div>
-                    <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>{c.description||"—"}</div>
-                    <div style={{fontSize:"10px",color:C.faint}}>{c.date}</div>
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
-                    <span style={{fontSize:"14px",fontWeight:600,color:C.red,whiteSpace:"nowrap"}}>-{new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(c.amount)}</span>
-                    <button onClick={()=>p.toggleCleared(c.id)} title={c.cleared?"Mark pending":"Mark cleared"}
-                      style={{background:c.cleared?C.green+"22":C.navActive,border:`1px solid ${c.cleared?C.green+"44":C.border}`,borderRadius:"6px",padding:"3px 7px",cursor:"pointer",fontSize:"11px",color:c.cleared?C.green:C.muted}}>
-                      {c.cleared?"✓":"○"}
-                    </button>
-                    <DelBtn id={c.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteCredit} C={C}/>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Table */}
+      <div style={sCard}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+          <div style={sSecT}>All Credit Entries</div>
+          <div style={{fontSize:"12px",color:C.muted}}>{allCredits.length} of {p.credits.length} entries</div>
+        </div>
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"'DM Sans',sans-serif"}}>
+            <thead>
+              <tr>
+                <th style={thS} onClick={()=>sortH("date")}>Date{sortKey==="date"?(sortDir==="asc"?" ↑":" ↓"):""}</th>
+                <th style={thS} onClick={()=>sortH("person")}>Person{sortKey==="person"?(sortDir==="asc"?" ↑":" ↓"):""}</th>
+                <th style={thS}>Type</th>
+                <th style={thS}>Status</th>
+                <th style={{...thS,cursor:"default"}}>Description</th>
+                <th style={thS} onClick={()=>sortH("amount")}>Amount{sortKey==="amount"?(sortDir==="asc"?" ↑":" ↓"):""}</th>
+                <th style={{...thS,cursor:"default",width:"120px"}}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allCredits.length===0&&<tr><td colSpan={7} style={{...tdS,textAlign:"center",color:C.faint,padding:"32px"}}>No entries yet</td></tr>}
+              {allCredits.map(c=>(
+                <>
+                  <tr key={c.id} style={{cursor:"pointer",opacity:c.cleared?0.6:1}}
+                    onClick={()=>setExpandId(expandId===c.id?null:c.id)}
+                    onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=C.cardAlt}
+                    onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=""}>
+                    <td style={{...tdS,color:C.muted,fontSize:"12px"}}>{c.date}</td>
+                    <td style={{...tdS,fontWeight:700}}>{c.person}</td>
+                    <td style={tdS}>
+                      <span style={{background:(c.type==="owed_to_me"?C.green:C.red)+"22",color:c.type==="owed_to_me"?C.green:C.red,padding:"2px 8px",borderRadius:"20px",fontSize:"11px",fontWeight:700,whiteSpace:"nowrap"}}>
+                        {c.type==="owed_to_me"?"They Owe Me":"I Owe"}
+                      </span>
+                    </td>
+                    <td style={tdS}>
+                      <span style={{background:c.cleared?C.green+"22":C.amber+"22",color:c.cleared?C.green:C.amber,padding:"2px 8px",borderRadius:"20px",fontSize:"11px",fontWeight:700}}>
+                        {c.cleared?"Cleared":"Pending"}
+                      </span>
+                    </td>
+                    <td style={{...tdS,color:C.muted,fontSize:"12px"}}>{c.description||"—"}</td>
+                    <td style={{...tdS,fontWeight:700,color:c.type==="owed_to_me"?C.green:C.red,whiteSpace:"nowrap"}}>
+                      {c.type==="owed_to_me"?"+":"-"}{fmt(c.amount)}
+                    </td>
+                    <td style={{...tdS,whiteSpace:"nowrap"}}>
+                      {deleteId===c.id?(
+                        <span style={{display:"flex",gap:"4px"}}>
+                          <button onClick={e=>{e.stopPropagation();p.deleteCredit(c.id);setDeleteId(null);}} style={{...{borderRadius:"7px",border:"none",fontWeight:700,fontSize:"11px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"3px 8px"},background:C.delBg,color:C.red}}>Del</button>
+                          <button onClick={e=>{e.stopPropagation();setDeleteId(null);}} style={{...{borderRadius:"7px",border:"none",fontWeight:600,fontSize:"11px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"3px 8px"},background:C.cancelBg,color:C.muted}}>No</button>
+                        </span>
+                      ):(
+                        <span style={{display:"flex",gap:"4px"}}>
+                          <button onClick={e=>{e.stopPropagation();p.toggleCleared(c.id);}} title={c.cleared?"Mark pending":"Mark cleared"}
+                            style={{...{borderRadius:"7px",border:"none",fontWeight:700,fontSize:"11px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"3px 8px"},background:c.cleared?C.green+"22":C.navActive,color:c.cleared?C.green:C.muted}}>
+                            {c.cleared?"✓":"○"}
+                          </button>
+                          <button onClick={e=>{e.stopPropagation();openEdit(c);}} style={{...{borderRadius:"7px",border:"none",fontWeight:700,fontSize:"11px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"3px 8px"},background:C.navActive,color:C.accent}}>✎</button>
+                          <button onClick={e=>{e.stopPropagation();setDeleteId(c.id);}} style={{...{borderRadius:"7px",border:"none",fontWeight:700,fontSize:"11px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"3px 8px"},background:C.delBg,color:C.red}}>✕</button>
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  {expandId===c.id&&(
+                    <tr key={c.id+"_exp"}>
+                      <td colSpan={7} style={{background:C.cardAlt,padding:"10px 14px",borderBottom:`1px solid ${C.border}`,fontSize:"12px",color:C.muted}}>
+                        <strong style={{color:C.text}}>Person:</strong> {c.person} &nbsp;·&nbsp;
+                        <strong style={{color:C.text}}>Amount:</strong> {fmt(c.amount)} &nbsp;·&nbsp;
+                        <strong style={{color:C.text}}>Date:</strong> {c.date} &nbsp;·&nbsp;
+                        <strong style={{color:C.text}}>Note:</strong> {c.description||"—"} &nbsp;·&nbsp;
+                        <strong style={{color:C.text}}>Status:</strong> {c.cleared?"Cleared":"Pending"}
+                      </td>
+                    </tr>
+                  )}
+                </>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
+
+      {/* Edit modal */}
+      {editEntry&&<EditModal C={C} title="Edit Credit Entry"
+        fields={[
+          {label:"Person's Name",value:editPerson,onChange:setEditPerson},
+          {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+          {label:"Description",value:editDesc,onChange:setEditDesc},
+          {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+        ]}
+        onSave={()=>{
+          if(editEntry) p.updateCredit(editEntry.id,{person:editPerson,amount:+editAmt,description:editDesc,date:editDate});
+          setEditEntry(null);
+        }}
+        onClose={()=>setEditEntry(null)}
+      />}
     </div>
   );
 }
+
 
 // ─── Auth Screen ──────────────────────────────────────────────────────────────
 function AuthScreen({ onAuth, dark }: { onAuth:(user:User)=>void; dark:boolean }) {
@@ -1344,7 +1386,6 @@ function AccountsTab({ C, accounts, expenses, earnings, savings, newAccount, set
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function BudgetTracker() {
   const [dark,          setDark]          = useState<boolean>(() => lsLoad<boolean>("budgetly_dark", false));
-  const [bold,          setBold]          = useState<boolean>(() => lsLoad<boolean>("budgetly_bold", false));
   const [tutorialVisits,setTutorialVisits]= useState<number>(() => lsLoad<number>("budgetly_tutorial_visits", 0));
   const [appMode,       setAppMode]       = useState<AppMode|null>(() => lsLoad<AppMode|null>("budgetly_mode", null));
   const [showModeSelect,setShowModeSelect]= useState(false);
@@ -1395,9 +1436,6 @@ export default function BudgetTracker() {
     setShowModeSelect(false);
   };
 
-  const toggleBold = () => {
-    setBold(b => { lsSave("budgetly_bold", !b); return !b; });
-  };
 
   const incrementTutorialVisits = () => {
     setTutorialVisits(v => { const n=v+1; lsSave("budgetly_tutorial_visits", n); return n; });
@@ -1763,15 +1801,7 @@ export default function BudgetTracker() {
                 <div style={{position:"absolute",top:"3px",left:dark?"23px":"3px",width:"18px",height:"18px",borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,0.25)"}}/>
               </button>
             </div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.cardAlt,padding:"12px 14px",borderRadius:"10px",border:`1px solid ${C.border}`}}>
-              <div>
-                <div style={{fontSize:"13px",color:C.text,fontWeight:500}}>Bold Text</div>
-                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>Makes all text heavier and easier to read</div>
-              </div>
-              <button onClick={toggleBold} style={{background:bold?C.accent:"#d1cfe8",border:"none",borderRadius:"20px",width:"44px",height:"24px",cursor:"pointer",position:"relative",flexShrink:0}}>
-                <div style={{position:"absolute",top:"3px",left:bold?"23px":"3px",width:"18px",height:"18px",borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,0.25)"}}/>
-              </button>
-            </div>
+
           </div>
 
           {/* Month management */}
@@ -1859,21 +1889,21 @@ export default function BudgetTracker() {
     );
   }
 
-  const ovProps: OvProps = { C,budget,cashFlowIn,cashFlowOut,totalEarnings,totalSavings,remaining,spentPct,editingBudget,tempBudget,setEditingBudget,setTempBudget,saveBudget,expenses,savings,categories,accounts,appMode,daysInMonth,todayDay,idealPerDay,idealSpentByToday,actualVsIdeal,moneyLeft,daysLeft,currentDailyAvg,currentIdealAvg };
+  const ovProps: OvProps = { C,budget,cashFlowIn,cashFlowOut,totalEarnings,totalSavings,remaining,spentPct,editingBudget,tempBudget,setEditingBudget,setTempBudget,saveBudget,expenses,earnings,savings,categories,accounts,appMode,daysInMonth,todayDay,idealPerDay,idealSpentByToday,actualVsIdeal,moneyLeft,daysLeft,currentDailyAvg,currentIdealAvg };
   const exProps: ExProps = { C,expenses,categories,accounts,appMode,totalExpenses:cashFlowOut,expAmt,expCat,expDesc,expDate,expMode,expAcc,setExpAmt,setExpCat,setExpDesc,setExpDate,setExpMode,setExpAcc,addExpense,deleteConfirm,setDeleteConfirm,deleteExpense,updateExpense };
   const erProps: ErProps = { C,earnings,accounts,appMode,totalEarnings,earnAmt,earnDesc,earnDate,earnMode,earnAcc,setEarnAmt,setEarnDesc,setEarnDate,setEarnMode,setEarnAcc,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning,updateEarning };
   const svProps: SvProps = { C,savings,accounts,appMode,totalSavings,cashFlowIn,savAmt,savDesc,savDate,savMode,savAcc,setSavAmt,setSavDesc,setSavDate,setSavMode,setSavAcc,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving,updateSaving };
   const caProps: CaProps = { C,categories,expenses,cashFlowOut,newCategory,setNewCategory,addCategory,deleteCategory };
   const trProps: TrProps = { C,allMonths,activeMK,categories };
-  const crProps: CrProps = { C,credits,crAmt,crPerson,crDesc,crDate,crType,setCrAmt,setCrPerson,setCrDesc,setCrDate,setCrType,addCredit,toggleCleared,deleteCredit,deleteConfirm,setDeleteConfirm };
+  const crProps: CrProps = { C,credits,crAmt,crPerson,crDesc,crDate,crType,setCrAmt,setCrPerson,setCrDesc,setCrDate,setCrType,addCredit,toggleCleared,deleteCredit,updateCredit,deleteConfirm,setDeleteConfirm };
 
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-      <style dangerouslySetInnerHTML={{__html:bold?`
-        body, button, input, select, textarea { font-weight: 600 !important; }
-        .bold-text-override { font-weight: 700 !important; }
-      `:``}}/>
+      <style dangerouslySetInnerHTML={{__html:`
+        body, button, input, select, textarea, div, span, p, h1, h2, h3, td, th { font-weight: 600; }
+        :root { --text-primary: ${dark ? '#ffffff' : '#000000'}; }
+      `}}/>
       <link rel="manifest" href="/manifest.json"/>
       <meta name="theme-color" content="#6c5ce7"/>
       <meta name="apple-mobile-web-app-capable" content="yes"/>
