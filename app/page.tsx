@@ -1199,8 +1199,10 @@ function CreditTab(p: CrProps) {
 
 
 // ─── Auth Screen ──────────────────────────────────────────────────────────────
-function AuthScreen({ onAuth, dark }: { onAuth:(user:User)=>void; dark:boolean }) {
-  const C = makeTheme(dark);
+function AuthScreen({ onAuth, dark: _dark }: { onAuth:(user:User)=>void; dark:boolean }) {
+  // Always light mode on login page
+  const C = makeTheme(false);
+  const ACCENT = "#6c5ce7";
   const [mode,     setMode]     = useState<"login"|"signup">("login");
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
@@ -1209,8 +1211,12 @@ function AuthScreen({ onAuth, dark }: { onAuth:(user:User)=>void; dark:boolean }
   const [loading,  setLoading]  = useState(false);
   const [done,     setDone]     = useState(false);
 
-  const sInput: CSSProperties = { width:"100%",padding:"11px 14px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"15px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif",marginBottom:"12px" };
-  const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"32px",border:`1px solid ${C.border}` };
+  const sInput: CSSProperties = {
+    width:"100%", padding:"10px 14px", borderRadius:"9px",
+    border:"1.5px solid #e0ddf8", background:"#f5f3ff",
+    color:"#1a1a2e", fontSize:"14px", outline:"none",
+    boxSizing:"border-box", fontFamily:"'DM Sans',sans-serif", marginBottom:"10px",
+  };
 
   const handle = async () => {
     setError(""); setLoading(true);
@@ -1225,59 +1231,81 @@ function AuthScreen({ onAuth, dark }: { onAuth:(user:User)=>void; dark:boolean }
     setLoading(false);
   };
 
+  const pageStyle: CSSProperties = {
+    height:"100vh", background:"#f7f6ff",
+    display:"flex", flexDirection:"column",
+    alignItems:"center", justifyContent:"center",
+    fontFamily:"'DM Sans',sans-serif",
+    padding:"16px", boxSizing:"border-box", overflow:"hidden",
+  };
+
   if (done) return (
-    <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>
-      <div style={{...sCard,maxWidth:"380px",width:"90%",textAlign:"center"}}>
-        <div style={{fontSize:"32px",marginBottom:"12px"}}>📧</div>
-        <div style={{fontSize:"18px",fontWeight:600,color:C.text,marginBottom:"8px"}}>Check your email</div>
-        <div style={{fontSize:"13px",color:C.muted,lineHeight:1.6}}>We sent a confirmation link to <strong>{email}</strong>. Click it then come back and log in.</div>
-        <button onClick={()=>{setDone(false);setMode("login");}} style={{...btnP,marginTop:"20px",width:"100%",padding:"11px"}}>Back to Login</button>
+    <div style={pageStyle}>
+      <div style={{maxWidth:"360px",width:"100%",textAlign:"center"}}>
+        <div style={{fontSize:"36px",marginBottom:"12px"}}>📧</div>
+        <div style={{fontSize:"18px",fontWeight:700,color:"#1a1a2e",marginBottom:"8px"}}>Check your email</div>
+        <div style={{fontSize:"13px",color:"#555",lineHeight:1.6,marginBottom:"20px"}}>We sent a confirmation link to <strong>{email}</strong>. Click it then come back and log in.</div>
+        <button onClick={()=>{setDone(false);setMode("login");}} style={{...btnP,width:"100%",padding:"11px"}}>Back to Login</button>
       </div>
     </div>
   );
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif",padding:"20px"}}>
-      <div style={{...sCard,maxWidth:"380px",width:"100%"}}>
-        <div style={{marginBottom:"24px"}}>
-          <div style={{fontSize:"22px",fontWeight:700,color:C.text,marginBottom:"4px"}}><span style={{color:C.accent}}>Budget</span>ly</div>
-          <div style={{fontSize:"13px",color:C.muted}}>{mode==="login"?"Welcome back":"Create your account"}</div>
+    <div style={pageStyle}>
+      <div style={{maxWidth:"360px",width:"100%",display:"flex",flexDirection:"column",gap:"0"}}>
+        {/* Logo */}
+        <div style={{textAlign:"center",marginBottom:"20px"}}>
+          <div style={{fontSize:"26px",fontWeight:800,color:"#1a1a2e",letterSpacing:"-0.5px"}}>
+            <span style={{color:ACCENT}}>Budget</span>ly
+          </div>
+          <div style={{fontSize:"12px",color:"#888",marginTop:"3px"}}>
+            {mode==="login"?"Welcome back":"Create your account"}
+          </div>
         </div>
-        <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} style={sInput}/>
-        <div style={{position:"relative",marginBottom:"12px"}}>
+
+        {/* Form — no card border, blends with page */}
+        <input type="email" placeholder="Email" value={email}
+          onChange={e=>setEmail(e.target.value)} style={sInput}/>
+        <div style={{position:"relative",marginBottom:"10px"}}>
           <input type={showPw?"text":"password"} placeholder="Password" value={password}
             onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handle()}
-            style={{...sInput,marginBottom:"0",paddingRight:"48px"}}/>
+            style={{...sInput,marginBottom:"0",paddingRight:"52px"}}/>
           <button onClick={()=>setShowPw(v=>!v)}
-            style={{position:"absolute",right:"12px",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif"}}>
+            style={{position:"absolute",right:"12px",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:"12px",fontFamily:"'DM Sans',sans-serif"}}>
             {showPw?"Hide":"Show"}
           </button>
         </div>
-        {error&&<div style={{fontSize:"12px",color:C.red,marginBottom:"10px",padding:"8px 10px",background:C.pillRed,borderRadius:"7px"}}>{error}</div>}
-        <button onClick={handle} disabled={loading} style={{...btnP,width:"100%",padding:"12px",fontSize:"14px",opacity:loading?0.7:1}}>
+        {error&&<div style={{fontSize:"12px",color:"#c0392b",marginBottom:"8px",padding:"8px 10px",background:"#fdecea",borderRadius:"7px"}}>{error}</div>}
+        <button onClick={handle} disabled={loading}
+          style={{...btnP,width:"100%",padding:"11px",fontSize:"14px",opacity:loading?0.7:1,marginBottom:"12px"}}>
           {loading?"...":(mode==="login"?"Log In":"Sign Up")}
         </button>
-        <div style={{textAlign:"center",marginTop:"16px",fontSize:"13px",color:C.muted}}>
+        <div style={{textAlign:"center",fontSize:"12px",color:"#888"}}>
           {mode==="login"?"Don't have an account? ":"Already have an account? "}
           <button onClick={()=>{setMode(mode==="login"?"signup":"login");setError("");}}
-            style={{background:"none",border:"none",color:C.accent,cursor:"pointer",fontWeight:600,fontSize:"13px",fontFamily:"'DM Sans',sans-serif"}}>
+            style={{background:"none",border:"none",color:ACCENT,cursor:"pointer",fontWeight:700,fontSize:"12px",fontFamily:"'DM Sans',sans-serif"}}>
             {mode==="login"?"Sign Up":"Log In"}
           </button>
         </div>
-      </div>
-      {/* Install app instructions */}
-      <div style={{maxWidth:"380px",width:"100%",marginTop:"16px",background:C.card,borderRadius:"14px",padding:"16px 20px",border:`1px solid ${C.border}`}}>
-        <div style={{fontSize:"11px",color:C.accent,fontWeight:600,marginBottom:"8px"}}>📱 Install Budgetly on Android</div>
-        {["Open this page in Chrome","Tap ⋮ → Add to Home screen","Tap Add — done"].map((step,i)=>(
-          <div key={i} style={{display:"flex",gap:"8px",marginBottom:"5px",alignItems:"flex-start"}}>
-            <div style={{width:"16px",height:"16px",borderRadius:"50%",background:C.accent,color:"#fff",fontSize:"9px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px"}}>{i+1}</div>
-            <div style={{fontSize:"11px",color:C.muted,lineHeight:1.5}}>{step}</div>
-          </div>
-        ))}
-      </div>
-      {/* Credit */}
-      <div style={{marginTop:"20px",fontSize:"12px",color:C.faint,textAlign:"center",fontFamily:"'DM Sans',sans-serif"}}>
-        Made by <span style={{color:C.muted,fontWeight:500}}>Armaan Gupta</span>
+
+        {/* Divider */}
+        <div style={{borderTop:"1px solid #e0ddf8",margin:"16px 0"}}/>
+
+        {/* Install instructions */}
+        <div style={{background:"#ede9f8",borderRadius:"10px",padding:"12px 14px"}}>
+          <div style={{fontSize:"11px",color:ACCENT,fontWeight:700,marginBottom:"6px"}}>📱 Install on Android</div>
+          {["Open this page in Chrome","Tap ⋮ → Add to Home screen","Tap Add — done"].map((step,i)=>(
+            <div key={i} style={{display:"flex",gap:"7px",marginBottom:"3px",alignItems:"flex-start"}}>
+              <div style={{width:"14px",height:"14px",borderRadius:"50%",background:ACCENT,color:"#fff",fontSize:"8px",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px"}}>{i+1}</div>
+              <div style={{fontSize:"11px",color:"#555",lineHeight:1.4}}>{step}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Credit */}
+        <div style={{textAlign:"center",fontSize:"11px",color:"#aaa",marginTop:"12px"}}>
+          Made by <span style={{color:"#888",fontWeight:600}}>Armaan Gupta</span>
+        </div>
       </div>
     </div>
   );
