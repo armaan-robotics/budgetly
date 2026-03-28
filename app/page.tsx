@@ -134,7 +134,7 @@ interface SvProps { C:Theme; savings:Entry[];accounts:string[];appMode:AppMode;t
 interface CaProps { C:Theme; categories:string[];expenses:Expense[];cashFlowOut:number;newCategory:string;setNewCategory:(v:string)=>void;addCategory:()=>void;deleteCategory:(cat:string)=>void; }
 interface CreditEntry { id:number; person:string; amount:number; description:string; date:string; type:"owed_to_me"|"i_owe"; cleared:boolean; }
 interface CrProps { C:Theme; credits:CreditEntry[];crAmt:string;crPerson:string;crDesc:string;crDate:string;crType:"owed_to_me"|"i_owe";setCrAmt:(v:string)=>void;setCrPerson:(v:string)=>void;setCrDesc:(v:string)=>void;setCrDate:(v:string)=>void;setCrType:(v:"owed_to_me"|"i_owe")=>void;addCredit:()=>void;toggleCleared:(id:number)=>void;deleteCredit:(id:number)=>void;updateCredit:(id:number,u:Partial<CreditEntry>)=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void; }
-interface TrProps { C:Theme; allMonths:AllMonths; activeMK:string; categories:string[]; }
+interface TrProps { C:Theme; allMonths:AllMonths; activeMK:string; categories:string[]; appMode:AppMode; }
 
 // ─── Primitives (module-level) ────────────────────────────────────────────────
 function FF({ label, children, C }: { label:string; children:ReactNode; C:Theme }) {
@@ -790,7 +790,8 @@ function TrendsTab(p: TrProps) {
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split("T")[0];
     const mk = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
-    const monthData = p.allMonths[mk];
+    const modeKey = p.appMode==="household" ? `h:${mk}` : mk;
+    const monthData = p.allMonths[modeKey];
     const dayExpenses = monthData ? monthData.expenses.filter(e => e.date === dateStr) : [];
     const total = dayExpenses.reduce((s,e) => s+e.amount, 0);
     const byCategory: {[cat:string]:number} = {};
@@ -1944,7 +1945,7 @@ export default function BudgetTracker() {
   const erProps: ErProps = { C,earnings,accounts,appMode,totalEarnings,earnAmt,earnDesc,earnDate,earnMode,earnAcc,setEarnAmt,setEarnDesc,setEarnDate,setEarnMode,setEarnAcc,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning,updateEarning };
   const svProps: SvProps = { C,savings,accounts,appMode,totalSavings,cashFlowIn,savAmt,savDesc,savDate,savMode,savAcc,setSavAmt,setSavDesc,setSavDate,setSavMode,setSavAcc,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving,updateSaving };
   const caProps: CaProps = { C,categories,expenses,cashFlowOut,newCategory,setNewCategory,addCategory,deleteCategory };
-  const trProps: TrProps = { C,allMonths,activeMK,categories };
+  const trProps: TrProps = { C,allMonths,activeMK,categories,appMode };
   const crProps: CrProps = { C,credits,crAmt,crPerson,crDesc,crDate,crType,setCrAmt,setCrPerson,setCrDesc,setCrDate,setCrType,addCredit,toggleCleared,deleteCredit,updateCredit,deleteConfirm,setDeleteConfirm };
 
   return (
