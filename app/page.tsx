@@ -220,15 +220,15 @@ function OverviewTab(p: OvProps) {
       <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"10px",marginBottom:"12px"}}>
         {(()=>{
           const studentCards = [
-            {label:"Cash Flow In", val:fmt(p.cashFlowIn),  color:C.green,  sub:`${p.earnings?.length??0} income entr${(p.earnings?.length??0)!==1?"ies":"y"}`},
-            {label:"Cash Flow Out",val:fmt(p.cashFlowOut), color:C.red,    sub:`${p.expenses.length} expense${p.expenses.length!==1?"s":""}`},
-            {label:"Total Savings",val:fmt(p.totalSavings),color:C.amber,  sub:`${p.savings.length} entr${p.savings.length!==1?"ies":"y"}`},
+            {label:"Cash Flow In", val:fmt(p.cashFlowIn),  color:C.green,  sub:""},
+            {label:"Cash Flow Out",val:fmt(p.cashFlowOut), color:C.red,    sub:""},
+            {label:"Total Savings",val:fmt(p.totalSavings),color:C.amber,  sub:""},
             {label:"To Spend",     val:fmt(p.remaining),   color:p.remaining>=0?C.green:C.red, sub:p.remaining>=0?"On track":"Over budget ⚠"},
           ];
           const householdCards = [
-            {label:"Cash Flow In", val:fmt(p.cashFlowIn),  color:C.green, sub:`${p.earnings.length??0} income entr${(p.earnings.length??0)!==1?"ies":"y"}`},
-            {label:"Cash Flow Out",val:fmt(p.cashFlowOut), color:C.red,   sub:`${p.expenses.length} expense${p.expenses.length!==1?"s":""}`},
-            {label:"Total Savings",val:fmt(p.totalSavings),color:C.amber, sub:`${p.savings.length} entr${p.savings.length!==1?"ies":"y"}`},
+            {label:"Cash Flow In", val:fmt(p.cashFlowIn),  color:C.green, sub:""},
+            {label:"Cash Flow Out",val:fmt(p.cashFlowOut), color:C.red,   sub:""},
+            {label:"Total Savings",val:fmt(p.totalSavings),color:C.amber, sub:""},
             {label:"Net",          val:fmt(p.cashFlowIn-p.cashFlowOut), color:(p.cashFlowIn-p.cashFlowOut)>=0?C.green:C.red, sub:(p.cashFlowIn-p.cashFlowOut)>=0?"Surplus":"Deficit"},
           ];
           const cards = p.appMode==="household" ? householdCards : studentCards;
@@ -236,7 +236,7 @@ function OverviewTab(p: OvProps) {
             <div key={s.label} style={{...sCard,borderTop:`3px solid ${s.color}`,padding:"14px"}}>
               <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"5px"}}>{s.label}</div>
               <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:700,color:s.color}}>{s.val}</div>
-              <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{s.sub}</div>
+              {s.sub&&<div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{s.sub}</div>}
             </div>
           ));
         })()}
@@ -270,10 +270,7 @@ function OverviewTab(p: OvProps) {
         <div style={{background:C.progressTrack,borderRadius:"8px",height:"8px",overflow:"hidden",marginBottom:"7px"}}>
           <div style={{height:"100%",borderRadius:"8px",background:p.spentPct>80?C.red:C.accent,width:`${p.spentPct}%`,transition:"width 0.5s ease"}}/>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between"}}>
-          <span style={{fontSize:"11px",color:C.muted}}>Spent {fmt(p.cashFlowOut)}</span>
-          <span style={{fontSize:"11px",color:C.muted}}>of {fmt(p.cashFlowIn)}</span>
-        </div>
+
       </div>}
 
       {p.appMode==="student"&&<div style={{...sCard,marginBottom:"12px"}}>
@@ -380,12 +377,20 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
   const [filterText, setFilterText] = useState("");
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
+  const [filterCat, setFilterCat] = useState("");
+  const [filterAmtMin, setFilterAmtMin] = useState("");
+  const [filterAmtMax, setFilterAmtMax] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+
+  const allCategories = [...new Set(entries.map(e=>(e as any).category).filter(Boolean))];
 
   const filtered = entries.filter(e=>{
     if(filterText && !e.description?.toLowerCase().includes(filterText.toLowerCase())) return false;
     if(filterFrom && e.date < filterFrom) return false;
     if(filterTo && e.date > filterTo) return false;
+    if(filterCat && (e as any).category !== filterCat) return false;
+    if(filterAmtMin && e.amount < parseFloat(filterAmtMin)) return false;
+    if(filterAmtMax && e.amount > parseFloat(filterAmtMax)) return false;
     return true;
   });
 
@@ -399,7 +404,7 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
   });
 
   const sInput: CSSProperties = {padding:"7px 11px",borderRadius:"8px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"13px",outline:"none",fontFamily:"'DM Sans',sans-serif"};
-  const activeFilters = (filterText?1:0)+(filterFrom?1:0)+(filterTo?1:0);
+  const activeFilters = (filterText?1:0)+(filterFrom?1:0)+(filterTo?1:0)+(filterCat?1:0)+(filterAmtMin?1:0)+(filterAmtMax?1:0);
 
   const toggleSort = (key: SortKey) => {
     if(sortKey===key) setSortDir(d=>d==="asc"?"desc":"asc");
@@ -425,7 +430,7 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
           <button onClick={()=>setShowFilters(v=>!v)} style={{...sInput,cursor:"pointer",background:showFilters||activeFilters>0?C.navActive:C.inputBg,color:activeFilters>0?accentColor:C.muted,whiteSpace:"nowrap"}}>
             ⚡ Filter{activeFilters>0?` (${activeFilters})`:""}
           </button>
-          {activeFilters>0&&<button onClick={()=>{setFilterText("");setFilterFrom("");setFilterTo("");}} style={{...sInput,cursor:"pointer",background:C.delBg,color:C.red}}>✕ Clear</button>}
+          {activeFilters>0&&<button onClick={()=>{setFilterText("");setFilterFrom("");setFilterTo("");setFilterCat("");setFilterAmtMin("");setFilterAmtMax("");}} style={{...sInput,cursor:"pointer",background:C.delBg,color:C.red}}>✕ Clear</button>}
         </div>
         <div style={{fontSize:"12px",color:C.muted}}>{sorted.length} of {entries.length} entries</div>
       </div>
@@ -435,6 +440,15 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
           <input type="date" value={filterFrom} onChange={e=>setFilterFrom(e.target.value)} style={sInput}/></div>
           <div><label style={{display:"block",fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"4px"}}>To</label>
           <input type="date" value={filterTo} onChange={e=>setFilterTo(e.target.value)} style={sInput}/></div>
+          {allCategories.length>0&&<div><label style={{display:"block",fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"4px"}}>Category</label>
+          <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer",minWidth:"120px"}}>
+            <option value="">All</option>
+            {allCategories.map(c=><option key={c} value={c}>{c}</option>)}
+          </select></div>}
+          <div><label style={{display:"block",fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"4px"}}>Min ₹</label>
+          <input type="number" placeholder="0" value={filterAmtMin} onChange={e=>setFilterAmtMin(e.target.value)} style={{...sInput,width:"90px"}}/></div>
+          <div><label style={{display:"block",fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"4px"}}>Max ₹</label>
+          <input type="number" placeholder="∞" value={filterAmtMax} onChange={e=>setFilterAmtMax(e.target.value)} style={{...sInput,width:"90px"}}/></div>
         </div>
       )}
     <div style={{overflowX:"auto"}}>
@@ -442,11 +456,11 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
         <thead>
           <tr style={{background:C.cardAlt}}>
             {columns.map(col=>(
-              <th key={col.key} style={thStyle} onClick={()=>col.sortable!==false&&toggleSort(col.key)}>
+              <th key={col.key} className={col.key==="date"||col.key==="mode"||col.key==="account"?"col-hide-mobile":""} style={thStyle} onClick={()=>col.sortable!==false&&toggleSort(col.key)}>
                 {col.label}{sortKey===col.key?(sortDir==="asc"?" ↑":" ↓"):""}
               </th>
             ))}
-            <th style={{...thStyle,cursor:"default",width:"60px"}}>Actions</th>
+            <th className="col-actions-mobile" style={{...thStyle,cursor:"default",width:"60px"}}>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -460,7 +474,7 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
                 onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=C.cardAlt}
                 onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=""}>
                 {columns.map(col=>(
-                  <td key={col.key} style={tdStyle}>{col.render(entry)}</td>
+                  <td key={col.key} className={col.key==="date"||col.key==="mode"||col.key==="account"?"col-hide-mobile":""} style={tdStyle}>{col.render(entry)}</td>
                 ))}
                 <td style={{...tdStyle,whiteSpace:"nowrap"}}>
                   {deleteId===entry.id?(
@@ -483,12 +497,16 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
               {expandId===entry.id&&(
                 <tr key={entry.id+"_exp"}>
                   <td colSpan={columns.length+1} style={{background:C.cardAlt,padding:"10px 14px",borderBottom:`1px solid ${C.border}`}}>
-                    <div style={{display:"flex",gap:"20px",flexWrap:"wrap",fontSize:"12px",color:C.muted}}>
+                    <div style={{display:"flex",gap:"16px",flexWrap:"wrap",fontSize:"12px",color:C.muted,marginBottom:"8px"}}>
                       <span><strong style={{color:C.text}}>Date:</strong> {entry.date}</span>
                       <span><strong style={{color:C.text}}>Mode:</strong> {entry.mode||"—"}</span>
                       {(entry as any).category&&<span><strong style={{color:C.text}}>Category:</strong> {(entry as any).category}</span>}
                       {(entry as any).account&&<span><strong style={{color:C.text}}>Account:</strong> {(entry as any).account}</span>}
                       <span><strong style={{color:C.text}}>Description:</strong> {entry.description||"—"}</span>
+                    </div>
+                    <div className="row-expand-mobile" style={{display:"flex",gap:"6px"}}>
+                      <button onClick={e=>{e.stopPropagation();onEdit(entry);setExpandId(null);}} style={{...btnB,background:C.navActive,color:C.accent,padding:"5px 12px",fontSize:"12px"}}>✎ Edit</button>
+                      <button onClick={e=>{e.stopPropagation();setDeleteId(entry.id);setExpandId(null);}} style={{...btnB,background:C.delBg,color:C.red,padding:"5px 12px",fontSize:"12px"}}>✕ Delete</button>
                     </div>
                   </td>
                 </tr>
@@ -1520,9 +1538,18 @@ export default function BudgetTracker() {
     });
     setAllMonthsRaw(rebuilt);
     if (!cError && cData && cData.length > 0) {
-      const row = cData[0] as {credits?:CreditEntry[];household_credits?:CreditEntry[]};
+      const row = cData[0] as {credits?:CreditEntry[];household_credits?:CreditEntry[];categories?:string[];accounts?:string[]};
       const modeCredits = appMode==="household" ? (row.household_credits??[]) : (row.credits??[]);
       setCredits(modeCredits);
+      // Restore categories and accounts from server (more reliable than localStorage)
+      if (row.categories && row.categories.length > 0) {
+        setCategories(row.categories);
+        lsSave("budgetly_cats", row.categories);
+      }
+      if (row.accounts && row.accounts.length > 0) {
+        setAccounts(row.accounts);
+        lsSave("budgetly_accounts", row.accounts);
+      }
     }
     setCreditsLoaded(true);
     setDbLoading(false);
@@ -1538,6 +1565,11 @@ export default function BudgetTracker() {
     const field = appMode==="household" ? "household_credits" : "credits";
     await supabase.from("user_credits").upsert({ user_id:user.id, [field]:c, updated_at:new Date().toISOString() },{ onConflict:"user_id" });
   }, [user, isGuest, appMode]);
+
+  const saveUserPrefs = useCallback(async (cats: string[], accs: string[]) => {
+    if (!user) return;
+    await supabase.from("user_credits").upsert({ user_id:user.id, categories:cats, accounts:accs, updated_at:new Date().toISOString() },{ onConflict:"user_id" });
+  }, [user]);
 
   const setAllMonths = useCallback((updater: AllMonths|((prev:AllMonths)=>AllMonths)) => {
     setAllMonthsRaw(prev => { const next=typeof updater==="function"?updater(prev):updater; return next; });
@@ -1607,13 +1639,13 @@ export default function BudgetTracker() {
   const updateEarning  = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,earnings:earnings.map(e=>e.id===id?{...e,...u}:e)});
   const updateSaving   = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,savings: savings.map (e=>e.id===id?{...e,...u}:e)});
   const updateCredit   = (id:number,u:Partial<CreditEntry>) => setCredits(prev=>prev.map(c=>c.id===id?{...c,...u}:c));
-  const addCategory    = () => { const t=newCategory.trim(); if(!t||categories.includes(t))return; const n=[...categories,t]; setCategories(n); lsSave("budgetly_cats",n); setNewCategory(""); };
+  const addCategory    = () => { const t=newCategory.trim(); if(!t||categories.includes(t))return; const n=[...categories,t]; setCategories(n); lsSave("budgetly_cats",n); saveUserPrefs(n,accounts); setNewCategory(""); };
   const deleteCategory = (cat:string) => {
     const def = appMode==="household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
-    if(def.includes(cat))return; const n=categories.filter(c=>c!==cat); setCategories(n); lsSave("budgetly_cats",n);
+    if(def.includes(cat))return; const n=categories.filter(c=>c!==cat); setCategories(n); lsSave("budgetly_cats",n); saveUserPrefs(n,accounts);
   };
-  const addAccount     = () => { const t=newAccount.trim(); if(!t||accounts.includes(t))return; saveAccounts([...accounts,t]); setNewAccount(""); };
-  const deleteAccount  = (acc:string) => { if(DEFAULT_ACCOUNTS.includes(acc))return; saveAccounts(accounts.filter(a=>a!==acc)); };
+  const addAccount     = () => { const t=newAccount.trim(); if(!t||accounts.includes(t))return; const n=[...accounts,t]; saveAccounts(n); saveUserPrefs(categories,n); setNewAccount(""); };
+  const deleteAccount  = (acc:string) => { if(DEFAULT_ACCOUNTS.includes(acc))return; const n=accounts.filter(a=>a!==acc); saveAccounts(n); saveUserPrefs(categories,n); };
   const addCredit      = () => { if(!crAmt||isNaN(+crAmt)||!crPerson.trim())return; setCredits(prev=>[...prev,{id:Date.now(),person:crPerson.trim(),amount:+crAmt,description:crDesc,date:crDate,type:crType,cleared:false}]); setCrAmt(""); setCrPerson(""); setCrDesc(""); };
   const toggleCleared  = (id:number) => {
     setCredits(prev => prev.map(c => {
@@ -1680,12 +1712,7 @@ export default function BudgetTracker() {
           </select>
         </div>
 
-        {/* To Spend pill */}
-        <div style={{margin:"0 12px 16px",background:remaining>=0?C.pillGreen:C.pillRed,borderRadius:"10px",padding:"12px 14px",border:`1px solid ${remaining>=0?C.pillGreenBorder:C.pillRedBorder}`}}>
-          <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"3px"}}>To Spend</div>
-          <div style={{fontSize:"19px",fontWeight:600,color:remaining>=0?C.green:C.red}}>{fmt(remaining)}</div>
-          <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>{fmtMK(activeMK)}</div>
-        </div>
+
 
         {dbLoading&&<div style={{textAlign:"center",fontSize:"11px",color:C.faint,marginBottom:"10px"}}>Syncing…</div>}
 
@@ -1799,7 +1826,7 @@ export default function BudgetTracker() {
     return (
       <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:500,display:"flex",alignItems:"flex-end",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}
         onClick={e=>{if(e.target===e.currentTarget)setShowSettings(false);}}>
-        <div style={{background:C.card,borderRadius:"20px 20px 0 0",padding:"28px 24px 36px",width:"100%",maxWidth:"460px",border:`1px solid ${C.border}`,borderBottom:"none",maxHeight:"90vh",overflowY:"auto"}}>
+        <div className="settings-modal" style={{background:C.card,borderRadius:"20px 20px 0 0",padding:"28px 24px 36px",width:"100%",maxWidth:"460px",border:`1px solid ${C.border}`,borderBottom:"none",maxHeight:"90vh",overflowY:"auto"}}>
           {/* Handle bar */}
           <div style={{width:"36px",height:"4px",borderRadius:"4px",background:C.faint,margin:"0 auto 24px"}}/>
           <div style={{fontSize:"17px",fontWeight:600,color:C.text,marginBottom:"20px"}}>Settings</div>
@@ -1933,10 +1960,7 @@ export default function BudgetTracker() {
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-      <style dangerouslySetInnerHTML={{__html:`
-        body, button, input, select, textarea, div, span, p, h1, h2, h3, td, th { font-weight: 600; }
-        :root { --text-primary: ${dark ? '#ffffff' : '#000000'}; }
-      `}}/>
+
       <link rel="manifest" href="/manifest.json"/>
       <meta name="theme-color" content="#6c5ce7"/>
       <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -1968,12 +1992,24 @@ export default function BudgetTracker() {
         @keyframes slideInFromRight{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
         @keyframes slideInFromLeft{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:translateX(0)}}
         .mob-nav{display:none;}
+        @keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes slideUp{from{transform:translateY(32px);opacity:0}to{transform:translateY(0);opacity:1}}
+        .drawer-panel{animation:slideInLeft 0.25s cubic-bezier(0.32,0.72,0,1)}
+        .drawer-overlay{animation:fadeIn 0.2s ease}
+        .settings-modal{animation:slideUp 0.25s cubic-bezier(0.32,0.72,0,1)}
         @media(max-width:768px){
           .mob-header{display:flex!important;position:fixed;top:0;left:0;right:0;z-index:100;background:${C.sidebar};border-bottom:1px solid ${C.border};padding:11px 15px;align-items:center;justify-content:space-between;}
           .desk-sidebar{display:none!important;}
           .mob-nav{display:flex!important;position:fixed;bottom:0;left:0;right:0;background:${C.sidebar};border-top:1px solid ${C.border};z-index:50;padding:5px 0 max(8px,env(safe-area-inset-bottom));}
           .main-wrap{padding:64px 12px 72px!important;}
           .two-col-grid{grid-template-columns:1fr!important;}
+          .col-hide-mobile{display:none!important;}
+          .col-actions-mobile{display:none!important;}
+          .col-date-mobile{display:none!important;}
+          .col-mode-mobile{display:none!important;}
+          @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+          @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
         }
       `}</style>
 
@@ -1983,8 +2019,7 @@ export default function BudgetTracker() {
       <div className="mob-header">
         <div style={{fontSize:"18px",fontWeight:700,color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-<span style={{fontSize:"13px",fontWeight:600,color:remaining>=0?C.green:C.red}}>{fmt(remaining)}</span>
-          <button onClick={toggleDark} style={{background:C.navActive,border:`1px solid ${C.border}`,borderRadius:"20px",padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",gap:"5px"}}>
+<button onClick={toggleDark} style={{background:C.navActive,border:`1px solid ${C.border}`,borderRadius:"20px",padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",gap:"5px"}}>
             <div style={{width:"28px",height:"16px",borderRadius:"16px",background:dark?C.accent:"#d1cfe8",position:"relative",flexShrink:0}}>
               <div style={{position:"absolute",top:"2px",left:dark?"14px":"2px",width:"12px",height:"12px",borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,0.2)"}}/>
             </div>
@@ -1994,15 +2029,23 @@ export default function BudgetTracker() {
         </div>
       </div>
 
-      {/* Mobile drawer */}
-      {drawerOpen&&(
-        <div style={{position:"fixed",inset:0,zIndex:200,display:"flex"}}>
-          <div style={{width:"260px",background:C.sidebar,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",padding:"24px 0",overflowY:"auto"}}>
-            <SidebarInner/>
-          </div>
-          <div style={{flex:1,background:"rgba(0,0,0,0.3)"}} onClick={()=>setDrawerOpen(false)}/>
+      {/* Mobile drawer — animated */}
+      <div style={{
+        position:"fixed",inset:0,zIndex:200,display:"flex",
+        pointerEvents:drawerOpen?"auto":"none",
+        transition:"background 0.25s ease",
+        background:drawerOpen?"rgba(0,0,0,0.35)":"rgba(0,0,0,0)",
+      }} onClick={()=>setDrawerOpen(false)}>
+        <div style={{
+          width:"260px",background:C.sidebar,borderRight:`1px solid ${C.border}`,
+          display:"flex",flexDirection:"column",padding:"24px 0",overflowY:"auto",
+          transform:drawerOpen?"translateX(0)":"translateX(-100%)",
+          transition:"transform 0.28s cubic-bezier(0.4,0,0.2,1)",
+          pointerEvents:"auto",
+        }} onClick={e=>e.stopPropagation()}>
+          <SidebarInner/>
         </div>
-      )}
+      </div>
 
       <div style={{minHeight:"100vh",background:C.bg,display:"flex"}}>
         <aside className="desk-sidebar" style={{width:"210px",minHeight:"100vh",background:C.sidebar,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",padding:"24px 0",flexShrink:0,position:"sticky",top:0,height:"100vh",overflowY:"auto"}}>
