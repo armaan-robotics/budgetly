@@ -139,8 +139,8 @@ interface TrProps { C:Theme; allMonths:AllMonths; activeMK:string; categories:st
 // ─── Primitives (module-level) ────────────────────────────────────────────────
 function FF({ label, children, C }: { label:string; children:ReactNode; C:Theme }) {
   return (
-    <div style={{marginBottom:"12px"}}>
-      <label style={{display:"block",fontSize:"11px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"6px",fontWeight:500}}>{label}</label>
+    <div style={{marginBottom:"18px"}}>
+      <label style={{display:"block",fontSize:"11px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"8px",fontWeight:600}}>{label}</label>
       {children}
     </div>
   );
@@ -148,7 +148,7 @@ function FF({ label, children, C }: { label:string; children:ReactNode; C:Theme 
 
 function EntryRow({ left, right, C }: { left:ReactNode; right:ReactNode; C:Theme }) {
   return (
-    <div style={{background:C.cardAlt,borderRadius:"10px",padding:"11px 13px",border:`1px solid ${C.border}`,marginBottom:"6px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px"}}>
+    <div style={{background:C.cardAlt,borderRadius:"10px",padding:"14px 16px",border:`1px solid ${C.border}`,marginBottom:"8px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px"}}>
       <div style={{flex:1,minWidth:0}}>{left}</div>
       <div style={{display:"flex",alignItems:"center",gap:"9px",flexShrink:0}}>{right}</div>
     </div>
@@ -181,10 +181,10 @@ function EditModal({ C, title, fields, onSave, onClose }: {
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif",padding:"16px"}}>
-      <div style={{background:C.card,borderRadius:"16px",padding:"24px",width:"100%",maxWidth:"420px",border:`1px solid ${C.border}`}}>
+      <div style={{background:C.card,borderRadius:"16px",padding:"32px",width:"100%",maxWidth:"420px",border:`1px solid ${C.border}`}}>
         <div style={{fontSize:"16px",fontWeight:600,color:C.text,marginBottom:"18px"}}>{title}</div>
         {fields.map((f,i) => (
-          <div key={i} style={{marginBottom:"12px"}}>
+          <div key={i} style={{marginBottom:"18px"}}>
             <label style={{display:"block",fontSize:"11px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"6px",fontWeight:500}}>{f.label}</label>
             {f.options ? (
               <select value={f.value} onChange={e=>f.onChange(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>
@@ -208,8 +208,8 @@ function EditModal({ C, title, fields, onSave, onClose }: {
 // ─── Tab components (module-level — stable references, no typing bug) ─────────
 function OverviewTab(p: OvProps) {
   const { C } = p;
-  const sCard: CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
-  const sSecT: CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+  const sCard: CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
+  const sSecT: CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
   const catTotals = p.categories.map((cat,i)=>({
     name:cat,color:CAT_COLORS[i%CAT_COLORS.length],
     total:p.expenses.filter(e=>e.category===cat).reduce((s,e)=>s+e.amount,0),
@@ -217,7 +217,7 @@ function OverviewTab(p: OvProps) {
   })).filter(c=>c.total>0);
   return (
     <div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"10px",marginBottom:"12px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"14px",marginBottom:"18px"}}>
         {(()=>{
           const studentCards = [
             {label:"Cash Flow In", val:fmt(p.cashFlowIn),  color:C.green,  sub:""},
@@ -233,8 +233,8 @@ function OverviewTab(p: OvProps) {
           ];
           const cards = p.appMode==="household" ? householdCards : studentCards;
           return cards.map(s=>(
-            <div key={s.label} style={{...sCard,borderTop:`3px solid ${s.color}`,padding:"14px"}}>
-              <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"5px"}}>{s.label}</div>
+            <div key={s.label} style={{...sCard,borderTop:`3px solid ${s.color}`,padding:"20px"}}>
+              <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"8px"}}>{s.label}</div>
               <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:700,color:s.color}}>{s.val}</div>
               {s.sub&&<div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{s.sub}</div>}
             </div>
@@ -242,7 +242,7 @@ function OverviewTab(p: OvProps) {
         })()}
       </div>
 
-      {p.appMode==="student"&&<div style={{...sCard,marginBottom:"12px"}}>
+      {p.appMode==="student"&&<div style={{...sCard,marginBottom:"18px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px",flexWrap:"wrap",gap:"8px"}}>
           <div>
             <div style={sSecT}>Monthly Budget</div>
@@ -273,7 +273,7 @@ function OverviewTab(p: OvProps) {
 
       </div>}
 
-      {p.appMode==="student"&&<div style={{...sCard,marginBottom:"12px"}}>
+      {p.appMode==="student"&&<div style={{...sCard,marginBottom:"18px"}}>
         <div style={sSecT}>Daily Averages</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)"}}>
           {([
@@ -292,20 +292,20 @@ function OverviewTab(p: OvProps) {
       </div>}
 
       {catTotals.length>0&&(
-        <div style={{...sCard,marginBottom:"12px"}}>
+        <div style={{...sCard,marginBottom:"18px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
             <div style={sSecT}>Spending by Category</div>
             <div style={{fontSize:"11px",color:C.muted}}>{fmt(p.cashFlowOut)} total</div>
           </div>
           {/* Stacked bar */}
-          <div style={{height:"14px",borderRadius:"8px",overflow:"hidden",display:"flex",marginBottom:"18px",background:C.progressTrack}}>
+          <div style={{height:"16px",borderRadius:"8px",overflow:"hidden",display:"flex",marginBottom:"24px",background:C.progressTrack}}>
             {catTotals.map(cat=>{
               const pct=p.cashFlowOut>0?(cat.total/p.cashFlowOut)*100:0;
               return pct>0?<div key={cat.name} title={`${cat.name}: ${fmt(cat.total)} (${pct.toFixed(1)}%)`} style={{height:"100%",width:`${pct}%`,background:cat.color,transition:"width 0.5s ease"}}/>:null;
             })}
           </div>
           {/* Horizontal bars per category */}
-          <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+          <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
             {catTotals.map(cat=>{
               const pct=p.cashFlowOut>0?Math.min((cat.total/p.cashFlowOut)*100,100):0;
               return(
@@ -338,9 +338,9 @@ function OverviewTab(p: OvProps) {
         })).filter(a=>a.totalOut>0);
         if(accTotals.length===0)return null;
         return(
-          <div style={{...sCard,marginBottom:"12px"}}>
+          <div style={{...sCard,marginBottom:"18px"}}>
             <div style={sSecT}>By Account</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"9px"}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"14px"}}>
               {accTotals.map(acc=>(
                 <div key={acc.name} style={{background:C.cardAlt,borderRadius:"10px",padding:"12px",border:`1px solid ${C.border}`}}>
                   <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
@@ -412,20 +412,20 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
   };
 
   const thStyle: CSSProperties = {
-    padding:"8px 10px", fontSize:"10px", color:C.muted, textTransform:"uppercase",
+    padding:"10px 12px", fontSize:"10px", color:C.muted, textTransform:"uppercase",
     letterSpacing:"1.2px", fontWeight:600, cursor:"pointer", userSelect:"none",
     borderBottom:`1px solid ${C.border}`, textAlign:"left", whiteSpace:"nowrap",
   };
   const tdStyle: CSSProperties = {
-    padding:"9px 10px", fontSize:"13px", color:C.text, borderBottom:`1px solid ${C.border}`,
+    padding:"12px 12px", fontSize:"13px", color:C.text, borderBottom:`1px solid ${C.border}`,
     verticalAlign:"middle",
   };
 
   return (
     <div>
       {/* Filter controls */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px",gap:"8px",flexWrap:"wrap"}}>
-        <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px",gap:"10px",flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
           <input placeholder="Search description…" value={filterText} onChange={e=>setFilterText(e.target.value)} style={{...sInput,width:"180px"}}/>
           <button onClick={()=>setShowFilters(v=>!v)} style={{...sInput,cursor:"pointer",background:showFilters||activeFilters>0?C.navActive:C.inputBg,color:activeFilters>0?accentColor:C.muted,whiteSpace:"nowrap"}}>
             ⚡ Filter{activeFilters>0?` (${activeFilters})`:""}
@@ -435,7 +435,7 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
         <div style={{fontSize:"12px",color:C.muted}}>{sorted.length} of {entries.length} entries</div>
       </div>
       {showFilters&&(
-        <div style={{display:"flex",gap:"10px",marginBottom:"10px",flexWrap:"wrap",background:C.cardAlt,padding:"12px",borderRadius:"10px",border:`1px solid ${C.border}`}}>
+        <div style={{display:"flex",gap:"10px",marginBottom:"10px",flexWrap:"wrap",background:C.cardAlt,padding:"16px",borderRadius:"12px",border:`1px solid ${C.border}`}}>
           <div><label style={{display:"block",fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"4px"}}>From</label>
           <input type="date" value={filterFrom} onChange={e=>setFilterFrom(e.target.value)} style={sInput}/></div>
           <div><label style={{display:"block",fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"4px"}}>To</label>
@@ -480,7 +480,7 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
               </tr>
               {expandId===entry.id&&(
                 <tr key={entry.id+"_exp"}>
-                  <td colSpan={columns.length} style={{background:C.cardAlt,padding:"10px 14px",borderBottom:`1px solid ${C.border}`}}>
+                  <td colSpan={columns.length} style={{background:C.cardAlt,padding:"16px 18px",borderBottom:`1px solid ${C.border}`}}>
                     <div style={{display:"flex",gap:"16px",flexWrap:"wrap",fontSize:"12px",color:C.muted,marginBottom:"8px"}}>
                       <span><strong style={{color:C.text}}>Date:</strong> {entry.date}</span>
                       <span><strong style={{color:C.text}}>Mode:</strong> {entry.mode||"—"}</span>
@@ -507,8 +507,8 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
 function ExpensesTab(p: ExProps) {
   const { C } = p;
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
-  const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+  const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
+  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
   const [showForm, setShowForm] = useState(false);
   const [editEntry, setEditEntry] = useState<Expense|null>(null);
   const [editAmt, setEditAmt] = useState(""); const [editCat, setEditCat] = useState("");
@@ -533,7 +533,7 @@ function ExpensesTab(p: ExProps) {
 
   return (
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
         <div style={{...sCard,padding:"12px 16px",display:"inline-flex",gap:"16px",alignItems:"center"}}>
           <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Total</div>
           <div style={{fontSize:"18px",fontWeight:600,color:C.red}}>{fmt(p.totalExpenses)}</div></div>
@@ -547,7 +547,7 @@ function ExpensesTab(p: ExProps) {
       {showForm&&(
         <div style={{...sCard,marginBottom:"14px"}}>
           <div style={{...sSecT,marginBottom:"14px"}}>Add Expense</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.expAmt} onChange={e=>p.setExpAmt(e.target.value)} style={sInput}/></FF>
             <FF label="Category" C={C}><select value={p.expCat} onChange={e=>p.setExpCat(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>{p.categories.map(c=><option key={c} value={c}>{c}</option>)}</select></FF>
             <FF label="Description" C={C}><input type="text" placeholder="What did you spend on?" value={p.expDesc} onChange={e=>p.setExpDesc(e.target.value)} style={sInput}/></FF>
@@ -585,8 +585,8 @@ function ExpensesTab(p: ExProps) {
 function EarningsTab(p: ErProps) {
   const { C } = p;
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
-  const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+  const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
+  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
   const [showForm, setShowForm] = useState(false);
   const [editEntry, setEditEntry] = useState<Entry|null>(null);
   const [editAmt, setEditAmt] = useState(""); const [editDesc, setEditDesc] = useState("");
@@ -606,7 +606,7 @@ function EarningsTab(p: ErProps) {
 
   return (
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
         <div style={{...sCard,padding:"12px 16px",display:"inline-flex",gap:"16px",alignItems:"center"}}>
           <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Total</div>
           <div style={{fontSize:"18px",fontWeight:600,color:C.green}}>{fmt(p.totalEarnings)}</div></div>
@@ -620,7 +620,7 @@ function EarningsTab(p: ErProps) {
       {showForm&&(
         <div style={{...sCard,marginBottom:"14px"}}>
           <div style={{...sSecT,marginBottom:"14px"}}>Add Income</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.earnAmt} onChange={e=>p.setEarnAmt(e.target.value)} style={sInput}/></FF>
             <FF label="Description" C={C}><input type="text" placeholder="Source of income" value={p.earnDesc} onChange={e=>p.setEarnDesc(e.target.value)} style={sInput}/></FF>
             <FF label="Date" C={C}><input type="date" value={p.earnDate} onChange={e=>p.setEarnDate(e.target.value)} style={sInput}/></FF>
@@ -656,8 +656,8 @@ function EarningsTab(p: ErProps) {
 function SavingsTab(p: SvProps) {
   const { C } = p;
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
-  const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+  const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
+  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
   const [showForm, setShowForm] = useState(false);
   const [editEntry, setEditEntry] = useState<Entry|null>(null);
   const [editAmt, setEditAmt] = useState(""); const [editDesc, setEditDesc] = useState("");
@@ -677,7 +677,7 @@ function SavingsTab(p: SvProps) {
 
   return (
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
         <div style={{...sCard,padding:"12px 16px",display:"inline-flex",gap:"16px",alignItems:"center"}}>
           <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Total</div>
           <div style={{fontSize:"18px",fontWeight:600,color:C.amber}}>{fmt(p.totalSavings)}</div></div>
@@ -691,7 +691,7 @@ function SavingsTab(p: SvProps) {
       {showForm&&(
         <div style={{...sCard,marginBottom:"14px"}}>
           <div style={{...sSecT,marginBottom:"14px"}}>Add Saving</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.savAmt} onChange={e=>p.setSavAmt(e.target.value)} style={sInput}/></FF>
             <FF label="Description" C={C}><input type="text" placeholder="What are you saving for?" value={p.savDesc} onChange={e=>p.setSavDesc(e.target.value)} style={sInput}/></FF>
             <FF label="Date" C={C}><input type="date" value={p.savDate} onChange={e=>p.setSavDate(e.target.value)} style={sInput}/></FF>
@@ -727,8 +727,8 @@ function SavingsTab(p: SvProps) {
 function CategoriesTab(p: CaProps) {
   const { C } = p;
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
-  const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+  const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
+  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
   return (
     <div className="two-col-grid" style={{display:"grid",gridTemplateColumns:"clamp(240px,30%,300px) 1fr",gap:"16px"}}>
       <div style={sCard}>
@@ -739,7 +739,7 @@ function CategoriesTab(p: CaProps) {
       </div>
       <div style={sCard}>
         <div style={sSecT}>{p.categories.length} Categories</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"9px"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"14px"}}>
           {p.categories.map((cat,i)=>{
             const total=p.expenses.filter(e=>e.category===cat).reduce((s,e)=>s+e.amount,0);
             const count=p.expenses.filter(e=>e.category===cat).length;
@@ -927,7 +927,7 @@ function TrendsTab(p: TrProps) {
           <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600}}>
             Breakdown by Category
           </div>
-          <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+          <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
             {catTotals.map(cat => {
               const pct = totalPeriod > 0 ? (cat.total/totalPeriod)*100 : 0;
               return (
@@ -1021,8 +1021,8 @@ function TutorialTab({ C, appMode }: { C:Theme; appMode:AppMode }) {
 function CreditTab(p: CrProps) {
   const { C } = p;
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
-  const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+  const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
+  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
 
   const owedToMe = p.credits.filter(c=>c.type==="owed_to_me");
   const iOwe     = p.credits.filter(c=>c.type==="i_owe");
@@ -1071,7 +1071,7 @@ function CreditTab(p: CrProps) {
   return (
     <div>
       {/* Summary */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"16px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px",marginBottom:"22px"}}>
         <div style={{...sCard,borderTop:`3px solid ${C.green}`,padding:"14px"}}>
           <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"5px"}}>People Owe Me</div>
           <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:700,color:C.green}}>{fmt(totalOwedToMe)}</div>
@@ -1085,7 +1085,7 @@ function CreditTab(p: CrProps) {
       </div>
 
       {/* Add form */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
         <div style={{display:"flex",gap:"6px",alignItems:"center",flexWrap:"wrap"}}>
           <input placeholder="Search person or note…" value={filterText} onChange={e=>setFilterText(e.target.value)}
             style={{padding:"7px 11px",borderRadius:"8px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"13px",outline:"none",fontFamily:"'DM Sans',sans-serif",width:"180px"}}/>
@@ -1110,7 +1110,7 @@ function CreditTab(p: CrProps) {
             <button onClick={()=>p.setCrType("owed_to_me")} style={{flex:1,padding:"8px",borderRadius:"8px",border:`1.5px solid ${p.crType==="owed_to_me"?C.green:C.border}`,background:p.crType==="owed_to_me"?C.green+"18":"transparent",color:p.crType==="owed_to_me"?C.green:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"'DM Sans',sans-serif"}}>They Owe Me</button>
             <button onClick={()=>p.setCrType("i_owe")} style={{flex:1,padding:"8px",borderRadius:"8px",border:`1.5px solid ${p.crType==="i_owe"?C.red:C.border}`,background:p.crType==="i_owe"?C.red+"18":"transparent",color:p.crType==="i_owe"?C.red:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"'DM Sans',sans-serif"}}>I Owe Them</button>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             <FF label="Person's Name *" C={C}><input type="text" placeholder="Who?" value={p.crPerson} onChange={e=>p.setCrPerson(e.target.value)} style={sInput}/></FF>
             <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.crAmt} onChange={e=>p.setCrAmt(e.target.value)} style={sInput}/></FF>
             <FF label="Description" C={C}><input type="text" placeholder="What for?" value={p.crDesc} onChange={e=>p.setCrDesc(e.target.value)} style={sInput}/></FF>
@@ -1243,7 +1243,7 @@ function AuthScreen({ onAuth, dark: _dark }: { onAuth:(user:User)=>void; dark:bo
   if (done) return (
     <div style={pageStyle}>
       <div style={{maxWidth:"360px",width:"100%",textAlign:"center"}}>
-        <div style={{fontSize:"36px",marginBottom:"12px"}}>📧</div>
+        <div style={{fontSize:"36px",marginBottom:"18px"}}>📧</div>
         <div style={{fontSize:"18px",fontWeight:700,color:"#1a1a2e",marginBottom:"8px"}}>Check your email</div>
         <div style={{fontSize:"13px",color:"#555",lineHeight:1.6,marginBottom:"20px"}}>We sent a confirmation link to <strong>{email}</strong>. Click it then come back and log in.</div>
         <button onClick={()=>{setDone(false);setMode("login");}} style={{...btnP,width:"100%",padding:"11px"}}>Back to Login</button>
@@ -1278,7 +1278,7 @@ function AuthScreen({ onAuth, dark: _dark }: { onAuth:(user:User)=>void; dark:bo
         </div>
         {error&&<div style={{fontSize:"12px",color:"#c0392b",marginBottom:"8px",padding:"8px 10px",background:"#fdecea",borderRadius:"7px"}}>{error}</div>}
         <button onClick={handle} disabled={loading}
-          style={{...btnP,width:"100%",padding:"11px",fontSize:"14px",opacity:loading?0.7:1,marginBottom:"12px"}}>
+          style={{...btnP,width:"100%",padding:"11px",fontSize:"14px",opacity:loading?0.7:1,marginBottom:"18px"}}>
           {loading?"...":(mode==="login"?"Log In":"Sign Up")}
         </button>
         <div style={{textAlign:"center",fontSize:"12px",color:"#888"}}>
@@ -1316,7 +1316,7 @@ function AuthScreen({ onAuth, dark: _dark }: { onAuth:(user:User)=>void; dark:bo
 function MigrateModal({ onDecide, C }: { onDecide:(migrate:boolean)=>void; C:Theme }) {
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>
-      <div style={{background:C.card,borderRadius:"14px",padding:"28px",maxWidth:"380px",width:"90%",border:`1px solid ${C.border}`}}>
+      <div style={{background:C.card,borderRadius:"16px",padding:"36px",maxWidth:"380px",width:"90%",border:`1px solid ${C.border}`}}>
         <div style={{fontSize:"18px",fontWeight:600,color:C.text,marginBottom:"8px"}}>Import your existing data?</div>
         <div style={{fontSize:"13px",color:C.muted,lineHeight:1.7,marginBottom:"20px"}}>We found budget data saved locally on this device from before you had an account. Import it now so it syncs across all your devices?</div>
         <div style={{display:"flex",gap:"10px"}}>
@@ -1372,8 +1372,8 @@ function AccountsTab({ C, accounts, expenses, earnings, savings, newAccount, set
 }) {
   const DEFAULT_ACCS = ["Main Account","Cash","Savings Account"];
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
-  const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+  const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
+  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
   return (
     <div style={{maxWidth:"680px"}}>
       <div style={{...sCard,marginBottom:"14px"}}>
@@ -1672,8 +1672,8 @@ export default function BudgetTracker() {
   const logout         = async () => { await supabase.auth.signOut(); setUser(null); setAllMonthsRaw({}); };
 
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
-  const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+  const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
+  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
 
   if (!authReady) return (
     <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>
@@ -1689,7 +1689,7 @@ export default function BudgetTracker() {
     return (
       <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
         {/* Logo */}
-        <div style={{padding:"0 18px 20px"}}>
+        <div style={{padding:"0 20px 24px"}}>
           <div style={{fontSize:"20px",fontWeight:800,letterSpacing:"-0.5px",color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
           <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"4px"}}>
             <span style={{fontSize:"9px",background:C.navActive,color:C.accent,padding:"2px 7px",borderRadius:"20px",fontWeight:700,letterSpacing:"0.5px",textTransform:"uppercase"}}>
@@ -1699,7 +1699,7 @@ export default function BudgetTracker() {
         </div>
 
         {/* Month selector */}
-        <div style={{padding:"0 12px 14px"}}>
+        <div style={{padding:"0 14px 20px"}}>
           <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"5px"}}>Active Month</div>
           <select value={activeMK} onChange={e=>setActiveMK(e.target.value)}
             style={{...sInput,fontSize:"12px",appearance:"none",cursor:"pointer",padding:"8px 11px"}}>
@@ -1715,13 +1715,13 @@ export default function BudgetTracker() {
         <nav style={{flex:1,padding:"0 8px"}}>
           {NAV.map(item=>(
             <button key={item.id} onClick={()=>{setActiveTab(item.id);setDrawerOpen(false);}} style={{
-              width:"100%",padding:"9px 12px",borderRadius:"9px",border:"none",
+              width:"100%",padding:"11px 14px",borderRadius:"10px",border:"none",
               background:activeTab===item.id?C.navActive:"transparent",
               color:activeTab===item.id?C.accent:C.muted,
               fontWeight:activeTab===item.id?600:400,
               fontSize:"13px",cursor:"pointer",textAlign:"left",
               display:"flex",alignItems:"center",gap:"9px",
-              marginBottom:"2px",fontFamily:"'DM Sans',sans-serif",
+              marginBottom:"4px",fontFamily:"'DM Sans',sans-serif",
             }}>
               <span style={{fontSize:"14px",width:"18px",textAlign:"center"}}>{item.icon}</span>
               {item.label}
@@ -1729,13 +1729,13 @@ export default function BudgetTracker() {
           ))}
           {/* Trends — sidebar only */}
           <button onClick={()=>{setActiveTab("trends");setDrawerOpen(false);}} style={{
-            width:"100%",padding:"9px 12px",borderRadius:"9px",border:"none",
+            width:"100%",padding:"11px 14px",borderRadius:"10px",border:"none",
             background:activeTab==="trends"?C.navActive:"transparent",
             color:activeTab==="trends"?C.accent:C.muted,
             fontWeight:activeTab==="trends"?600:400,
             fontSize:"13px",cursor:"pointer",textAlign:"left",
             display:"flex",alignItems:"center",gap:"9px",
-            marginBottom:"2px",fontFamily:"'DM Sans',sans-serif",
+            marginBottom:"4px",fontFamily:"'DM Sans',sans-serif",
           }}>
             <span style={{fontSize:"14px",width:"18px",textAlign:"center",fontStyle:"normal"}}>∿</span>
             Trends
@@ -1745,7 +1745,7 @@ export default function BudgetTracker() {
         {/* Settings button at bottom */}
         <div style={{padding:"10px 12px 0",borderTop:`1px solid ${C.border}`}}>
           <button onClick={()=>setShowSettings(true)} style={{
-            width:"100%",padding:"9px 12px",borderRadius:"9px",border:"none",
+            width:"100%",padding:"11px 14px",borderRadius:"10px",border:"none",
             background:"transparent",color:C.muted,fontWeight:400,
             fontSize:"13px",cursor:"pointer",textAlign:"left",
             display:"flex",alignItems:"center",gap:"9px",
@@ -1827,7 +1827,7 @@ export default function BudgetTracker() {
           <div style={{fontSize:"17px",fontWeight:600,color:C.text,marginBottom:"20px"}}>Settings</div>
 
           {/* Account */}
-          <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
+          <div style={{marginBottom:"26px",paddingBottom:"26px",borderBottom:`1px solid ${C.border}`}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Account</div>
               <>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.cardAlt,padding:"10px 12px",borderRadius:"10px",border:`1px solid ${C.border}`,marginBottom:"10px"}}>
@@ -1845,7 +1845,7 @@ export default function BudgetTracker() {
           </div>
 
           {/* Dark mode + Bold */}
-          <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
+          <div style={{marginBottom:"26px",paddingBottom:"26px",borderBottom:`1px solid ${C.border}`}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Appearance</div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.cardAlt,padding:"12px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,marginBottom:"8px"}}>
               <div>
@@ -1860,7 +1860,7 @@ export default function BudgetTracker() {
           </div>
 
           {/* Month management */}
-          <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
+          <div style={{marginBottom:"26px",paddingBottom:"26px",borderBottom:`1px solid ${C.border}`}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Month</div>
             <button onClick={()=>{addNextMonth();setShowSettings(false);}} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:C.cardAlt,color:C.accent,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:600,textAlign:"left",marginBottom:"8px"}}>
               + Add New Month
@@ -1881,7 +1881,7 @@ export default function BudgetTracker() {
           </div>
 
           {/* App */}
-          <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
+          <div style={{marginBottom:"26px",paddingBottom:"26px",borderBottom:`1px solid ${C.border}`}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>App</div>
             {/* Mode switcher */}
             <div style={{background:C.cardAlt,borderRadius:"10px",padding:"12px 14px",border:`1px solid ${C.border}`,marginBottom:"8px"}}>
@@ -1903,7 +1903,7 @@ export default function BudgetTracker() {
           </div>
 
           {/* Get the App */}
-          <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
+          <div style={{marginBottom:"26px",paddingBottom:"26px",borderBottom:`1px solid ${C.border}`}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Get the App</div>
             <div style={{background:C.navActive,borderRadius:"10px",padding:"14px",border:`1px solid ${C.border}`}}>
               <div style={{fontSize:"12px",color:C.accent,fontWeight:600,marginBottom:"8px"}}>📱 Install on Android</div>
@@ -1922,7 +1922,7 @@ export default function BudgetTracker() {
           </div>
 
           {/* Export */}
-          <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
+          <div style={{marginBottom:"26px",paddingBottom:"26px",borderBottom:`1px solid ${C.border}`}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Export Data</div>
             <div style={{fontSize:"11px",color:C.muted,lineHeight:1.6,marginBottom:"10px"}}>Download all your data for {fmtMK(activeMK)} as a spreadsheet (.csv) you can open in Excel, Google Sheets, or any spreadsheet app.</div>
             <button onClick={exportCSV} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:C.cardAlt,color:C.green,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:600,textAlign:"left"}}>
@@ -1995,10 +1995,10 @@ export default function BudgetTracker() {
         .drawer-overlay{animation:fadeIn 0.2s ease}
         .settings-modal{animation:slideUp 0.25s cubic-bezier(0.32,0.72,0,1)}
         @media(max-width:768px){
-          .mob-header{display:flex!important;position:fixed;top:0;left:0;right:0;z-index:100;background:${C.sidebar};border-bottom:1px solid ${C.border};padding:11px 15px;align-items:center;justify-content:space-between;}
+          .mob-header{display:flex!important;position:fixed;top:0;left:0;right:0;z-index:100;background:${C.sidebar};border-bottom:1px solid ${C.border};padding:14px 18px;align-items:center;justify-content:space-between;}
           .desk-sidebar{display:none!important;}
           .mob-nav{display:flex!important;position:fixed;bottom:0;left:0;right:0;background:${C.sidebar};border-top:1px solid ${C.border};z-index:50;padding:5px 0 max(8px,env(safe-area-inset-bottom));}
-          .main-wrap{padding:64px 12px 72px!important;}
+          .main-wrap{padding:72px 16px 80px!important;}
           .two-col-grid{grid-template-columns:1fr!important;}
           .col-hide-mobile{display:none!important;}
           .col-actions-mobile{display:none!important;}
@@ -2053,7 +2053,7 @@ export default function BudgetTracker() {
           <SidebarInner/>
         </aside>
 
-        <main className="main-wrap" style={{flex:1,padding:"28px",overflowY:"auto",overflow:"hidden"}}
+        <main className="main-wrap" style={{flex:1,padding:"36px 32px",overflowY:"auto",overflow:"hidden"}}
           onTouchStart={e=>{
             const t=e.touches[0];
             const el=e.currentTarget as HTMLElement;
@@ -2105,7 +2105,7 @@ export default function BudgetTracker() {
             overflowY:"auto",
             height:"100%",
           }}>
-          <div style={{marginBottom:"18px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px"}}>
+          <div style={{marginBottom:"28px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px"}}>
             <div>
               <h1 style={{fontSize:"clamp(22px,4vw,32px)",fontWeight:800,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>
                 {activeTab==="categories"?"Categories":activeTab==="tutorial"?"How to use Budgetly":activeTab==="trends"?"Trends":activeTab==="accounts"?"Accounts":NAV.find(n=>n.id===activeTab)?.label}
@@ -2121,7 +2121,7 @@ export default function BudgetTracker() {
           </div>
 
           {showTutorialStrip&&activeTab!=="tutorial"&&(
-            <div style={{background:C.navActive,borderRadius:"10px",padding:"10px 14px",marginBottom:"14px",display:"flex",justifyContent:"space-between",alignItems:"center",border:`1px solid ${C.border}`,gap:"10px"}}>
+            <div style={{background:C.navActive,borderRadius:"10px",padding:"14px 18px",marginBottom:"20px",display:"flex",justifyContent:"space-between",alignItems:"center",border:`1px solid ${C.border}`,gap:"10px"}}>
               <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                 <span style={{fontSize:"14px"}}>💡</span>
                 <span style={{fontSize:"12px",color:C.muted,lineHeight:1.5}}>New to Budgetly? Check out tips and tricks to get the most out of the app.</span>
@@ -2151,7 +2151,7 @@ export default function BudgetTracker() {
 
       <div className="mob-nav">
         {NAV.map(item=>(
-          <button key={item.id} onClick={()=>setActiveTab(item.id)} style={{flex:1,padding:"5px 3px",border:"none",background:"transparent",color:activeTab===item.id?C.accent:C.faint,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:"2px",fontFamily:"'DM Sans',sans-serif"}}>
+          <button key={item.id} onClick={()=>setActiveTab(item.id)} style={{flex:1,padding:"8px 3px",border:"none",background:"transparent",color:activeTab===item.id?C.accent:C.faint,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:"2px",fontFamily:"'DM Sans',sans-serif"}}>
             <span style={{fontSize:"16px"}}>{item.icon}</span>
             <span style={{fontSize:"9px",fontWeight:activeTab===item.id?600:400}}>{item.label}</span>
           </button>
