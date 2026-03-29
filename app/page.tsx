@@ -53,51 +53,51 @@ const SWIPE_TABS = ["overview","expenses","earnings","savings","credit","trends"
 // ─── Theme factory ────────────────────────────────────────────────────────────
 function makeTheme(dark: boolean): Theme {
   return dark ? {
-    bg:             "#111118",
-    sidebar:        "#18181f",
-    card:           "#1e1e28",
-    cardAlt:        "#15151c",
-    border:         "#2c2c40",
-    text:           "#f0f0ff",
+    bg:             "#16152a",
+    sidebar:        "#1e1d32",
+    card:           "#242340",
+    cardAlt:        "#1a1930",
+    border:         "#32305a",
+    text:           "#e8e6ff",
     muted:          "#ffffff",
     faint:          "#cccccc",
-    accent:         "#9d8ff7",
-    green:          "#2ed4a0",
-    red:            "#f06b58",
-    amber:          "#f0aa28",
-    inputBg:        "#14141c",
-    progressTrack:  "#26263a",
-    navActive:      "#202032",
-    pillGreen:      "#0c2418",
-    pillGreenBorder:"#1e4030",
-    pillRed:        "#240e0e",
-    pillRedBorder:  "#401a1a",
-    delBg:          "#240e0e",
-    cancelBg:       "#1c1c2e",
-    upcomingBg:     "#14141c",
+    accent:         "#a898f8",
+    green:          "#5ecfa0",
+    red:            "#f08080",
+    amber:          "#f0b84a",
+    inputBg:        "#1a1930",
+    progressTrack:  "#2a284a",
+    navActive:      "#28265a",
+    pillGreen:      "#142a20",
+    pillGreenBorder:"#264838",
+    pillRed:        "#2a1414",
+    pillRedBorder:  "#482424",
+    delBg:          "#2a1414",
+    cancelBg:       "#20203a",
+    upcomingBg:     "#1a1930",
   } : {
-    bg:             "#f4f4f7",
-    sidebar:        "#ffffff",
+    bg:             "#f0eff8",
+    sidebar:        "#faf9ff",
     card:           "#ffffff",
-    cardAlt:        "#f9f9fc",
-    border:         "#e4e4ec",
-    text:           "#111118",
+    cardAlt:        "#f5f4fc",
+    border:         "#e0def4",
+    text:           "#1c1b2e",
     muted:          "#000000",
     faint:          "#333333",
-    accent:         "#6c5ce7",
-    green:          "#009e72",
-    red:            "#d03a2e",
-    amber:          "#c48000",
-    inputBg:        "#f9f9fc",
-    progressTrack:  "#eaeaef",
-    navActive:      "#eeecff",
-    pillGreen:      "#e4f8f1",
-    pillGreenBorder:"#9adec4",
-    pillRed:        "#fce8e6",
-    pillRedBorder:  "#f2aca6",
-    delBg:          "#fce8e6",
-    cancelBg:       "#ededf8",
-    upcomingBg:     "#f9f9fc",
+    accent:         "#7c6ee0",
+    green:          "#3aaa80",
+    red:            "#e06060",
+    amber:          "#d4900a",
+    inputBg:        "#f5f4fc",
+    progressTrack:  "#e8e6f6",
+    navActive:      "#eceaff",
+    pillGreen:      "#e8f8f2",
+    pillGreenBorder:"#a8dcc8",
+    pillRed:        "#fce8e8",
+    pillRedBorder:  "#f0b4b4",
+    delBg:          "#fce8e8",
+    cancelBg:       "#eceaff",
+    upcomingBg:     "#f5f4fc",
   };
 }
 
@@ -209,7 +209,7 @@ function EditModal({ C, title, fields, onSave, onClose }: {
 function OverviewTab(p: OvProps) {
   const { C } = p;
   const sCard: CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
-  const sSecT: CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
+  const sSecT: CSSProperties = { fontSize:"11px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:800 };
   const catTotals = p.categories.map((cat,i)=>({
     name:cat,color:CAT_COLORS[i%CAT_COLORS.length],
     total:p.expenses.filter(e=>e.category===cat).reduce((s,e)=>s+e.amount,0),
@@ -234,8 +234,8 @@ function OverviewTab(p: OvProps) {
           const cards = p.appMode==="household" ? householdCards : studentCards;
           return cards.map(s=>(
             <div key={s.label} style={{...sCard,borderTop:`3px solid ${s.color}`,padding:"20px"}}>
-              <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"8px"}}>{s.label}</div>
-              <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:700,color:s.color}}>{s.val}</div>
+              <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"10px",fontWeight:700}}>{s.label}</div>
+              <div style={{fontSize:"clamp(20px,3vw,28px)",fontWeight:800,color:s.color}}>{s.val}</div>
               {s.sub&&<div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{s.sub}</div>}
             </div>
           ));
@@ -256,7 +256,7 @@ function OverviewTab(p: OvProps) {
               </div>
             ):(
               <div style={{display:"flex",alignItems:"baseline",gap:"9px"}}>
-                <span style={{fontSize:"clamp(18px,3vw,26px)",fontWeight:600,color:C.text}}>{fmt(p.budget)}</span>
+                <span style={{fontSize:"clamp(22px,3vw,30px)",fontWeight:800,color:C.text}}>{fmt(p.budget)}</span>
                 <button onClick={()=>{p.setEditingBudget(true);p.setTempBudget(String(p.budget));}}
                   style={{...btnB,background:C.navActive,color:C.accent,padding:"3px 10px",fontSize:"12px"}}>Edit</button>
               </div>
@@ -264,7 +264,7 @@ function OverviewTab(p: OvProps) {
           </div>
           <div style={{textAlign:"right"}}>
             <div style={sSecT}>Spent</div>
-            <div style={{fontSize:"clamp(18px,3vw,26px)",fontWeight:600,color:p.spentPct>80?C.red:C.text}}>{p.spentPct.toFixed(1)}%</div>
+            <div style={{fontSize:"clamp(22px,3vw,30px)",fontWeight:800,color:p.spentPct>80?C.red:C.text}}>{p.spentPct.toFixed(1)}%</div>
           </div>
         </div>
         <div style={{background:C.progressTrack,borderRadius:"8px",height:"8px",overflow:"hidden",marginBottom:"7px"}}>
@@ -283,7 +283,7 @@ function OverviewTab(p: OvProps) {
           ] as {label:string;val:string;color:string;note:string}[]).map((d,i)=>(
             <div key={i} style={{padding:"10px 8px",borderLeft:i>0?`1px solid ${C.border}`:"none",textAlign:"center"}}>
               <div style={{fontSize:"9px",color:C.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:"6px",lineHeight:1.3}}>{d.label}</div>
-              <div style={{fontSize:"clamp(13px,2vw,18px)",fontWeight:600,color:d.color}}>{d.val}</div>
+              <div style={{fontSize:"clamp(16px,2vw,22px)",fontWeight:800,color:d.color}}>{d.val}</div>
               <div style={{fontSize:"9px",color:C.muted,marginTop:"4px",lineHeight:1.3}}>{d.note}</div>
             </div>
           ))}
@@ -318,7 +318,7 @@ function OverviewTab(p: OvProps) {
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
                       <span style={{fontSize:"11px",color:C.muted}}>{pct.toFixed(1)}%</span>
-                      <span style={{fontSize:"14px",fontWeight:700,color:cat.color}}>{fmt(cat.total)}</span>
+                      <span style={{fontSize:"16px",fontWeight:800,color:cat.color}}>{fmt(cat.total)}</span>
                     </div>
                   </div>
                   <div style={{height:"8px",borderRadius:"6px",background:C.progressTrack,overflow:"hidden"}}>
@@ -508,7 +508,7 @@ function ExpensesTab(p: ExProps) {
   const { C } = p;
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
   const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
+  const sSecT:  CSSProperties = { fontSize:"11px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:800 };
   const [showForm, setShowForm] = useState(false);
   const [editEntry, setEditEntry] = useState<Expense|null>(null);
   const [editAmt, setEditAmt] = useState(""); const [editCat, setEditCat] = useState("");
@@ -536,10 +536,10 @@ function ExpensesTab(p: ExProps) {
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
         <div style={{...sCard,padding:"12px 16px",display:"inline-flex",gap:"16px",alignItems:"center"}}>
           <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Total</div>
-          <div style={{fontSize:"18px",fontWeight:600,color:C.red}}>{fmt(p.totalExpenses)}</div></div>
+          <div style={{fontSize:"22px",fontWeight:800,color:C.red}}>{fmt(p.totalExpenses)}</div></div>
           <div style={{width:"1px",height:"36px",background:C.border}}/>
           <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Entries</div>
-          <div style={{fontSize:"18px",fontWeight:600,color:C.text}}>{p.expenses.length}</div></div>
+          <div style={{fontSize:"22px",fontWeight:800,color:C.text}}>{p.expenses.length}</div></div>
         </div>
         <button onClick={()=>setShowForm(v=>!v)} style={{...btnP,padding:"10px 18px",fontSize:"20px",lineHeight:1}}>+</button>
       </div>
@@ -586,7 +586,7 @@ function EarningsTab(p: ErProps) {
   const { C } = p;
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
   const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
+  const sSecT:  CSSProperties = { fontSize:"11px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:800 };
   const [showForm, setShowForm] = useState(false);
   const [editEntry, setEditEntry] = useState<Entry|null>(null);
   const [editAmt, setEditAmt] = useState(""); const [editDesc, setEditDesc] = useState("");
@@ -609,10 +609,10 @@ function EarningsTab(p: ErProps) {
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
         <div style={{...sCard,padding:"12px 16px",display:"inline-flex",gap:"16px",alignItems:"center"}}>
           <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Total</div>
-          <div style={{fontSize:"18px",fontWeight:600,color:C.green}}>{fmt(p.totalEarnings)}</div></div>
+          <div style={{fontSize:"22px",fontWeight:800,color:C.green}}>{fmt(p.totalEarnings)}</div></div>
           <div style={{width:"1px",height:"36px",background:C.border}}/>
           <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Entries</div>
-          <div style={{fontSize:"18px",fontWeight:600,color:C.text}}>{p.earnings.length}</div></div>
+          <div style={{fontSize:"22px",fontWeight:800,color:C.text}}>{p.earnings.length}</div></div>
         </div>
         <button onClick={()=>setShowForm(v=>!v)} style={{...btnG,padding:"10px 18px",fontSize:"20px",lineHeight:1}}>+</button>
       </div>
@@ -657,7 +657,7 @@ function SavingsTab(p: SvProps) {
   const { C } = p;
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
   const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
+  const sSecT:  CSSProperties = { fontSize:"11px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:800 };
   const [showForm, setShowForm] = useState(false);
   const [editEntry, setEditEntry] = useState<Entry|null>(null);
   const [editAmt, setEditAmt] = useState(""); const [editDesc, setEditDesc] = useState("");
@@ -680,10 +680,10 @@ function SavingsTab(p: SvProps) {
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
         <div style={{...sCard,padding:"12px 16px",display:"inline-flex",gap:"16px",alignItems:"center"}}>
           <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Total</div>
-          <div style={{fontSize:"18px",fontWeight:600,color:C.amber}}>{fmt(p.totalSavings)}</div></div>
+          <div style={{fontSize:"22px",fontWeight:800,color:C.amber}}>{fmt(p.totalSavings)}</div></div>
           <div style={{width:"1px",height:"36px",background:C.border}}/>
           <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Entries</div>
-          <div style={{fontSize:"18px",fontWeight:600,color:C.text}}>{p.savings.length}</div></div>
+          <div style={{fontSize:"22px",fontWeight:800,color:C.text}}>{p.savings.length}</div></div>
         </div>
         <button onClick={()=>setShowForm(v=>!v)} style={{...btnA,padding:"10px 18px",fontSize:"20px",lineHeight:1}}>+</button>
       </div>
@@ -728,7 +728,7 @@ function CategoriesTab(p: CaProps) {
   const { C } = p;
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
   const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
+  const sSecT:  CSSProperties = { fontSize:"11px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:800 };
   return (
     <div className="two-col-grid" style={{display:"grid",gridTemplateColumns:"clamp(240px,30%,300px) 1fr",gap:"16px"}}>
       <div style={sCard}>
@@ -845,17 +845,17 @@ function TrendsTab(p: TrProps) {
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px",marginBottom:"16px"}} className="two-col-grid">
         <div style={{...sCard,padding:"14px",borderTop:`3px solid ${C.red}`}}>
           <div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"5px"}}>Total Spent</div>
-          <div style={{fontSize:"clamp(15px,2.5vw,20px)",fontWeight:600,color:C.red}}>{fmt(totalPeriod)}</div>
+          <div style={{fontSize:"clamp(18px,2.5vw,24px)",fontWeight:800,color:C.red}}>{fmt(totalPeriod)}</div>
           <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{view==="week"?"past 7 days":"past 30 days"}</div>
         </div>
         <div style={{...sCard,padding:"14px",borderTop:`3px solid ${C.amber}`}}>
           <div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"5px"}}>Daily Average</div>
-          <div style={{fontSize:"clamp(15px,2.5vw,20px)",fontWeight:600,color:C.amber}}>{fmt(Math.round(avgPerDay))}</div>
+          <div style={{fontSize:"clamp(18px,2.5vw,24px)",fontWeight:800,color:C.amber}}>{fmt(Math.round(avgPerDay))}</div>
           <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{activeDays} active day{activeDays!==1?"s":""}</div>
         </div>
         <div style={{...sCard,padding:"14px",borderTop:`3px solid ${C.accent}`}}>
           <div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"5px"}}>Highest Day</div>
-          <div style={{fontSize:"clamp(15px,2.5vw,20px)",fontWeight:600,color:C.accent}}>{fmt(highestDay.total)}</div>
+          <div style={{fontSize:"clamp(18px,2.5vw,24px)",fontWeight:800,color:C.accent}}>{fmt(highestDay.total)}</div>
           <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>
             {highestDay.total > 0 ? new Date(highestDay.dateStr+"T00:00:00").toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"}) : "No data"}
           </div>
@@ -966,7 +966,7 @@ function TutorialTab({ C, appMode }: { C:Theme; appMode:AppMode }) {
       <div style={{display:"flex",gap:"12px",alignItems:"flex-start",marginBottom:"10px"}}>
         <div style={{width:"38px",height:"38px",borderRadius:"10px",background:C.navActive,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px",flexShrink:0}}>{icon}</div>
         <div style={{flex:1}}>
-          <div style={{fontWeight:700,fontSize:"15px",color:C.text,marginBottom:"4px"}}>{title}</div>
+          <div style={{fontWeight:800,fontSize:"17px",color:C.text,marginBottom:"6px"}}>{title}</div>
           <div style={{fontSize:"13px",color:C.muted,lineHeight:1.6,marginBottom:"6px"}}>{desc}</div>
           <div>{tags}</div>
         </div>
@@ -979,7 +979,7 @@ function TutorialTab({ C, appMode }: { C:Theme; appMode:AppMode }) {
   return (
     <div style={{maxWidth:"680px"}}>
       <div style={{marginBottom:"16px"}}>
-        <div style={{fontSize:"18px",fontWeight:700,color:C.text,marginBottom:"4px"}}>How to use Budgetly</div>
+        <div style={{fontSize:"24px",fontWeight:800,color:C.text,marginBottom:"6px"}}>How to use Budgetly</div>
         <div style={{fontSize:"13px",color:C.muted}}>Quick guide · {appMode==="student"?"🎓 Student mode":"🏠 Household mode"}</div>
       </div>
       {row("◎","Overview","Your financial snapshot for the month.",
@@ -1022,7 +1022,7 @@ function CreditTab(p: CrProps) {
   const { C } = p;
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
   const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
+  const sSecT:  CSSProperties = { fontSize:"11px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:800 };
 
   const owedToMe = p.credits.filter(c=>c.type==="owed_to_me");
   const iOwe     = p.credits.filter(c=>c.type==="i_owe");
@@ -1074,12 +1074,12 @@ function CreditTab(p: CrProps) {
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px",marginBottom:"22px"}}>
         <div style={{...sCard,borderTop:`3px solid ${C.green}`,padding:"14px"}}>
           <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"5px"}}>People Owe Me</div>
-          <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:700,color:C.green}}>{fmt(totalOwedToMe)}</div>
+          <div style={{fontSize:"clamp(20px,3vw,28px)",fontWeight:800,color:C.green}}>{fmt(totalOwedToMe)}</div>
           <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{owedToMe.filter(c=>!c.cleared).length} pending</div>
         </div>
         <div style={{...sCard,borderTop:`3px solid ${C.red}`,padding:"14px"}}>
           <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"5px"}}>I Owe</div>
-          <div style={{fontSize:"clamp(15px,2.5vw,21px)",fontWeight:700,color:C.red}}>{fmt(totalIOwe)}</div>
+          <div style={{fontSize:"clamp(20px,3vw,28px)",fontWeight:800,color:C.red}}>{fmt(totalIOwe)}</div>
           <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{iOwe.filter(c=>!c.cleared).length} pending</div>
         </div>
       </div>
@@ -1317,7 +1317,7 @@ function MigrateModal({ onDecide, C }: { onDecide:(migrate:boolean)=>void; C:The
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>
       <div style={{background:C.card,borderRadius:"16px",padding:"36px",maxWidth:"380px",width:"90%",border:`1px solid ${C.border}`}}>
-        <div style={{fontSize:"18px",fontWeight:600,color:C.text,marginBottom:"8px"}}>Import your existing data?</div>
+        <div style={{fontSize:"22px",fontWeight:800,color:C.text,marginBottom:"8px"}}>Import your existing data?</div>
         <div style={{fontSize:"13px",color:C.muted,lineHeight:1.7,marginBottom:"20px"}}>We found budget data saved locally on this device from before you had an account. Import it now so it syncs across all your devices?</div>
         <div style={{display:"flex",gap:"10px"}}>
           <button onClick={()=>onDecide(true)}  style={{...btnP,flex:1,padding:"11px"}}>Yes, import</button>
@@ -1373,7 +1373,7 @@ function AccountsTab({ C, accounts, expenses, earnings, savings, newAccount, set
   const DEFAULT_ACCS = ["Main Account","Cash","Savings Account"];
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
   const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
+  const sSecT:  CSSProperties = { fontSize:"11px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:800 };
   return (
     <div style={{maxWidth:"680px"}}>
       <div style={{...sCard,marginBottom:"14px"}}>
@@ -1673,7 +1673,7 @@ export default function BudgetTracker() {
 
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
   const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:600 };
+  const sSecT:  CSSProperties = { fontSize:"11px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:800 };
 
   if (!authReady) return (
     <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>
@@ -1690,7 +1690,7 @@ export default function BudgetTracker() {
       <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
         {/* Logo */}
         <div style={{padding:"0 20px 24px"}}>
-          <div style={{fontSize:"20px",fontWeight:800,letterSpacing:"-0.5px",color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
+          <div style={{fontSize:"24px",fontWeight:900,letterSpacing:"-0.8px",color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
           <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"4px"}}>
             <span style={{fontSize:"9px",background:C.navActive,color:C.accent,padding:"2px 7px",borderRadius:"20px",fontWeight:700,letterSpacing:"0.5px",textTransform:"uppercase"}}>
               {appMode==="household"?"🏠 Household":"🎓 Student"}
@@ -1955,6 +1955,7 @@ export default function BudgetTracker() {
   return (
     <>
       <title>{appMode ? `Budgetly · ${appMode==="household"?"Household":"Student"}` : "Budgetly"}</title>
+      <link rel="icon" type="image/svg+xml" href={`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237c6ee0'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='sans-serif' font-weight='700' font-size='18' fill='white'>B</text></svg>`}/>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
       <link rel="manifest" href="/manifest.json"/>
@@ -2014,7 +2015,7 @@ export default function BudgetTracker() {
       {/* Mobile header */}
       <div className="mob-header">
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-          <div style={{fontSize:"18px",fontWeight:800,color:C.text,letterSpacing:"-0.3px"}}><span style={{color:C.accent}}>Budget</span>ly</div>
+          <div style={{fontSize:"20px",fontWeight:900,color:C.text,letterSpacing:"-0.5px"}}><span style={{color:C.accent}}>Budget</span>ly</div>
           <span style={{fontSize:"9px",background:C.navActive,color:C.accent,padding:"2px 7px",borderRadius:"20px",fontWeight:700,letterSpacing:"0.5px",textTransform:"uppercase"}}>
             {appMode==="household"?"🏠 HH":"🎓 STU"}
           </span>
@@ -2107,7 +2108,7 @@ export default function BudgetTracker() {
           }}>
           <div style={{marginBottom:"28px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px"}}>
             <div>
-              <h1 style={{fontSize:"clamp(22px,4vw,32px)",fontWeight:800,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>
+              <h1 style={{fontSize:"clamp(26px,4vw,36px)",fontWeight:900,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>
                 {activeTab==="categories"?"Categories":activeTab==="tutorial"?"How to use Budgetly":activeTab==="trends"?"Trends":activeTab==="accounts"?"Accounts":NAV.find(n=>n.id===activeTab)?.label}
               </h1>
               <div style={{fontSize:"12px",color:C.muted,marginTop:"5px",fontWeight:500}}>
