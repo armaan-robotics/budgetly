@@ -53,51 +53,51 @@ const SWIPE_TABS = ["overview","expenses","earnings","savings","credit","trends"
 // ─── Theme factory ────────────────────────────────────────────────────────────
 function makeTheme(dark: boolean): Theme {
   return dark ? {
-    bg:             "#111114",
-    sidebar:        "#18181c",
-    card:           "#1e1e23",
-    cardAlt:        "#16161a",
-    border:         "#2c2c34",
-    text:           "#ffffff",
-    muted:          "#ffffff",
-    faint:          "#cccccc",
-    accent:         "#7c6fd4",
-    green:          "#3aaa80",
-    red:            "#b86050",
-    amber:          "#b89028",
-    inputBg:        "#141418",
-    progressTrack:  "#2c2c34",
-    navActive:      "#222230",
-    pillGreen:      "#0e241a",
-    pillGreenBorder:"#1c3e2c",
-    pillRed:        "#241212",
-    pillRedBorder:  "#3e2020",
-    delBg:          "#241414",
-    cancelBg:       "#1e1e26",
-    upcomingBg:     "#141418",
+    bg:             "#0c0c12",
+    sidebar:        "#131320",
+    card:           "#18182a",
+    cardAlt:        "#10101e",
+    border:         "#28283e",
+    text:           "#eeeeff",
+    muted:          "#c8c6e8",
+    faint:          "#7874a8",
+    accent:         "#8b7ff5",
+    green:          "#2ecc8a",
+    red:            "#e85c4a",
+    amber:          "#e8a820",
+    inputBg:        "#0e0e1c",
+    progressTrack:  "#222238",
+    navActive:      "#1c1c2e",
+    pillGreen:      "#0a2018",
+    pillGreenBorder:"#183828",
+    pillRed:        "#200e0e",
+    pillRedBorder:  "#381818",
+    delBg:          "#200e0e",
+    cancelBg:       "#181828",
+    upcomingBg:     "#0e0e1c",
   } : {
-    bg:             "#f7f6f3",
+    bg:             "#f2f2f8",
     sidebar:        "#ffffff",
     card:           "#ffffff",
-    cardAlt:        "#faf9f7",
-    border:         "#e8e5e0",
-    text:           "#000000",
-    muted:          "#000000",
-    faint:          "#444444",
+    cardAlt:        "#f8f8fc",
+    border:         "#dedce8",
+    text:           "#0a0a14",
+    muted:          "#2a2840",
+    faint:          "#6b6888",
     accent:         "#6c5ce7",
-    green:          "#00b894",
-    red:            "#e17055",
-    amber:          "#e0a800",
-    inputBg:        "#faf9f7",
-    progressTrack:  "#f0ede8",
-    navActive:      "#ede9f8",
-    pillGreen:      "#edfaf5",
-    pillGreenBorder:"#b2ead0",
-    pillRed:        "#fdecea",
-    pillRedBorder:  "#f5c0b8",
-    delBg:          "#fde8e4",
-    cancelBg:       "#f0ede8",
-    upcomingBg:     "#faf9f7",
+    green:          "#00a87a",
+    red:            "#d94535",
+    amber:          "#cc8c00",
+    inputBg:        "#f8f8fc",
+    progressTrack:  "#e8e6f8",
+    navActive:      "#eeecff",
+    pillGreen:      "#e6faf4",
+    pillGreenBorder:"#a0e4c8",
+    pillRed:        "#fde8e6",
+    pillRedBorder:  "#f4b0a8",
+    delBg:          "#fde8e6",
+    cancelBg:       "#eeeeff",
+    upcomingBg:     "#f8f8fc",
   };
 }
 
@@ -1219,6 +1219,13 @@ function AuthScreen({ onAuth, dark: _dark }: { onAuth:(user:User)=>void; dark:bo
     boxSizing:"border-box", fontFamily:"'DM Sans',sans-serif", marginBottom:"10px",
   };
 
+  const handleGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
+  };
+
   const handle = async () => {
     setError(""); setLoading(true);
     if (mode==="signup") {
@@ -1264,7 +1271,20 @@ function AuthScreen({ onAuth, dark: _dark }: { onAuth:(user:User)=>void; dark:bo
           </div>
         </div>
 
-        {/* Form — no card border, blends with page */}
+        {/* Google OAuth */}
+        <button onClick={handleGoogle} style={{width:"100%",padding:"11px",borderRadius:"9px",border:"1.5px solid #e0ddf8",background:"#fff",color:"#1a1a2e",fontSize:"14px",fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:"10px",marginBottom:"14px"}}>
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+          Continue with Google
+        </button>
+
+        {/* Divider */}
+        <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"14px"}}>
+          <div style={{flex:1,height:"1px",background:"#e0ddf8"}}/>
+          <span style={{fontSize:"11px",color:"#aaa"}}>or</span>
+          <div style={{flex:1,height:"1px",background:"#e0ddf8"}}/>
+        </div>
+
+        {/* Email/password */}
         <input type="email" placeholder="Email" value={email}
           onChange={e=>setEmail(e.target.value)} style={sInput}/>
         <div style={{position:"relative",marginBottom:"10px"}}>
@@ -1690,8 +1710,12 @@ export default function BudgetTracker() {
       <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
         {/* Logo */}
         <div style={{padding:"0 18px 20px"}}>
-          <div style={{fontSize:"20px",fontWeight:700,letterSpacing:"-0.3px",color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
-          <div style={{fontSize:"10px",color:dark?C.muted:C.faint,marginTop:"1px"}}>by Armaan Gupta</div>
+          <div style={{fontSize:"20px",fontWeight:800,letterSpacing:"-0.5px",color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
+          <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"4px"}}>
+            <span style={{fontSize:"9px",background:C.navActive,color:C.accent,padding:"2px 7px",borderRadius:"20px",fontWeight:700,letterSpacing:"0.5px",textTransform:"uppercase"}}>
+              {appMode==="household"?"🏠 Household":"🎓 Student"}
+            </span>
+          </div>
         </div>
 
         {/* Month selector */}
@@ -1950,6 +1974,7 @@ export default function BudgetTracker() {
 
   return (
     <>
+      <title>{appMode ? `Budgetly · ${appMode==="household"?"Household":"Student"}` : "Budgetly"}</title>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
       <link rel="manifest" href="/manifest.json"/>
@@ -2008,7 +2033,12 @@ export default function BudgetTracker() {
 
       {/* Mobile header */}
       <div className="mob-header">
-        <div style={{fontSize:"18px",fontWeight:700,color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
+        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+          <div style={{fontSize:"18px",fontWeight:800,color:C.text,letterSpacing:"-0.3px"}}><span style={{color:C.accent}}>Budget</span>ly</div>
+          <span style={{fontSize:"9px",background:C.navActive,color:C.accent,padding:"2px 7px",borderRadius:"20px",fontWeight:700,letterSpacing:"0.5px",textTransform:"uppercase"}}>
+            {appMode==="household"?"🏠 HH":"🎓 STU"}
+          </span>
+        </div>
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
 <button onClick={toggleDark} style={{background:C.navActive,border:`1px solid ${C.border}`,borderRadius:"20px",padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",gap:"5px"}}>
             <div style={{width:"28px",height:"16px",borderRadius:"16px",background:dark?C.accent:"#d1cfe8",position:"relative",flexShrink:0}}>
@@ -2097,10 +2127,10 @@ export default function BudgetTracker() {
           }}>
           <div style={{marginBottom:"18px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px"}}>
             <div>
-              <h1 style={{fontSize:"clamp(18px,3.5vw,24px)",fontWeight:600,color:C.text,letterSpacing:"-0.3px"}}>
+              <h1 style={{fontSize:"clamp(22px,4vw,32px)",fontWeight:800,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>
                 {activeTab==="categories"?"Categories":activeTab==="tutorial"?"How to use Budgetly":activeTab==="trends"?"Trends":activeTab==="accounts"?"Accounts":NAV.find(n=>n.id===activeTab)?.label}
               </h1>
-              <div style={{fontSize:"11px",color:C.muted,marginTop:"3px"}}>
+              <div style={{fontSize:"12px",color:C.muted,marginTop:"5px",fontWeight:500}}>
                 {fmtMK(activeMK)}{activeMK!==curMK()&&" · past month"}
               </div>
             </div>
