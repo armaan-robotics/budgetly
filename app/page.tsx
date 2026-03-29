@@ -293,40 +293,63 @@ function OverviewTab(p: OvProps) {
 
       {catTotals.length>0&&(
         <div style={{...sCard,marginBottom:"18px"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
             <div style={sSecT}>Spending by Category</div>
-            <div style={{fontSize:"11px",color:C.muted}}>{fmt(p.cashFlowOut)} total</div>
+            <div style={{fontSize:"12px",color:C.muted,fontWeight:600}}>{fmt(p.cashFlowOut)} total</div>
           </div>
-          {/* Stacked bar */}
-          <div style={{height:"16px",borderRadius:"8px",overflow:"hidden",display:"flex",marginBottom:"24px",background:C.progressTrack}}>
-            {catTotals.map(cat=>{
-              const pct=p.cashFlowOut>0?(cat.total/p.cashFlowOut)*100:0;
-              return pct>0?<div key={cat.name} title={`${cat.name}: ${fmt(cat.total)} (${pct.toFixed(1)}%)`} style={{height:"100%",width:`${pct}%`,background:cat.color,transition:"width 0.5s ease"}}/>:null;
-            })}
-          </div>
-          {/* Horizontal bars per category */}
-          <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
-            {catTotals.map(cat=>{
-              const pct=p.cashFlowOut>0?Math.min((cat.total/p.cashFlowOut)*100,100):0;
-              return(
-                <div key={cat.name}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:"7px"}}>
-                      <div style={{width:"9px",height:"9px",borderRadius:"50%",background:cat.color,flexShrink:0}}/>
-                      <span style={{fontSize:"13px",fontWeight:600,color:C.text}}>{cat.name}</span>
-                      <span style={{fontSize:"11px",color:C.muted}}>({cat.count})</span>
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                      <span style={{fontSize:"11px",color:C.muted}}>{pct.toFixed(1)}%</span>
-                      <span style={{fontSize:"16px",fontWeight:800,color:cat.color}}>{fmt(cat.total)}</span>
-                    </div>
-                  </div>
-                  <div style={{height:"8px",borderRadius:"6px",background:C.progressTrack,overflow:"hidden"}}>
-                    <div style={{height:"100%",borderRadius:"6px",background:cat.color,width:`${pct}%`,transition:"width 0.5s ease"}}/>
-                  </div>
-                </div>
+          <div style={{display:"flex",gap:"32px",alignItems:"center",flexWrap:"wrap"}}>
+            {(()=>{
+              const total = p.cashFlowOut;
+              if(total===0) return <div style={{fontSize:"13px",color:C.faint,padding:"20px"}}>No expenses yet</div>;
+              const size=180, cx=90, cy=90, r=82, innerR=42;
+              let startAngle = -Math.PI/2;
+              const slices = catTotals.map(cat=>{
+                const pct=cat.total/total;
+                const angle=pct*2*Math.PI;
+                const endAngle=startAngle+angle;
+                const x1=cx+r*Math.cos(startAngle), y1=cy+r*Math.sin(startAngle);
+                const x2=cx+r*Math.cos(endAngle),   y2=cy+r*Math.sin(endAngle);
+                const ix1=cx+innerR*Math.cos(startAngle), iy1=cy+innerR*Math.sin(startAngle);
+                const ix2=cx+innerR*Math.cos(endAngle),   iy2=cy+innerR*Math.sin(endAngle);
+                const largeArc=angle>Math.PI?1:0;
+                const path=`M ${ix1} ${iy1} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix1} ${iy1} Z`;
+                startAngle=endAngle;
+                return {...cat,path,pct};
+              });
+              return (
+                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{flexShrink:0,filter:"drop-shadow(0 2px 12px rgba(0,0,0,0.10))"}}>
+                  {slices.map((s,i)=>(
+                    <path key={i} d={s.path} fill={s.color} stroke={C.card} strokeWidth="2.5">
+                      <title>{s.name}: {fmt(s.total)} ({(s.pct*100).toFixed(1)}%)</title>
+                    </path>
+                  ))}
+                  <text x={cx} y={cy-7} textAnchor="middle" fontSize="10" fill={C.muted} fontFamily="DM Sans,sans-serif">{catTotals.length} categories</text>
+                  <text x={cx} y={cy+10} textAnchor="middle" fontSize="14" fontWeight="800" fill={C.text} fontFamily="DM Sans,sans-serif">{fmt(total)}</text>
+                </svg>
               );
-            })}
+            })()}
+            <div style={{flex:1,minWidth:"160px",display:"flex",flexDirection:"column",gap:"12px"}}>
+              {catTotals.map(cat=>{
+                const pct=p.cashFlowOut>0?(cat.total/p.cashFlowOut*100):0;
+                return (
+                  <div key={cat.name} style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                    <div style={{width:"12px",height:"12px",borderRadius:"3px",background:cat.color,flexShrink:0}}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+                        <span style={{fontSize:"13px",fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{cat.name}</span>
+                        <span style={{fontSize:"13px",fontWeight:700,color:cat.color,marginLeft:"8px",flexShrink:0}}>{fmt(cat.total)}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"3px"}}>
+                        <div style={{flex:1,height:"4px",borderRadius:"4px",background:C.progressTrack,overflow:"hidden"}}>
+                          <div style={{height:"100%",borderRadius:"4px",background:cat.color,width:`${pct}%`}}/>
+                        </div>
+                        <span style={{fontSize:"11px",color:C.muted,flexShrink:0}}>{pct.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
