@@ -53,51 +53,51 @@ const SWIPE_TABS = ["overview","expenses","earnings","savings","credit","trends"
 // ─── Theme factory ────────────────────────────────────────────────────────────
 function makeTheme(dark: boolean): Theme {
   return dark ? {
-    bg:             "#111118",
-    sidebar:        "#18181f",
-    card:           "#1e1e28",
-    cardAlt:        "#15151c",
-    border:         "#2c2c40",
-    text:           "#f0f0ff",
-    muted:          "#9e9cbe",
-    faint:          "#58567a",
-    accent:         "#9d8ff7",
-    green:          "#2ed4a0",
-    red:            "#f06b58",
-    amber:          "#f0aa28",
-    inputBg:        "#14141c",
-    progressTrack:  "#26263a",
-    navActive:      "#202032",
-    pillGreen:      "#0c2418",
-    pillGreenBorder:"#1e4030",
-    pillRed:        "#240e0e",
-    pillRedBorder:  "#401a1a",
-    delBg:          "#240e0e",
-    cancelBg:       "#1c1c2e",
-    upcomingBg:     "#14141c",
+    bg:             "#111114",
+    sidebar:        "#18181c",
+    card:           "#1e1e23",
+    cardAlt:        "#16161a",
+    border:         "#2c2c34",
+    text:           "#ffffff",
+    muted:          "#ffffff",
+    faint:          "#cccccc",
+    accent:         "#7c6fd4",
+    green:          "#3aaa80",
+    red:            "#b86050",
+    amber:          "#b89028",
+    inputBg:        "#141418",
+    progressTrack:  "#2c2c34",
+    navActive:      "#222230",
+    pillGreen:      "#0e241a",
+    pillGreenBorder:"#1c3e2c",
+    pillRed:        "#241212",
+    pillRedBorder:  "#3e2020",
+    delBg:          "#241414",
+    cancelBg:       "#1e1e26",
+    upcomingBg:     "#141418",
   } : {
-    bg:             "#f4f4f7",
+    bg:             "#f7f6f3",
     sidebar:        "#ffffff",
     card:           "#ffffff",
-    cardAlt:        "#f9f9fc",
-    border:         "#e4e4ec",
-    text:           "#111118",
-    muted:          "#44424e",
-    faint:          "#88869a",
+    cardAlt:        "#faf9f7",
+    border:         "#e8e5e0",
+    text:           "#000000",
+    muted:          "#000000",
+    faint:          "#444444",
     accent:         "#6c5ce7",
-    green:          "#009e72",
-    red:            "#d03a2e",
-    amber:          "#c48000",
-    inputBg:        "#f9f9fc",
-    progressTrack:  "#eaeaef",
-    navActive:      "#eeecff",
-    pillGreen:      "#e4f8f1",
-    pillGreenBorder:"#9adec4",
-    pillRed:        "#fce8e6",
-    pillRedBorder:  "#f2aca6",
-    delBg:          "#fce8e6",
-    cancelBg:       "#ededf8",
-    upcomingBg:     "#f9f9fc",
+    green:          "#00b894",
+    red:            "#e17055",
+    amber:          "#e0a800",
+    inputBg:        "#faf9f7",
+    progressTrack:  "#f0ede8",
+    navActive:      "#ede9f8",
+    pillGreen:      "#edfaf5",
+    pillGreenBorder:"#b2ead0",
+    pillRed:        "#fdecea",
+    pillRedBorder:  "#f5c0b8",
+    delBg:          "#fde8e4",
+    cancelBg:       "#f0ede8",
+    upcomingBg:     "#faf9f7",
   };
 }
 
@@ -134,7 +134,7 @@ interface SvProps { C:Theme; savings:Entry[];accounts:string[];appMode:AppMode;t
 interface CaProps { C:Theme; categories:string[];expenses:Expense[];cashFlowOut:number;newCategory:string;setNewCategory:(v:string)=>void;addCategory:()=>void;deleteCategory:(cat:string)=>void; }
 interface CreditEntry { id:number; person:string; amount:number; description:string; date:string; type:"owed_to_me"|"i_owe"; cleared:boolean; }
 interface CrProps { C:Theme; credits:CreditEntry[];crAmt:string;crPerson:string;crDesc:string;crDate:string;crType:"owed_to_me"|"i_owe";setCrAmt:(v:string)=>void;setCrPerson:(v:string)=>void;setCrDesc:(v:string)=>void;setCrDate:(v:string)=>void;setCrType:(v:"owed_to_me"|"i_owe")=>void;addCredit:()=>void;toggleCleared:(id:number)=>void;deleteCredit:(id:number)=>void;updateCredit:(id:number,u:Partial<CreditEntry>)=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void; }
-interface TrProps { C:Theme; allMonths:AllMonths; activeMK:string; categories:string[]; appMode:AppMode; }
+interface TrProps { C:Theme; allMonths:AllMonths; activeMK:string; categories:string[]; }
 
 // ─── Primitives (module-level) ────────────────────────────────────────────────
 function FF({ label, children, C }: { label:string; children:ReactNode; C:Theme }) {
@@ -790,8 +790,7 @@ function TrendsTab(p: TrProps) {
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split("T")[0];
     const mk = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
-    const modeKey = p.appMode==="household" ? `h:${mk}` : mk;
-    const monthData = p.allMonths[modeKey];
+    const monthData = p.allMonths[mk];
     const dayExpenses = monthData ? monthData.expenses.filter(e => e.date === dateStr) : [];
     const total = dayExpenses.reduce((s,e) => s+e.amount, 0);
     const byCategory: {[cat:string]:number} = {};
@@ -1219,13 +1218,6 @@ function AuthScreen({ onAuth, dark: _dark }: { onAuth:(user:User)=>void; dark:bo
     boxSizing:"border-box", fontFamily:"'DM Sans',sans-serif", marginBottom:"10px",
   };
 
-  const handleGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin },
-    });
-  };
-
   const handle = async () => {
     setError(""); setLoading(true);
     if (mode==="signup") {
@@ -1271,20 +1263,7 @@ function AuthScreen({ onAuth, dark: _dark }: { onAuth:(user:User)=>void; dark:bo
           </div>
         </div>
 
-        {/* Google OAuth */}
-        <button onClick={handleGoogle} style={{width:"100%",padding:"11px",borderRadius:"9px",border:"1.5px solid #e0ddf8",background:"#fff",color:"#1a1a2e",fontSize:"14px",fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:"10px",marginBottom:"14px"}}>
-          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
-          Continue with Google
-        </button>
-
-        {/* Divider */}
-        <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"14px"}}>
-          <div style={{flex:1,height:"1px",background:"#e0ddf8"}}/>
-          <span style={{fontSize:"11px",color:"#aaa"}}>or</span>
-          <div style={{flex:1,height:"1px",background:"#e0ddf8"}}/>
-        </div>
-
-        {/* Email/password */}
+        {/* Form — no card border, blends with page */}
         <input type="email" placeholder="Email" value={email}
           onChange={e=>setEmail(e.target.value)} style={sInput}/>
         <div style={{position:"relative",marginBottom:"10px"}}>
@@ -1710,12 +1689,8 @@ export default function BudgetTracker() {
       <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
         {/* Logo */}
         <div style={{padding:"0 18px 20px"}}>
-          <div style={{fontSize:"20px",fontWeight:800,letterSpacing:"-0.5px",color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
-          <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"4px"}}>
-            <span style={{fontSize:"9px",background:C.navActive,color:C.accent,padding:"2px 7px",borderRadius:"20px",fontWeight:700,letterSpacing:"0.5px",textTransform:"uppercase"}}>
-              {appMode==="household"?"🏠 Household":"🎓 Student"}
-            </span>
-          </div>
+          <div style={{fontSize:"20px",fontWeight:700,letterSpacing:"-0.3px",color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
+          <div style={{fontSize:"10px",color:dark?C.muted:C.faint,marginTop:"1px"}}>by Armaan Gupta</div>
         </div>
 
         {/* Month selector */}
@@ -1969,12 +1944,11 @@ export default function BudgetTracker() {
   const erProps: ErProps = { C,earnings,accounts,appMode,totalEarnings,earnAmt,earnDesc,earnDate,earnMode,earnAcc,setEarnAmt,setEarnDesc,setEarnDate,setEarnMode,setEarnAcc,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning,updateEarning };
   const svProps: SvProps = { C,savings,accounts,appMode,totalSavings,cashFlowIn,savAmt,savDesc,savDate,savMode,savAcc,setSavAmt,setSavDesc,setSavDate,setSavMode,setSavAcc,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving,updateSaving };
   const caProps: CaProps = { C,categories,expenses,cashFlowOut,newCategory,setNewCategory,addCategory,deleteCategory };
-  const trProps: TrProps = { C,allMonths,activeMK,categories,appMode };
+  const trProps: TrProps = { C,allMonths,activeMK,categories };
   const crProps: CrProps = { C,credits,crAmt,crPerson,crDesc,crDate,crType,setCrAmt,setCrPerson,setCrDesc,setCrDate,setCrType,addCredit,toggleCleared,deleteCredit,updateCredit,deleteConfirm,setDeleteConfirm };
 
   return (
     <>
-      <title>{appMode ? `Budgetly · ${appMode==="household"?"Household":"Student"}` : "Budgetly"}</title>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
       <link rel="manifest" href="/manifest.json"/>
@@ -2033,12 +2007,7 @@ export default function BudgetTracker() {
 
       {/* Mobile header */}
       <div className="mob-header">
-        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-          <div style={{fontSize:"18px",fontWeight:800,color:C.text,letterSpacing:"-0.3px"}}><span style={{color:C.accent}}>Budget</span>ly</div>
-          <span style={{fontSize:"9px",background:C.navActive,color:C.accent,padding:"2px 7px",borderRadius:"20px",fontWeight:700,letterSpacing:"0.5px",textTransform:"uppercase"}}>
-            {appMode==="household"?"🏠 HH":"🎓 STU"}
-          </span>
-        </div>
+        <div style={{fontSize:"18px",fontWeight:700,color:C.text}}><span style={{color:C.accent}}>Budget</span>ly</div>
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
 <button onClick={toggleDark} style={{background:C.navActive,border:`1px solid ${C.border}`,borderRadius:"20px",padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",gap:"5px"}}>
             <div style={{width:"28px",height:"16px",borderRadius:"16px",background:dark?C.accent:"#d1cfe8",position:"relative",flexShrink:0}}>
@@ -2127,10 +2096,10 @@ export default function BudgetTracker() {
           }}>
           <div style={{marginBottom:"18px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px"}}>
             <div>
-              <h1 style={{fontSize:"clamp(22px,4vw,32px)",fontWeight:800,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>
+              <h1 style={{fontSize:"clamp(18px,3.5vw,24px)",fontWeight:600,color:C.text,letterSpacing:"-0.3px"}}>
                 {activeTab==="categories"?"Categories":activeTab==="tutorial"?"How to use Budgetly":activeTab==="trends"?"Trends":activeTab==="accounts"?"Accounts":NAV.find(n=>n.id===activeTab)?.label}
               </h1>
-              <div style={{fontSize:"12px",color:C.muted,marginTop:"5px",fontWeight:500}}>
+              <div style={{fontSize:"11px",color:C.muted,marginTop:"3px"}}>
                 {fmtMK(activeMK)}{activeMK!==curMK()&&" · past month"}
               </div>
             </div>
