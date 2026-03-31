@@ -1437,6 +1437,9 @@ export default function BudgetTracker() {
   const [showSettings,  setShowSettings]  = useState(false);
   const [dbLoading,     setDbLoading]     = useState(false);
   const [deleteMonthConfirm, setDeleteMonthConfirm] = useState(false);
+  const [deleteAccountConfirm, setDeleteAccountConfirm] = useState(false);
+  const [deleteAccountInput,   setDeleteAccountInput]   = useState("");
+  const [deletingAccount,      setDeletingAccount]      = useState(false);
   const [swipeOffset,   setSwipeOffset]   = useState(0);   // live drag offset px
   const [swipeAnim,     setSwipeAnim]     = useState<"in-left"|"in-right"|null>(null); // entry animation
 
@@ -1669,6 +1672,18 @@ export default function BudgetTracker() {
   const deleteMonth    = async () => { setDeleteMonthConfirm(false); setAllMonths(prev=>{const next={...prev};delete next[activeMK];return next;}); if(user) await supabase.from("month_data").delete().eq("user_id",user.id).eq("month_key",activeMK); setActiveMK(curMK()); };
   const handleMigrate  = async (migrate:boolean) => { setShowMigrate(false); if(!migrate||!user)return; const lsData=lsLoad<AllMonths>("budgetly_months",{}); for(const [mk,d] of Object.entries(lsData)) await saveToSupabase(mk,d); localStorage.removeItem("budgetly_months"); await loadFromSupabase(); };
   const logout         = async () => { await supabase.auth.signOut(); setUser(null); setAllMonthsRaw({}); };
+  const deleteAccount  = async () => {
+    if (!user) return;
+    setDeletingAccount(true);
+    await supabase.from("month_data").delete().eq("user_id", user.id);
+    await supabase.from("user_credits").delete().eq("user_id", user.id);
+    await supabase.rpc("delete_user");
+    await supabase.auth.signOut();
+    setUser(null);
+    setAllMonthsRaw({});
+    setDeletingAccount(false);
+    setDeleteAccountConfirm(false);
+  };
 
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
   const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
@@ -1926,13 +1941,45 @@ export default function BudgetTracker() {
           </div>
 
           {/* Feedback */}
-          <div>
+          <div style={{marginBottom:"20px",paddingBottom:"20px",borderBottom:`1px solid ${C.border}`}}>
             <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Feedback</div>
             <a href="https://docs.google.com/forms/d/e/1FAIpQLSdtx7DdVgiihO1C6qGfO8Y_nPjvyMvjQUr9fZMdwuG2C1DlCg/viewform?usp=publish-editor"
               target="_blank" rel="noreferrer" onClick={()=>setShowSettings(false)}
               style={{display:"block",textAlign:"center",padding:"10px",borderRadius:"10px",background:C.navActive,color:C.accent,fontSize:"13px",fontWeight:600,textDecoration:"none"}}>
               💬 Give Feedback
             </a>
+          </div>
+
+          {/* Danger Zone */}
+          <div>
+            <div style={{fontSize:"10px",color:C.red,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Danger Zone</div>
+            <div style={{border:`1px solid ${C.red}44`,borderRadius:"12px",padding:"14px"}}>
+              {deleteAccountConfirm ? (
+                <div>
+                  <div style={{fontSize:"13px",color:C.text,fontWeight:600,marginBottom:"6px"}}>Delete Account</div>
+                  <div style={{fontSize:"12px",color:C.muted,lineHeight:1.6,marginBottom:"12px"}}>This will permanently delete your account and all your data. This cannot be undone. Type <strong style={{color:C.text}}>DELETE</strong> to confirm.</div>
+                  <input
+                    value={deleteAccountInput}
+                    onChange={e=>setDeleteAccountInput(e.target.value)}
+                    placeholder="Type DELETE to confirm"
+                    style={{width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${deleteAccountInput==="DELETE"?C.red:C.border}`,background:C.inputBg,color:C.text,fontSize:"13px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif",marginBottom:"10px"}}
+                  />
+                  <div style={{display:"flex",gap:"8px"}}>
+                    <button
+                      onClick={deleteAccount}
+                      disabled={deleteAccountInput!=="DELETE"||deletingAccount}
+                      style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:deleteAccountInput==="DELETE"?C.red:C.delBg,color:deleteAccountInput==="DELETE"?"#fff":C.muted,cursor:deleteAccountInput==="DELETE"?"pointer":"not-allowed",fontSize:"12px",fontWeight:600,fontFamily:"'DM Sans',sans-serif",opacity:deletingAccount?0.6:1}}>
+                      {deletingAccount?"Deleting…":"Delete Account"}
+                    </button>
+                    <button onClick={()=>{setDeleteAccountConfirm(false);setDeleteAccountInput("");}} style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:C.cancelBg,color:C.muted,cursor:"pointer",fontSize:"12px",fontFamily:"'DM Sans',sans-serif"}}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={()=>setDeleteAccountConfirm(true)} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.red}44`,background:"transparent",color:C.red,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:600,textAlign:"left"}}>
+                  Delete Account
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
