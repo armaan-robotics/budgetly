@@ -1672,7 +1672,7 @@ export default function BudgetTracker() {
   const deleteMonth    = async () => { setDeleteMonthConfirm(false); setAllMonths(prev=>{const next={...prev};delete next[activeMK];return next;}); if(user) await supabase.from("month_data").delete().eq("user_id",user.id).eq("month_key",activeMK); setActiveMK(curMK()); };
   const handleMigrate  = async (migrate:boolean) => { setShowMigrate(false); if(!migrate||!user)return; const lsData=lsLoad<AllMonths>("budgetly_months",{}); for(const [mk,d] of Object.entries(lsData)) await saveToSupabase(mk,d); localStorage.removeItem("budgetly_months"); await loadFromSupabase(); };
   const logout         = async () => { await supabase.auth.signOut(); setUser(null); setAllMonthsRaw({}); };
-  const deleteAccount  = async () => {
+  const deleteUserAccount  = async () => {
     if (!user) return;
     setDeletingAccount(true);
     await supabase.from("month_data").delete().eq("user_id", user.id);
@@ -1966,7 +1966,7 @@ export default function BudgetTracker() {
                   />
                   <div style={{display:"flex",gap:"8px"}}>
                     <button
-                      onClick={deleteAccount}
+                      onClick={deleteUserAccount}
                       disabled={deleteAccountInput!=="DELETE"||deletingAccount}
                       style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:deleteAccountInput==="DELETE"?C.red:C.delBg,color:deleteAccountInput==="DELETE"?"#fff":C.muted,cursor:deleteAccountInput==="DELETE"?"pointer":"not-allowed",fontSize:"12px",fontWeight:600,fontFamily:"'DM Sans',sans-serif",opacity:deletingAccount?0.6:1}}>
                       {deletingAccount?"Deleting…":"Delete Account"}
