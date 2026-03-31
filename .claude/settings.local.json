@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(find . -not -path */node_modules/* -not -path */.next/* -name *.tsx -o -name *.ts -not -path */node_modules/* -not -path */.next/*)",
+      "Bash(find . -not -path */node_modules/* -not -path */.next/* -name *.js)"
+    ]
+  }
+}
