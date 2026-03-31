@@ -398,6 +398,7 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
   const [sortDir, setSortDir] = useState<"asc"|"desc">("desc");
   const [expandId, setExpandId] = useState<number|null>(null);
   const [deleteId, setDeleteId] = useState<number|null>(null);
+  const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [filterText, setFilterText] = useState("");
@@ -457,11 +458,14 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
             ⚡ Filter{activeFilters>0?` (${activeFilters})`:""}
           </button>
           {activeFilters>0&&<button onClick={()=>{setFilterText("");setFilterFrom("");setFilterTo("");setFilterCat("");setFilterAmtMin("");setFilterAmtMax("");}} style={{...sInput,cursor:"pointer",background:C.delBg,color:C.red}}>✕ Clear</button>}
+          <button onClick={()=>{setSelectMode(v=>!v);setSelectedIds(new Set());}} style={{...sInput,cursor:"pointer",background:selectMode?C.navActive:C.inputBg,color:selectMode?accentColor:C.muted,whiteSpace:"nowrap"}}>
+            ☑ Select
+          </button>
         </div>
-          <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-          {selectedIds.size>0&&(
+        <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+          {selectMode&&selectedIds.size>0&&(
             <button onClick={()=>setBulkDeleteConfirm(true)} style={{...sInput,cursor:"pointer",background:C.delBg,color:C.red,whiteSpace:"nowrap"}}>
-              ✕ Delete {selectedIds.size} selected
+              ✕ Delete {selectedIds.size}
             </button>
           )}
           <div style={{fontSize:"12px",color:C.muted}}>{sorted.length} of {entries.length} entries</div>
@@ -488,7 +492,7 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
       <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"'DM Sans',sans-serif"}}>
         <thead>
           <tr style={{background:C.cardAlt}}>
-            <th style={{...thStyle,width:"36px",paddingRight:0}}>
+            {selectMode&&<th style={{...thStyle,width:"36px",paddingRight:0}}>
               <input type="checkbox"
                 checked={sorted.length>0&&sorted.every(e=>selectedIds.has(e.id))}
                 onChange={e=>{
@@ -498,7 +502,7 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
                 onClick={ev=>ev.stopPropagation()}
                 style={{cursor:"pointer",width:"14px",height:"14px",accentColor:accentColor}}
               />
-            </th>
+            </th>}
             {columns.map(col=>(
               <th key={col.key} className={col.key==="date"||col.key==="mode"||col.key==="account"?"col-hide-mobile":""} style={thStyle} onClick={()=>col.sortable!==false&&toggleSort(col.key)}>
                 {col.label}{sortKey===col.key?(sortDir==="asc"?" ↑":" ↓"):""}
@@ -508,7 +512,7 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
         </thead>
         <tbody>
           {sorted.length===0&&(
-            <tr><td colSpan={columns.length+1} style={{...tdStyle,textAlign:"center",color:C.faint,padding:"32px"}}>No entries yet</td></tr>
+            <tr><td colSpan={columns.length+(selectMode?1:0)} style={{...tdStyle,textAlign:"center",color:C.faint,padding:"32px"}}>No entries yet</td></tr>
           )}
           {sorted.map(entry=>(
             <>
@@ -516,7 +520,7 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
                 onClick={()=>setExpandId(expandId===entry.id?null:entry.id)}
                 onMouseEnter={e=>{if(!selectedIds.has(entry.id))(e.currentTarget as HTMLTableRowElement).style.background=C.cardAlt;}}
                 onMouseLeave={e=>{(e.currentTarget as HTMLTableRowElement).style.background=selectedIds.has(entry.id)?accentColor+"18":""}}>
-                <td style={{...tdStyle,width:"36px",paddingRight:0}} onClick={e=>e.stopPropagation()}>
+                {selectMode&&<td style={{...tdStyle,width:"36px",paddingRight:0}} onClick={e=>e.stopPropagation()}>
                   <input type="checkbox"
                     checked={selectedIds.has(entry.id)}
                     onChange={e=>{
@@ -526,14 +530,14 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
                     }}
                     style={{cursor:"pointer",width:"14px",height:"14px",accentColor:accentColor}}
                   />
-                </td>
+                </td>}
                 {columns.map(col=>(
                   <td key={col.key} className={col.key==="date"||col.key==="mode"||col.key==="account"?"col-hide-mobile":""} style={tdStyle}>{col.render(entry)}</td>
                 ))}
               </tr>
               {expandId===entry.id&&(
                 <tr key={entry.id+"_exp"}>
-                  <td colSpan={columns.length+1} style={{background:C.cardAlt,padding:"16px 18px",borderBottom:`1px solid ${C.border}`}}>
+                  <td colSpan={columns.length+(selectMode?1:0)} style={{background:C.cardAlt,padding:"16px 18px",borderBottom:`1px solid ${C.border}`}}>
                     <div style={{display:"flex",gap:"16px",flexWrap:"wrap",fontSize:"12px",color:C.muted,marginBottom:"8px"}}>
                       <span><strong style={{color:C.text}}>Date:</strong> {entry.date}</span>
                       <span><strong style={{color:C.text}}>Mode:</strong> {entry.mode||"—"}</span>
@@ -571,7 +575,7 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
           <div style={{fontSize:"15px",fontWeight:600,color:C.text,marginBottom:"8px"}}>Delete {selectedIds.size} entries?</div>
           <div style={{fontSize:"13px",color:C.muted,marginBottom:"20px"}}>This cannot be undone.</div>
           <div style={{display:"flex",gap:"8px"}}>
-            <button onClick={()=>{onDeleteMany([...selectedIds]);setSelectedIds(new Set());setBulkDeleteConfirm(false);}} style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:C.delBg,color:C.red,cursor:"pointer",fontSize:"13px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>Delete all</button>
+            <button onClick={()=>{onDeleteMany([...selectedIds]);setSelectedIds(new Set());setSelectMode(false);setBulkDeleteConfirm(false);}} style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:C.delBg,color:C.red,cursor:"pointer",fontSize:"13px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>Delete all</button>
             <button onClick={()=>setBulkDeleteConfirm(false)} style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:C.cancelBg,color:C.muted,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif"}}>Cancel</button>
           </div>
         </div>
