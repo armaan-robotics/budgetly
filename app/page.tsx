@@ -523,6 +523,18 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
         </tbody>
       </table>
     </div>
+    {deleteId!==null&&(
+      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={()=>setDeleteId(null)}>
+        <div style={{background:C.card,borderRadius:"16px",padding:"24px",width:"280px",border:`1px solid ${C.border}`,boxShadow:"0 8px 32px rgba(0,0,0,0.2)"}} onClick={e=>e.stopPropagation()}>
+          <div style={{fontSize:"15px",fontWeight:600,color:C.text,marginBottom:"8px"}}>Delete entry?</div>
+          <div style={{fontSize:"13px",color:C.muted,marginBottom:"20px"}}>This cannot be undone.</div>
+          <div style={{display:"flex",gap:"8px"}}>
+            <button onClick={()=>{onDelete(deleteId);setDeleteId(null);}} style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:C.delBg,color:C.red,cursor:"pointer",fontSize:"13px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>Delete</button>
+            <button onClick={()=>setDeleteId(null)} style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:C.cancelBg,color:C.muted,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif"}}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   );
 }
@@ -1634,7 +1646,7 @@ export default function BudgetTracker() {
   const idealSpentByToday = idealPerDay*todayDay;
   const actualVsIdeal     = cashFlowOut-idealSpentByToday;
   const currentDailyAvg   = todayDay>0 ? Math.round(cashFlowOut/todayDay) : 0;
-  const currentIdealAvg   = Math.round(moneyLeft/daysLeft);
+  const currentIdealAvg   = Math.round(remaining/daysLeft);
   const modePrefix = appMode==="household" ? "h:" : "";
   const allMKs = (() => {
     const k=Object.keys(allMonths).filter(mk=>appMode==="household"?mk.startsWith("h:"):!mk.startsWith("h:"));
@@ -1963,6 +1975,14 @@ export default function BudgetTracker() {
               target="_blank" rel="noreferrer" onClick={()=>setShowSettings(false)}
               style={{display:"block",textAlign:"center",padding:"10px",borderRadius:"10px",background:C.navActive,color:C.accent,fontSize:"13px",fontWeight:600,textDecoration:"none"}}>
               💬 Give Feedback
+            </a>
+          </div>
+
+          {/* Legal */}
+          <div style={{marginTop:"20px",paddingTop:"20px",borderTop:`1px solid ${C.border}`}}>
+            <a href="/privacy-policy" target="_blank" rel="noreferrer" onClick={()=>setShowSettings(false)}
+              style={{display:"block",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:C.cardAlt,color:C.muted,fontSize:"13px",fontWeight:500,textDecoration:"none",textAlign:"left"}}>
+              🔒 Privacy Policy
             </a>
           </div>
 
