@@ -2204,7 +2204,7 @@ export default function BudgetTracker() {
         </main>
       </div>
 
-      {showSettings&&<SettingsModal/>}
+      {showSettings&&SettingsModal()}
 
       <div className="mob-nav">
         {NAV.map(item=>(
