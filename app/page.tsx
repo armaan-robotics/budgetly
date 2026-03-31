@@ -128,9 +128,9 @@ interface OvProps {
   idealSpentByToday:number; actualVsIdeal:number;
   moneyLeft:number; daysLeft:number; currentDailyAvg:number; currentIdealAvg:number;
 }
-interface ExProps { C:Theme; expenses:Expense[];categories:string[];accounts:string[];appMode:AppMode;totalExpenses:number;expAmt:string;expCat:string;expDesc:string;expDate:string;expMode:string;expAcc:string;setExpAmt:(v:string)=>void;setExpCat:(v:string)=>void;setExpDesc:(v:string)=>void;setExpDate:(v:string)=>void;setExpMode:(v:string)=>void;setExpAcc:(v:string)=>void;addExpense:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteExpense:(id:number)=>void;updateExpense:(id:number,u:Partial<Expense>)=>void; }
-interface ErProps { C:Theme; earnings:Entry[];accounts:string[];appMode:AppMode;totalEarnings:number;earnAmt:string;earnDesc:string;earnDate:string;earnMode:string;earnAcc:string;setEarnAmt:(v:string)=>void;setEarnDesc:(v:string)=>void;setEarnDate:(v:string)=>void;setEarnMode:(v:string)=>void;setEarnAcc:(v:string)=>void;addEarning:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteEarning:(id:number)=>void;updateEarning:(id:number,u:Partial<Entry>)=>void; }
-interface SvProps { C:Theme; savings:Entry[];accounts:string[];appMode:AppMode;totalSavings:number;cashFlowIn:number;savAmt:string;savDesc:string;savDate:string;savMode:string;savAcc:string;setSavAmt:(v:string)=>void;setSavDesc:(v:string)=>void;setSavDate:(v:string)=>void;setSavMode:(v:string)=>void;setSavAcc:(v:string)=>void;addSaving:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteSaving:(id:number)=>void;updateSaving:(id:number,u:Partial<Entry>)=>void; }
+interface ExProps { C:Theme; expenses:Expense[];categories:string[];accounts:string[];appMode:AppMode;totalExpenses:number;expAmt:string;expCat:string;expDesc:string;expDate:string;expMode:string;expAcc:string;setExpAmt:(v:string)=>void;setExpCat:(v:string)=>void;setExpDesc:(v:string)=>void;setExpDate:(v:string)=>void;setExpMode:(v:string)=>void;setExpAcc:(v:string)=>void;addExpense:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteExpense:(id:number)=>void;deleteManyExpenses:(ids:number[])=>void;updateExpense:(id:number,u:Partial<Expense>)=>void; }
+interface ErProps { C:Theme; earnings:Entry[];accounts:string[];appMode:AppMode;totalEarnings:number;earnAmt:string;earnDesc:string;earnDate:string;earnMode:string;earnAcc:string;setEarnAmt:(v:string)=>void;setEarnDesc:(v:string)=>void;setEarnDate:(v:string)=>void;setEarnMode:(v:string)=>void;setEarnAcc:(v:string)=>void;addEarning:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteEarning:(id:number)=>void;deleteManyEarnings:(ids:number[])=>void;updateEarning:(id:number,u:Partial<Entry>)=>void; }
+interface SvProps { C:Theme; savings:Entry[];accounts:string[];appMode:AppMode;totalSavings:number;cashFlowIn:number;savAmt:string;savDesc:string;savDate:string;savMode:string;savAcc:string;setSavAmt:(v:string)=>void;setSavDesc:(v:string)=>void;setSavDate:(v:string)=>void;setSavMode:(v:string)=>void;setSavAcc:(v:string)=>void;addSaving:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteSaving:(id:number)=>void;deleteManySavings:(ids:number[])=>void;updateSaving:(id:number,u:Partial<Entry>)=>void; }
 interface CaProps { C:Theme; categories:string[];expenses:Expense[];cashFlowOut:number;newCategory:string;setNewCategory:(v:string)=>void;addCategory:()=>void;deleteCategory:(cat:string)=>void; }
 interface CreditEntry { id:number; person:string; amount:number; description:string; date:string; type:"owed_to_me"|"i_owe"; cleared:boolean; }
 interface CrProps { C:Theme; credits:CreditEntry[];crAmt:string;crPerson:string;crDesc:string;crDate:string;crType:"owed_to_me"|"i_owe";setCrAmt:(v:string)=>void;setCrPerson:(v:string)=>void;setCrDesc:(v:string)=>void;setCrDate:(v:string)=>void;setCrType:(v:"owed_to_me"|"i_owe")=>void;addCredit:()=>void;toggleCleared:(id:number)=>void;deleteCredit:(id:number)=>void;updateCredit:(id:number,u:Partial<CreditEntry>)=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void; }
@@ -385,18 +385,21 @@ function OverviewTab(p: OvProps) {
 
 // ─── Entry Table (sortable, clickable rows) ───────────────────────────────────
 type SortKey = "date"|"amount"|"description"|"category"|"mode"|"account";
-function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onDelete, C}: {
+function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onDelete, onDeleteMany, C}: {
   entries: T[];
   columns: {key: SortKey; label: string; render: (e:T)=>React.ReactNode; sortable?: boolean}[];
   accentColor: string;
   onEdit: (e:T)=>void;
   onDelete: (id:number)=>void;
+  onDeleteMany: (ids:number[])=>void;
   C: Theme;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<"asc"|"desc">("desc");
   const [expandId, setExpandId] = useState<number|null>(null);
   const [deleteId, setDeleteId] = useState<number|null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [filterText, setFilterText] = useState("");
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
@@ -455,7 +458,14 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
           </button>
           {activeFilters>0&&<button onClick={()=>{setFilterText("");setFilterFrom("");setFilterTo("");setFilterCat("");setFilterAmtMin("");setFilterAmtMax("");}} style={{...sInput,cursor:"pointer",background:C.delBg,color:C.red}}>✕ Clear</button>}
         </div>
-        <div style={{fontSize:"12px",color:C.muted}}>{sorted.length} of {entries.length} entries</div>
+          <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+          {selectedIds.size>0&&(
+            <button onClick={()=>setBulkDeleteConfirm(true)} style={{...sInput,cursor:"pointer",background:C.delBg,color:C.red,whiteSpace:"nowrap"}}>
+              ✕ Delete {selectedIds.size} selected
+            </button>
+          )}
+          <div style={{fontSize:"12px",color:C.muted}}>{sorted.length} of {entries.length} entries</div>
+        </div>
       </div>
       {showFilters&&(
         <div style={{display:"flex",gap:"10px",marginBottom:"10px",flexWrap:"wrap",background:C.cardAlt,padding:"16px",borderRadius:"12px",border:`1px solid ${C.border}`}}>
@@ -478,32 +488,52 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
       <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"'DM Sans',sans-serif"}}>
         <thead>
           <tr style={{background:C.cardAlt}}>
+            <th style={{...thStyle,width:"36px",paddingRight:0}}>
+              <input type="checkbox"
+                checked={sorted.length>0&&sorted.every(e=>selectedIds.has(e.id))}
+                onChange={e=>{
+                  if(e.target.checked) setSelectedIds(new Set(sorted.map(e=>e.id)));
+                  else setSelectedIds(new Set());
+                }}
+                onClick={ev=>ev.stopPropagation()}
+                style={{cursor:"pointer",width:"14px",height:"14px",accentColor:accentColor}}
+              />
+            </th>
             {columns.map(col=>(
               <th key={col.key} className={col.key==="date"||col.key==="mode"||col.key==="account"?"col-hide-mobile":""} style={thStyle} onClick={()=>col.sortable!==false&&toggleSort(col.key)}>
                 {col.label}{sortKey===col.key?(sortDir==="asc"?" ↑":" ↓"):""}
               </th>
             ))}
-
           </tr>
         </thead>
         <tbody>
           {sorted.length===0&&(
-            <tr><td colSpan={columns.length} style={{...tdStyle,textAlign:"center",color:C.faint,padding:"32px"}}>No entries yet</td></tr>
+            <tr><td colSpan={columns.length+1} style={{...tdStyle,textAlign:"center",color:C.faint,padding:"32px"}}>No entries yet</td></tr>
           )}
           {sorted.map(entry=>(
             <>
-              <tr key={entry.id} style={{cursor:"pointer",transition:"background 0.1s"}}
+              <tr key={entry.id} style={{cursor:"pointer",transition:"background 0.1s",background:selectedIds.has(entry.id)?accentColor+"18":""}}
                 onClick={()=>setExpandId(expandId===entry.id?null:entry.id)}
-                onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=C.cardAlt}
-                onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=""}>
+                onMouseEnter={e=>{if(!selectedIds.has(entry.id))(e.currentTarget as HTMLTableRowElement).style.background=C.cardAlt;}}
+                onMouseLeave={e=>{(e.currentTarget as HTMLTableRowElement).style.background=selectedIds.has(entry.id)?accentColor+"18":""}}>
+                <td style={{...tdStyle,width:"36px",paddingRight:0}} onClick={e=>e.stopPropagation()}>
+                  <input type="checkbox"
+                    checked={selectedIds.has(entry.id)}
+                    onChange={e=>{
+                      const next=new Set(selectedIds);
+                      if(e.target.checked) next.add(entry.id); else next.delete(entry.id);
+                      setSelectedIds(next);
+                    }}
+                    style={{cursor:"pointer",width:"14px",height:"14px",accentColor:accentColor}}
+                  />
+                </td>
                 {columns.map(col=>(
                   <td key={col.key} className={col.key==="date"||col.key==="mode"||col.key==="account"?"col-hide-mobile":""} style={tdStyle}>{col.render(entry)}</td>
                 ))}
-
               </tr>
               {expandId===entry.id&&(
                 <tr key={entry.id+"_exp"}>
-                  <td colSpan={columns.length} style={{background:C.cardAlt,padding:"16px 18px",borderBottom:`1px solid ${C.border}`}}>
+                  <td colSpan={columns.length+1} style={{background:C.cardAlt,padding:"16px 18px",borderBottom:`1px solid ${C.border}`}}>
                     <div style={{display:"flex",gap:"16px",flexWrap:"wrap",fontSize:"12px",color:C.muted,marginBottom:"8px"}}>
                       <span><strong style={{color:C.text}}>Date:</strong> {entry.date}</span>
                       <span><strong style={{color:C.text}}>Mode:</strong> {entry.mode||"—"}</span>
@@ -531,6 +561,18 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
           <div style={{display:"flex",gap:"8px"}}>
             <button onClick={()=>{onDelete(deleteId);setDeleteId(null);}} style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:C.delBg,color:C.red,cursor:"pointer",fontSize:"13px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>Delete</button>
             <button onClick={()=>setDeleteId(null)} style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:C.cancelBg,color:C.muted,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif"}}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {bulkDeleteConfirm&&(
+      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={()=>setBulkDeleteConfirm(false)}>
+        <div style={{background:C.card,borderRadius:"16px",padding:"24px",width:"300px",border:`1px solid ${C.border}`,boxShadow:"0 8px 32px rgba(0,0,0,0.2)"}} onClick={e=>e.stopPropagation()}>
+          <div style={{fontSize:"15px",fontWeight:600,color:C.text,marginBottom:"8px"}}>Delete {selectedIds.size} entries?</div>
+          <div style={{fontSize:"13px",color:C.muted,marginBottom:"20px"}}>This cannot be undone.</div>
+          <div style={{display:"flex",gap:"8px"}}>
+            <button onClick={()=>{onDeleteMany([...selectedIds]);setSelectedIds(new Set());setBulkDeleteConfirm(false);}} style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:C.delBg,color:C.red,cursor:"pointer",fontSize:"13px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>Delete all</button>
+            <button onClick={()=>setBulkDeleteConfirm(false)} style={{flex:1,padding:"9px",borderRadius:"9px",border:"none",background:C.cancelBg,color:C.muted,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif"}}>Cancel</button>
           </div>
         </div>
       </div>
@@ -598,7 +640,7 @@ function ExpensesTab(p: ExProps) {
       )}
 
       <div style={sCard}>
-        <EntryTable entries={p.expenses} columns={cols} accentColor={C.red} onEdit={openEdit} onDelete={p.deleteExpense} C={C}/>
+        <EntryTable entries={p.expenses} columns={cols} accentColor={C.red} onEdit={openEdit} onDelete={p.deleteExpense} onDeleteMany={p.deleteManyExpenses} C={C}/>
       </div>
 
       {editEntry&&<EditModal C={C} title="Edit Expense"
@@ -670,7 +712,7 @@ function EarningsTab(p: ErProps) {
       )}
 
       <div style={sCard}>
-        <EntryTable entries={p.earnings} columns={cols} accentColor={C.green} onEdit={openEdit} onDelete={p.deleteEarning} C={C}/>
+        <EntryTable entries={p.earnings} columns={cols} accentColor={C.green} onEdit={openEdit} onDelete={p.deleteEarning} onDeleteMany={p.deleteManyEarnings} C={C}/>
       </div>
 
       {editEntry&&<EditModal C={C} title="Edit Income"
@@ -741,7 +783,7 @@ function SavingsTab(p: SvProps) {
       )}
 
       <div style={sCard}>
-        <EntryTable entries={p.savings} columns={cols} accentColor={C.amber} onEdit={openEdit} onDelete={p.deleteSaving} C={C}/>
+        <EntryTable entries={p.savings} columns={cols} accentColor={C.amber} onEdit={openEdit} onDelete={p.deleteSaving} onDeleteMany={p.deleteManySavings} C={C}/>
       </div>
 
       {editEntry&&<EditModal C={C} title="Edit Saving"
@@ -1640,7 +1682,7 @@ export default function BudgetTracker() {
   const spentPct          = cashFlowIn>0 ? Math.min((cashFlowOut/(cashFlowIn-totalSavings))*100,100) : 0;
   const daysInMonth       = getDays(activeMK);
   const todayDay          = activeMK===curMK() ? new Date().getDate() : daysInMonth;
-  const daysLeft          = Math.max(daysInMonth-todayDay,1);
+  const daysLeft          = Math.max(daysInMonth-todayDay+1,1);
   const moneyLeft         = Math.max(remaining,0);
   const idealPerDay       = Math.round((cashFlowIn-totalSavings)/daysInMonth);
   const idealSpentByToday = idealPerDay*todayDay;
@@ -1660,9 +1702,12 @@ export default function BudgetTracker() {
   const addExpense     = () => { if(!expAmt||isNaN(+expAmt))return; setM(activeMK,{...md,expenses:[...expenses,{id:Date.now(),amount:+expAmt,category:expCat,description:expDesc,date:expDate,mode:expMode,account:expAcc||undefined}]}); setExpAmt(""); setExpDesc(""); };
   const addEarning     = () => { if(!earnAmt||isNaN(+earnAmt))return; setM(activeMK,{...md,earnings:[...earnings,{id:Date.now(),amount:+earnAmt,description:earnDesc,date:earnDate,mode:earnMode,account:earnAcc||undefined}]}); setEarnAmt(""); setEarnDesc(""); };
   const addSaving      = () => { if(!savAmt||isNaN(+savAmt))return; setM(activeMK,{...md,savings:[...savings,{id:Date.now(),amount:+savAmt,description:savDesc,date:savDate,mode:savMode,account:savAcc||undefined}]}); setSavAmt(""); setSavDesc(""); };
-  const deleteExpense  = (id:number) => { setM(activeMK,{...md,expenses:expenses.filter(e=>e.id!==id)}); setDeleteConfirm(null); };
-  const deleteEarning  = (id:number) => { setM(activeMK,{...md,earnings:earnings.filter(e=>e.id!==id)}); setDeleteConfirm(null); };
-  const deleteSaving   = (id:number) => { setM(activeMK,{...md,savings: savings.filter (e=>e.id!==id)}); setDeleteConfirm(null); };
+  const deleteExpense       = (id:number)       => { setM(activeMK,{...md,expenses:expenses.filter(e=>e.id!==id)}); setDeleteConfirm(null); };
+  const deleteEarning       = (id:number)       => { setM(activeMK,{...md,earnings:earnings.filter(e=>e.id!==id)}); setDeleteConfirm(null); };
+  const deleteSaving        = (id:number)       => { setM(activeMK,{...md,savings: savings.filter (e=>e.id!==id)}); setDeleteConfirm(null); };
+  const deleteManyExpenses  = (ids:number[])    => { setM(activeMK,{...md,expenses:expenses.filter(e=>!ids.includes(e.id))}); };
+  const deleteManyEarnings  = (ids:number[])    => { setM(activeMK,{...md,earnings:earnings.filter(e=>!ids.includes(e.id))}); };
+  const deleteManySavings   = (ids:number[])    => { setM(activeMK,{...md,savings: savings.filter (e=>!ids.includes(e.id))}); };
   const updateExpense  = (id:number,u:Partial<Expense>) => setM(activeMK,{...md,expenses:expenses.map(e=>e.id===id?{...e,...u}:e)});
   const updateEarning  = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,earnings:earnings.map(e=>e.id===id?{...e,...u}:e)});
   const updateSaving   = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,savings: savings.map (e=>e.id===id?{...e,...u}:e)});
@@ -2021,9 +2066,9 @@ export default function BudgetTracker() {
   }
 
   const ovProps: OvProps = { C,budget,cashFlowIn,cashFlowOut,totalEarnings,totalSavings,remaining,spentPct,editingBudget,tempBudget,setEditingBudget,setTempBudget,saveBudget,expenses,earnings,savings,categories,accounts,appMode,daysInMonth,todayDay,idealPerDay,idealSpentByToday,actualVsIdeal,moneyLeft,daysLeft,currentDailyAvg,currentIdealAvg };
-  const exProps: ExProps = { C,expenses,categories,accounts,appMode,totalExpenses:cashFlowOut,expAmt,expCat,expDesc,expDate,expMode,expAcc,setExpAmt,setExpCat,setExpDesc,setExpDate,setExpMode,setExpAcc,addExpense,deleteConfirm,setDeleteConfirm,deleteExpense,updateExpense };
-  const erProps: ErProps = { C,earnings,accounts,appMode,totalEarnings,earnAmt,earnDesc,earnDate,earnMode,earnAcc,setEarnAmt,setEarnDesc,setEarnDate,setEarnMode,setEarnAcc,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning,updateEarning };
-  const svProps: SvProps = { C,savings,accounts,appMode,totalSavings,cashFlowIn,savAmt,savDesc,savDate,savMode,savAcc,setSavAmt,setSavDesc,setSavDate,setSavMode,setSavAcc,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving,updateSaving };
+  const exProps: ExProps = { C,expenses,categories,accounts,appMode,totalExpenses:cashFlowOut,expAmt,expCat,expDesc,expDate,expMode,expAcc,setExpAmt,setExpCat,setExpDesc,setExpDate,setExpMode,setExpAcc,addExpense,deleteConfirm,setDeleteConfirm,deleteExpense,deleteManyExpenses,updateExpense };
+  const erProps: ErProps = { C,earnings,accounts,appMode,totalEarnings,earnAmt,earnDesc,earnDate,earnMode,earnAcc,setEarnAmt,setEarnDesc,setEarnDate,setEarnMode,setEarnAcc,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning,deleteManyEarnings,updateEarning };
+  const svProps: SvProps = { C,savings,accounts,appMode,totalSavings,cashFlowIn,savAmt,savDesc,savDate,savMode,savAcc,setSavAmt,setSavDesc,setSavDate,setSavMode,setSavAcc,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving,deleteManySavings,updateSaving };
   const caProps: CaProps = { C,categories,expenses,cashFlowOut,newCategory,setNewCategory,addCategory,deleteCategory };
   const trProps: TrProps = { C,allMonths,activeMK,categories,appMode };
   const crProps: CrProps = { C,credits,crAmt,crPerson,crDesc,crDate,crType,setCrAmt,setCrPerson,setCrDesc,setCrDate,setCrType,addCredit,toggleCleared,deleteCredit,updateCredit,deleteConfirm,setDeleteConfirm };
