@@ -35,7 +35,7 @@ function lsSave(key: string, val: unknown): void {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_CATS: string[] = ["Food","Transport","College","Entertainment","Health","Shopping","Other"];
-const DEFAULT_HOUSEHOLD_CATS: string[] = ["Groceries","Electricity","Water","Gas","Rent","Internet","Transport","Medical","School Fees","Dining Out","Shopping","Maintenance","Other"];
+const DEFAULT_HOUSEHOLD_CATS: string[] = ["Groceries","Electricity","Water","Gas","Rent","Internet","Transport","Medical","School Fees","Dining Out","Shopping","Maintenance","Salaries","Kitchen","Bills","Other"];
 const DEFAULT_ACCOUNTS: string[] = ["Main Account","Cash","Savings Account"];
 const PAYMENT_MODES: string[] = ["UPI","Cash","Card","Bank Transfer","Other"];
 const CAT_COLORS: string[]   = ["#f97316","#06b6d4","#8b5cf6","#10b981","#f43f5e","#eab308","#6366f1","#ec4899","#14b8a6","#84cc16","#ef4444","#3b82f6"];
@@ -217,7 +217,7 @@ function OverviewTab(p: OvProps) {
   })).filter(c=>c.total>0);
   return (
     <div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"14px",marginBottom:"18px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:"14px",marginBottom:"18px"}}>
         {(()=>{
           const studentCards = [
             {label:"Cash Flow In", val:fmt(p.cashFlowIn),  color:C.green,  sub:""},
@@ -275,7 +275,7 @@ function OverviewTab(p: OvProps) {
 
       {p.appMode==="student"&&<div style={{...sCard,marginBottom:"18px"}}>
         <div style={sSecT}>Daily Averages</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))"}}>
           {([
             {label:"Ideal monthly avg",  val:fmt(p.idealPerDay),     color:C.accent, note:""},
             {label:"Daily avg to spend", val:fmt(p.currentIdealAvg), color:p.currentIdealAvg<p.idealPerDay?C.green:C.red, note:""},
@@ -452,7 +452,7 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
     <div>
       {/* Filter controls */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px",gap:"10px",flexWrap:"wrap"}}>
-        <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+        <div style={{display:"flex",gap:"8px",alignItems:"center",flexWrap:"wrap"}}>
           <input placeholder="Search description…" value={filterText} onChange={e=>setFilterText(e.target.value)} style={{...sInput,width:"180px"}}/>
           <button onClick={()=>setShowFilters(v=>!v)} style={{...sInput,cursor:"pointer",background:showFilters||activeFilters>0?C.navActive:C.inputBg,color:activeFilters>0?accentColor:C.muted,whiteSpace:"nowrap"}}>
             ⚡ Filter{activeFilters>0?` (${activeFilters})`:""}
@@ -488,8 +488,8 @@ function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onD
           <input type="number" placeholder="∞" value={filterAmtMax} onChange={e=>setFilterAmtMax(e.target.value)} style={{...sInput,width:"90px"}}/></div>
         </div>
       )}
-    <div style={{overflowX:"auto"}}>
-      <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"'DM Sans',sans-serif"}}>
+    <div style={{overflowX:"auto",maxWidth:"100%"}}>
+      <table style={{width:"100%",tableLayout:"auto",borderCollapse:"collapse",fontFamily:"'DM Sans',sans-serif"}}>
         <thead>
           <tr style={{background:C.cardAlt}}>
             {selectMode&&<th style={{...thStyle,width:"36px",paddingRight:0}}>
@@ -614,7 +614,7 @@ function ExpensesTab(p: ExProps) {
 
   return (
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px",flexWrap:"wrap",gap:"8px"}}>
         <div style={{...sCard,padding:"12px 16px",display:"inline-flex",gap:"16px",alignItems:"center"}}>
           <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Total</div>
           <div style={{fontSize:"22px",fontWeight:800,color:C.red}}>{fmt(p.totalExpenses)}</div></div>
@@ -628,7 +628,7 @@ function ExpensesTab(p: ExProps) {
       {showForm&&(
         <div style={{...sCard,marginBottom:"14px"}}>
           <div style={{...sSecT,marginBottom:"14px"}}>Add Expense</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
+          <div className="form-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.expAmt} onChange={e=>p.setExpAmt(e.target.value)} style={sInput}/></FF>
             <FF label="Category" C={C}><select value={p.expCat} onChange={e=>p.setExpCat(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>{p.categories.map(c=><option key={c} value={c}>{c}</option>)}</select></FF>
             <FF label="Description" C={C}><input type="text" placeholder="What did you spend on?" value={p.expDesc} onChange={e=>p.setExpDesc(e.target.value)} style={sInput}/></FF>
@@ -687,7 +687,7 @@ function EarningsTab(p: ErProps) {
 
   return (
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px",flexWrap:"wrap",gap:"8px"}}>
         <div style={{...sCard,padding:"12px 16px",display:"inline-flex",gap:"16px",alignItems:"center"}}>
           <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Total</div>
           <div style={{fontSize:"22px",fontWeight:800,color:C.green}}>{fmt(p.totalEarnings)}</div></div>
@@ -701,7 +701,7 @@ function EarningsTab(p: ErProps) {
       {showForm&&(
         <div style={{...sCard,marginBottom:"14px"}}>
           <div style={{...sSecT,marginBottom:"14px"}}>Add Income</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
+          <div className="form-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.earnAmt} onChange={e=>p.setEarnAmt(e.target.value)} style={sInput}/></FF>
             <FF label="Description" C={C}><input type="text" placeholder="Source of income" value={p.earnDesc} onChange={e=>p.setEarnDesc(e.target.value)} style={sInput}/></FF>
             <FF label="Date" C={C}><input type="date" value={p.earnDate} onChange={e=>p.setEarnDate(e.target.value)} style={sInput}/></FF>
@@ -758,7 +758,7 @@ function SavingsTab(p: SvProps) {
 
   return (
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px",flexWrap:"wrap",gap:"8px"}}>
         <div style={{...sCard,padding:"12px 16px",display:"inline-flex",gap:"16px",alignItems:"center"}}>
           <div><div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Total</div>
           <div style={{fontSize:"22px",fontWeight:800,color:C.amber}}>{fmt(p.totalSavings)}</div></div>
@@ -772,7 +772,7 @@ function SavingsTab(p: SvProps) {
       {showForm&&(
         <div style={{...sCard,marginBottom:"14px"}}>
           <div style={{...sSecT,marginBottom:"14px"}}>Add Saving</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
+          <div className="form-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.savAmt} onChange={e=>p.setSavAmt(e.target.value)} style={sInput}/></FF>
             <FF label="Description" C={C}><input type="text" placeholder="What are you saving for?" value={p.savDesc} onChange={e=>p.setSavDesc(e.target.value)} style={sInput}/></FF>
             <FF label="Date" C={C}><input type="date" value={p.savDate} onChange={e=>p.setSavDate(e.target.value)} style={sInput}/></FF>
@@ -923,7 +923,7 @@ function TrendsTab(p: TrProps) {
       </div>
 
       {/* Summary cards */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px",marginBottom:"16px"}} className="two-col-grid">
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:"10px",marginBottom:"16px"}} className="two-col-grid">
         <div style={{...sCard,padding:"14px",borderTop:`3px solid ${C.red}`}}>
           <div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"5px"}}>Total Spent</div>
           <div style={{fontSize:"clamp(18px,2.5vw,24px)",fontWeight:800,color:C.red}}>{fmt(totalPeriod)}</div>
@@ -1166,7 +1166,7 @@ function CreditTab(p: CrProps) {
       </div>
 
       {/* Add form */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px",flexWrap:"wrap",gap:"8px"}}>
         <div style={{display:"flex",gap:"6px",alignItems:"center",flexWrap:"wrap"}}>
           <input placeholder="Search person or note…" value={filterText} onChange={e=>setFilterText(e.target.value)}
             style={{padding:"7px 11px",borderRadius:"8px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"13px",outline:"none",fontFamily:"'DM Sans',sans-serif",width:"180px"}}/>
@@ -1191,7 +1191,7 @@ function CreditTab(p: CrProps) {
             <button onClick={()=>p.setCrType("owed_to_me")} style={{flex:1,padding:"8px",borderRadius:"8px",border:`1.5px solid ${p.crType==="owed_to_me"?C.green:C.border}`,background:p.crType==="owed_to_me"?C.green+"18":"transparent",color:p.crType==="owed_to_me"?C.green:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"'DM Sans',sans-serif"}}>They Owe Me</button>
             <button onClick={()=>p.setCrType("i_owe")} style={{flex:1,padding:"8px",borderRadius:"8px",border:`1.5px solid ${p.crType==="i_owe"?C.red:C.border}`,background:p.crType==="i_owe"?C.red+"18":"transparent",color:p.crType==="i_owe"?C.red:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"'DM Sans',sans-serif"}}>I Owe Them</button>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
+          <div className="form-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             <FF label="Person's Name *" C={C}><input type="text" placeholder="Who?" value={p.crPerson} onChange={e=>p.setCrPerson(e.target.value)} style={sInput}/></FF>
             <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.crAmt} onChange={e=>p.setCrAmt(e.target.value)} style={sInput}/></FF>
             <FF label="Description" C={C}><input type="text" placeholder="What for?" value={p.crDesc} onChange={e=>p.setCrDesc(e.target.value)} style={sInput}/></FF>
@@ -1210,8 +1210,8 @@ function CreditTab(p: CrProps) {
           <div style={sSecT}>All Credit Entries</div>
           <div style={{fontSize:"12px",color:C.muted}}>{allCredits.length} of {p.credits.length} entries</div>
         </div>
-        <div style={{overflowX:"auto"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"'DM Sans',sans-serif"}}>
+        <div style={{overflowX:"auto",maxWidth:"100%"}}>
+          <table style={{width:"100%",tableLayout:"auto",borderCollapse:"collapse",fontFamily:"'DM Sans',sans-serif"}}>
             <thead>
               <tr>
                 <th style={thS} onClick={()=>sortH("person")}>Name{sortKey==="person"?(sortDir==="asc"?" ↑":" ↓"):""}</th>
@@ -2098,6 +2098,7 @@ export default function BudgetTracker() {
       `}}/>
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0;}
+        html,body{overflow-x:hidden;max-width:100vw;}
         body{background:${C.bg};font-family:'DM Sans',sans-serif;color-scheme:${dark?'dark':'light'};}
         *,*::before,*::after{transition:background-color 0.5s ease,border-color 0.5s ease,color 0.5s ease,box-shadow 0.5s ease!important;}
         input,select,textarea,button{transition:background-color 0.5s ease,border-color 0.5s ease,color 0.5s ease,opacity 0.15s ease,box-shadow 0.5s ease!important;}
@@ -2124,7 +2125,7 @@ export default function BudgetTracker() {
           .mob-header{display:flex!important;position:fixed;top:0;left:0;right:0;z-index:100;background:${C.sidebar};border-bottom:1px solid ${C.border};padding:14px 18px;align-items:center;justify-content:space-between;}
           .desk-sidebar{display:none!important;}
           .mob-nav{display:flex!important;position:fixed;bottom:0;left:0;right:0;background:${C.sidebar};border-top:1px solid ${C.border};z-index:50;padding:5px 0 max(8px,env(safe-area-inset-bottom));}
-          .main-wrap{padding:72px 16px 80px!important;}
+          .main-wrap{padding:72px 16px 80px!important;overflow-x:hidden;max-width:100vw;}
           .two-col-grid{grid-template-columns:1fr!important;}
           .col-hide-mobile{display:none!important;}
           .col-actions-mobile{display:none!important;}
@@ -2132,6 +2133,12 @@ export default function BudgetTracker() {
           .col-mode-mobile{display:none!important;}
           @keyframes fadeIn{from{opacity:0}to{opacity:1}}
           @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+        }
+        @media(max-width:640px){
+          table{table-layout:auto;width:100%;max-width:100%;}
+          th,td{padding:8px 6px!important;font-size:11px!important;}
+          .form-grid{grid-template-columns:1fr!important;}
+          .table-scroll{overflow-x:auto;max-width:100%;}
         }
       `}</style>
 
@@ -2179,7 +2186,7 @@ export default function BudgetTracker() {
           <SidebarInner/>
         </aside>
 
-        <main className="main-wrap" style={{flex:1,padding:"36px 32px",overflowY:"auto",overflow:"hidden"}}
+        <main className="main-wrap" style={{flex:1,padding:"36px 32px",overflowX:"hidden",overflowY:"auto",minWidth:0}}
           onTouchStart={e=>{
             const t=e.touches[0];
             const el=e.currentTarget as HTMLElement;
@@ -2228,7 +2235,9 @@ export default function BudgetTracker() {
             transition:swipeOffset===0?"transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)":"none",
             animation:swipeAnim==="in-left"?"slideInFromRight 0.32s cubic-bezier(0.25,0.46,0.45,0.94)":swipeAnim==="in-right"?"slideInFromLeft 0.32s cubic-bezier(0.25,0.46,0.45,0.94)":"none",
             willChange:"transform",
+            overflowX:"hidden",
             overflowY:"auto",
+            maxWidth:"100%",
             height:"100%",
           }}>
           <div style={{marginBottom:"28px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px"}}>

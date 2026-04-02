@@ -57,8 +57,8 @@ android {
         applicationId "com.armaangupta.budgetly"
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 3
-        versionName "3"
+        versionCode 5
+        versionName "1.2"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name
