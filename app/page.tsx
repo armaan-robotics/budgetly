@@ -869,11 +869,13 @@ function TrendsTab(p: TrProps) {
   for (let i = numDays - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split("T")[0];
+    // Use local date parts to avoid UTC offset shifting the date
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
     const mk = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
     const modeKey = p.appMode==="household" ? `h:${mk}` : mk;
     const monthData = p.allMonths[modeKey];
-    const dayExpenses = monthData ? monthData.expenses.filter(e => e.date === dateStr) : [];
+    // Normalize e.date to YYYY-MM-DD to handle ISO strings or other formats
+    const dayExpenses = monthData ? monthData.expenses.filter(e => (e.date||"").slice(0,10) === dateStr) : [];
     const total = dayExpenses.reduce((s,e) => s+e.amount, 0);
     const byCategory: {[cat:string]:number} = {};
     dayExpenses.forEach(e => { byCategory[e.category] = (byCategory[e.category]||0) + e.amount; });
@@ -903,7 +905,7 @@ function TrendsTab(p: TrProps) {
 
   const [hovered, setHovered] = useState<number|null>(null);
 
-  const todayStr = today.toISOString().split("T")[0];
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
 
   return (
     <div style={{maxWidth:"820px"}}>
