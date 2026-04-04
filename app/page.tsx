@@ -134,7 +134,7 @@ interface SvProps { C:Theme; savings:Entry[];accounts:string[];appMode:AppMode;t
 interface CaProps { C:Theme; categories:string[];expenses:Expense[];cashFlowOut:number;newCategory:string;setNewCategory:(v:string)=>void;addCategory:()=>void;deleteCategory:(cat:string)=>void; }
 interface CreditEntry { id:number; person:string; amount:number; description:string; date:string; type:"owed_to_me"|"i_owe"; cleared:boolean; }
 interface CrProps { C:Theme; credits:CreditEntry[];crAmt:string;crPerson:string;crDesc:string;crDate:string;crType:"owed_to_me"|"i_owe";setCrAmt:(v:string)=>void;setCrPerson:(v:string)=>void;setCrDesc:(v:string)=>void;setCrDate:(v:string)=>void;setCrType:(v:"owed_to_me"|"i_owe")=>void;addCredit:()=>void;toggleCleared:(id:number)=>void;deleteCredit:(id:number)=>void;updateCredit:(id:number,u:Partial<CreditEntry>)=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void; }
-interface TrProps { C:Theme; allMonths:AllMonths; activeMK:string; categories:string[]; appMode:AppMode; }
+interface TrProps { C:Theme; allMonths:AllMonths; activeMK:string; categories:string[]; appMode:AppMode; expenses:Expense[]; cashFlowOut:number; currentDailyAvg:number; todayDay:number; }
 
 // ─── Primitives (module-level) ────────────────────────────────────────────────
 function FF({ label, children, C }: { label:string; children:ReactNode; C:Theme }) {
@@ -894,11 +894,11 @@ function TrendsTab(p: TrProps) {
   const highestDay = days.reduce((best, d) => d.total > best.total ? d : best, days[0]);
   const activeDays = days.filter(d => d.total > 0).length;
 
-  // Category totals for the period
+  // Category totals for current month (same source as Overview donut chart)
   const catTotals: {name:string; color:string; total:number}[] = p.categories.map((cat,i) => ({
     name: cat,
     color: CAT_COLORS[i % CAT_COLORS.length],
-    total: days.reduce((s,d) => s+(d.byCategory[cat]||0), 0),
+    total: p.expenses.filter(e=>e.category===cat).reduce((s,e)=>s+e.amount,0),
   })).filter(c => c.total > 0).sort((a,b) => b.total - a.total);
 
   const [hovered, setHovered] = useState<number|null>(null);
@@ -926,13 +926,13 @@ function TrendsTab(p: TrProps) {
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:"10px",marginBottom:"16px"}} className="two-col-grid">
         <div style={{...sCard,padding:"14px",borderTop:`3px solid ${C.red}`}}>
           <div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"5px"}}>Total Spent</div>
-          <div style={{fontSize:"clamp(18px,2.5vw,24px)",fontWeight:800,color:C.red}}>{fmt(totalPeriod)}</div>
-          <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{view==="week"?"past 7 days":"past 30 days"}</div>
+          <div style={{fontSize:"clamp(18px,2.5vw,24px)",fontWeight:800,color:C.red}}>{fmt(p.cashFlowOut)}</div>
+          <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>this month</div>
         </div>
         <div style={{...sCard,padding:"14px",borderTop:`3px solid ${C.amber}`}}>
           <div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"5px"}}>Daily Average</div>
-          <div style={{fontSize:"clamp(18px,2.5vw,24px)",fontWeight:800,color:C.amber}}>{fmt(Math.round(avgPerDay))}</div>
-          <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{activeDays} active day{activeDays!==1?"s":""}</div>
+          <div style={{fontSize:"clamp(18px,2.5vw,24px)",fontWeight:800,color:C.amber}}>{fmt(p.currentDailyAvg)}</div>
+          <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{p.todayDay} day{p.todayDay!==1?"s":""} elapsed</div>
         </div>
         <div style={{...sCard,padding:"14px",borderTop:`3px solid ${C.accent}`}}>
           <div style={{fontSize:"10px",color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"5px"}}>Highest Day</div>
@@ -1010,7 +1010,7 @@ function TrendsTab(p: TrProps) {
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
             {catTotals.map(cat => {
-              const pct = totalPeriod > 0 ? (cat.total/totalPeriod)*100 : 0;
+              const pct = p.cashFlowOut > 0 ? (cat.total/p.cashFlowOut)*100 : 0;
               return (
                 <div key={cat.name}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px"}}>
@@ -2074,7 +2074,7 @@ export default function BudgetTracker() {
   const erProps: ErProps = { C,earnings,accounts,appMode,totalEarnings,earnAmt,earnDesc,earnDate,earnMode,earnAcc,setEarnAmt,setEarnDesc,setEarnDate,setEarnMode,setEarnAcc,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning,deleteManyEarnings,updateEarning };
   const svProps: SvProps = { C,savings,accounts,appMode,totalSavings,cashFlowIn,savAmt,savDesc,savDate,savMode,savAcc,setSavAmt,setSavDesc,setSavDate,setSavMode,setSavAcc,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving,deleteManySavings,updateSaving };
   const caProps: CaProps = { C,categories,expenses,cashFlowOut,newCategory,setNewCategory,addCategory,deleteCategory };
-  const trProps: TrProps = { C,allMonths,activeMK,categories,appMode };
+  const trProps: TrProps = { C,allMonths,activeMK,categories,appMode,expenses,cashFlowOut,currentDailyAvg,todayDay };
   const crProps: CrProps = { C,credits,crAmt,crPerson,crDesc,crDate,crType,setCrAmt,setCrPerson,setCrDesc,setCrDate,setCrType,addCredit,toggleCleared,deleteCredit,updateCredit,deleteConfirm,setDeleteConfirm };
 
   return (
