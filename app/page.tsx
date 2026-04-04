@@ -275,16 +275,16 @@ function OverviewTab(p: OvProps) {
 
       {p.appMode==="student"&&<div style={{...sCard,marginBottom:"18px"}}>
         <div style={sSecT}>Daily Averages</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))"}}>
+        <div style={{display:"flex",flexWrap:"nowrap"}}>
           {([
             {label:"Ideal monthly avg",  val:fmt(p.idealPerDay),     color:C.accent, note:""},
             {label:"Daily avg to spend", val:fmt(p.currentIdealAvg), color:p.currentIdealAvg<p.idealPerDay?C.green:C.red, note:""},
             {label:"Spent per day",      val:fmt(p.currentDailyAvg), color:C.muted,  note:""},
           ] as {label:string;val:string;color:string;note:string}[]).map((d,i)=>(
-            <div key={i} style={{padding:"10px 8px",borderLeft:i>0?`1px solid ${C.border}`:"none",textAlign:"center"}}>
-              <div style={{fontSize:"9px",color:C.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:"6px",lineHeight:1.3}}>{d.label}</div>
-              <div style={{fontSize:"clamp(16px,2vw,22px)",fontWeight:800,color:d.color}}>{d.val}</div>
-              <div style={{fontSize:"9px",color:C.muted,marginTop:"4px",lineHeight:1.3}}>{d.note}</div>
+            <div key={i} style={{flex:1,minWidth:0,padding:"8px 4px",borderLeft:i>0?`1px solid ${C.border}`:"none",textAlign:"center"}}>
+              <div style={{fontSize:"8px",color:C.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:"5px",lineHeight:1.3}}>{d.label}</div>
+              <div style={{fontSize:"clamp(13px,3.5vw,22px)",fontWeight:800,color:d.color}}>{d.val}</div>
+              <div style={{fontSize:"8px",color:C.muted,marginTop:"3px",lineHeight:1.3}}>{d.note}</div>
             </div>
           ))}
         </div>
