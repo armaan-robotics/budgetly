@@ -127,11 +127,12 @@ interface OvProps {
   daysInMonth:number; todayDay:number; idealPerDay:number;
   idealSpentByToday:number; actualVsIdeal:number;
   moneyLeft:number; daysLeft:number; currentDailyAvg:number; currentIdealAvg:number;
+  credits:CreditEntry[]; setActiveTab:(v:string)=>void;
 }
 interface ExProps { C:Theme; expenses:Expense[];categories:string[];accounts:string[];appMode:AppMode;totalExpenses:number;expAmt:string;expCat:string;expDesc:string;expDate:string;expMode:string;expAcc:string;setExpAmt:(v:string)=>void;setExpCat:(v:string)=>void;setExpDesc:(v:string)=>void;setExpDate:(v:string)=>void;setExpMode:(v:string)=>void;setExpAcc:(v:string)=>void;addExpense:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteExpense:(id:number)=>void;deleteManyExpenses:(ids:number[])=>void;updateExpense:(id:number,u:Partial<Expense>)=>void; }
 interface ErProps { C:Theme; earnings:Entry[];accounts:string[];appMode:AppMode;totalEarnings:number;earnAmt:string;earnDesc:string;earnDate:string;earnMode:string;earnAcc:string;setEarnAmt:(v:string)=>void;setEarnDesc:(v:string)=>void;setEarnDate:(v:string)=>void;setEarnMode:(v:string)=>void;setEarnAcc:(v:string)=>void;addEarning:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteEarning:(id:number)=>void;deleteManyEarnings:(ids:number[])=>void;updateEarning:(id:number,u:Partial<Entry>)=>void; }
 interface SvProps { C:Theme; savings:Entry[];accounts:string[];appMode:AppMode;totalSavings:number;cashFlowIn:number;savAmt:string;savDesc:string;savDate:string;savMode:string;savAcc:string;setSavAmt:(v:string)=>void;setSavDesc:(v:string)=>void;setSavDate:(v:string)=>void;setSavMode:(v:string)=>void;setSavAcc:(v:string)=>void;addSaving:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteSaving:(id:number)=>void;deleteManySavings:(ids:number[])=>void;updateSaving:(id:number,u:Partial<Entry>)=>void; }
-interface CaProps { C:Theme; categories:string[];expenses:Expense[];cashFlowOut:number;newCategory:string;setNewCategory:(v:string)=>void;addCategory:()=>void;deleteCategory:(cat:string)=>void; }
+interface CaProps { C:Theme; categories:string[];expenses:Expense[];cashFlowOut:number;newCategory:string;setNewCategory:(v:string)=>void;addCategory:()=>void;deleteCategory:(cat:string)=>void;appMode:AppMode; }
 interface CreditEntry { id:number; person:string; amount:number; description:string; date:string; type:"owed_to_me"|"i_owe"; cleared:boolean; }
 interface CrProps { C:Theme; credits:CreditEntry[];crAmt:string;crPerson:string;crDesc:string;crDate:string;crType:"owed_to_me"|"i_owe";setCrAmt:(v:string)=>void;setCrPerson:(v:string)=>void;setCrDesc:(v:string)=>void;setCrDate:(v:string)=>void;setCrType:(v:"owed_to_me"|"i_owe")=>void;addCredit:()=>void;toggleCleared:(id:number)=>void;deleteCredit:(id:number)=>void;updateCredit:(id:number,u:Partial<CreditEntry>)=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void; }
 interface TrProps { C:Theme; allMonths:AllMonths; activeMK:string; categories:string[]; appMode:AppMode; expenses:Expense[]; cashFlowOut:number; currentDailyAvg:number; todayDay:number; }
@@ -374,6 +375,30 @@ function OverviewTab(p: OvProps) {
                   <div style={{fontSize:"10px",color:C.faint,marginTop:"2px"}}>{acc.count} transactions</div>
                 </div>
               ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {(()=>{
+        const peopleOweMe = p.credits.filter(c=>c.type==="owed_to_me"&&!c.cleared).reduce((s,c)=>s+c.amount,0);
+        const iOwePeople  = p.credits.filter(c=>c.type==="i_owe"&&!c.cleared).reduce((s,c)=>s+c.amount,0);
+        if(peopleOweMe===0&&iOwePeople===0)return null;
+        return(
+          <div style={{...sCard,marginBottom:"18px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+              <div style={sSecT}>Credits</div>
+              <button onClick={()=>p.setActiveTab("credit")} style={{background:"none",border:"none",color:C.accent,fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:"0"}}>View Credits →</button>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
+              <div style={{background:C.cardAlt,borderRadius:"10px",padding:"14px",border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.green}`}}>
+                <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"6px",fontWeight:700}}>People owe me</div>
+                <div style={{fontSize:"clamp(16px,3vw,22px)",fontWeight:800,color:C.green}}>{fmt(peopleOweMe)}</div>
+              </div>
+              <div style={{background:C.cardAlt,borderRadius:"10px",padding:"14px",border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.red}`}}>
+                <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",textTransform:"uppercase",marginBottom:"6px",fontWeight:700}}>I owe people</div>
+                <div style={{fontSize:"clamp(16px,3vw,22px)",fontWeight:800,color:C.red}}>{fmt(iOwePeople)}</div>
+              </div>
             </div>
           </div>
         );
@@ -824,7 +849,7 @@ function CategoriesTab(p: CaProps) {
           {p.categories.map((cat,i)=>{
             const total=p.expenses.filter(e=>e.category===cat).reduce((s,e)=>s+e.amount,0);
             const count=p.expenses.filter(e=>e.category===cat).length;
-            const color=CAT_COLORS[i%CAT_COLORS.length]; const isDef=DEFAULT_CATS.includes(cat)||DEFAULT_HOUSEHOLD_CATS.includes(cat);
+            const color=CAT_COLORS[i%CAT_COLORS.length]; const isDef=(p.appMode==="household"?DEFAULT_HOUSEHOLD_CATS:DEFAULT_CATS).includes(cat);
             return(
               <div key={cat} style={{background:C.cardAlt,borderRadius:"10px",padding:"12px",border:`1px solid ${C.border}`}}>
                 <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"7px"}}>
@@ -2071,11 +2096,11 @@ export default function BudgetTracker() {
     );
   }
 
-  const ovProps: OvProps = { C,budget,cashFlowIn,cashFlowOut,totalEarnings,totalSavings,remaining,spentPct,editingBudget,tempBudget,setEditingBudget,setTempBudget,saveBudget,expenses,earnings,savings,categories,accounts,appMode,daysInMonth,todayDay,idealPerDay,idealSpentByToday,actualVsIdeal,moneyLeft,daysLeft,currentDailyAvg,currentIdealAvg };
+  const ovProps: OvProps = { C,budget,cashFlowIn,cashFlowOut,totalEarnings,totalSavings,remaining,spentPct,editingBudget,tempBudget,setEditingBudget,setTempBudget,saveBudget,expenses,earnings,savings,categories,accounts,appMode,daysInMonth,todayDay,idealPerDay,idealSpentByToday,actualVsIdeal,moneyLeft,daysLeft,currentDailyAvg,currentIdealAvg,credits,setActiveTab };
   const exProps: ExProps = { C,expenses,categories,accounts,appMode,totalExpenses:cashFlowOut,expAmt,expCat,expDesc,expDate,expMode,expAcc,setExpAmt,setExpCat,setExpDesc,setExpDate,setExpMode,setExpAcc,addExpense,deleteConfirm,setDeleteConfirm,deleteExpense,deleteManyExpenses,updateExpense };
   const erProps: ErProps = { C,earnings,accounts,appMode,totalEarnings,earnAmt,earnDesc,earnDate,earnMode,earnAcc,setEarnAmt,setEarnDesc,setEarnDate,setEarnMode,setEarnAcc,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning,deleteManyEarnings,updateEarning };
   const svProps: SvProps = { C,savings,accounts,appMode,totalSavings,cashFlowIn,savAmt,savDesc,savDate,savMode,savAcc,setSavAmt,setSavDesc,setSavDate,setSavMode,setSavAcc,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving,deleteManySavings,updateSaving };
-  const caProps: CaProps = { C,categories,expenses,cashFlowOut,newCategory,setNewCategory,addCategory,deleteCategory };
+  const caProps: CaProps = { C,categories,expenses,cashFlowOut,newCategory,setNewCategory,addCategory,deleteCategory,appMode };
   const trProps: TrProps = { C,allMonths,activeMK,categories,appMode,expenses,cashFlowOut,currentDailyAvg,todayDay };
   const crProps: CrProps = { C,credits,crAmt,crPerson,crDesc,crDate,crType,setCrAmt,setCrPerson,setCrDesc,setCrDate,setCrType,addCredit,toggleCleared,deleteCredit,updateCredit,deleteConfirm,setDeleteConfirm };
 
