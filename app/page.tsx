@@ -383,7 +383,6 @@ function OverviewTab(p: OvProps) {
       {(()=>{
         const peopleOweMe = p.credits.filter(c=>c.type==="owed_to_me"&&!c.cleared).reduce((s,c)=>s+c.amount,0);
         const iOwePeople  = p.credits.filter(c=>c.type==="i_owe"&&!c.cleared).reduce((s,c)=>s+c.amount,0);
-        if(peopleOweMe===0&&iOwePeople===0)return null;
         return(
           <div style={{...sCard,marginBottom:"18px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
