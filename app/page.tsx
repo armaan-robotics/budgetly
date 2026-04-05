@@ -35,7 +35,7 @@ function lsSave(key: string, val: unknown): void {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_CATS: string[] = ["Food","Transport","College","Entertainment","Health","Shopping","Other"];
-const DEFAULT_HOUSEHOLD_CATS: string[] = ["Groceries","Electricity","Water","Gas","Rent","Internet","Transport","Medical","School Fees","Dining Out","Shopping","Maintenance","Salaries","Kitchen","Bills","Other"];
+const DEFAULT_HOUSEHOLD_CATS: string[] = ["Groceries","Electricity","Water","Gas","Rent","Internet","Transport","Medical","School Fees","Dining Out","Shopping","Maintenance","Salaries","Other"];
 const DEFAULT_ACCOUNTS: string[] = ["Main Account","Cash","Savings Account"];
 const PAYMENT_MODES: string[] = ["UPI","Cash","Card","Bank Transfer","Other"];
 const CAT_COLORS: string[]   = ["#f97316","#06b6d4","#8b5cf6","#10b981","#f43f5e","#eab308","#6366f1","#ec4899","#14b8a6","#84cc16","#ef4444","#3b82f6"];
@@ -844,7 +844,7 @@ function CategoriesTab(p: CaProps) {
       </div>
       <div style={sCard}>
         <div style={sSecT}>{p.categories.length} Categories</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"14px"}}>
+        <div className="cat-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"14px"}}>
           {p.categories.map((cat,i)=>{
             const total=p.expenses.filter(e=>e.category===cat).reduce((s,e)=>s+e.amount,0);
             const count=p.expenses.filter(e=>e.category===cat).length;
@@ -854,7 +854,7 @@ function CategoriesTab(p: CaProps) {
                 <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"7px"}}>
                   <div style={{width:"7px",height:"7px",borderRadius:"50%",background:color,flexShrink:0}}/>
                   <span style={{fontSize:"12px",fontWeight:500,color:C.text,flex:1}}>{cat}</span>
-                  {!isDef&&<button onClick={()=>p.deleteCategory(cat)} style={{background:"none",border:"none",color:C.faint,cursor:"pointer",fontSize:"12px",padding:"0 2px"}}
+                  {!isDef&&<button onClick={()=>p.deleteCategory(cat)} style={{background:"none",border:"none",color:C.faint,cursor:"pointer",fontSize:"14px",padding:"0",width:"44px",height:"44px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,margin:"-10px -10px -10px 0"}}
                     onMouseEnter={e=>{(e.currentTarget as HTMLButtonElement).style.color=C.red;}}
                     onMouseLeave={e=>{(e.currentTarget as HTMLButtonElement).style.color=C.faint;}}>✕</button>}
                 </div>
@@ -1531,11 +1531,12 @@ export default function BudgetTracker() {
   const setActiveMK = (mk:string) => setActiveMKRaw(stripMK(mk));
   const [allMonths,     setAllMonthsRaw]  = useState<AllMonths>({});
   const [categories,    setCategories]    = useState<string[]>(() => {
-    const saved = lsLoad<string[]>("budgetly_cats", null as any);
-    if (saved && saved.length > 0) return saved;
-    // No saved cats — use defaults based on current mode
     const mode = lsLoad<AppMode|null>("budgetly_mode", null);
-    return mode==="household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
+    const modeKey = mode === "household" ? "budgetly_cats_household" : "budgetly_cats_student";
+    // Try mode-specific key first, fall back to legacy key for migration
+    const saved = lsLoad<string[]>(modeKey, null as any) ?? lsLoad<string[]>("budgetly_cats", null as any);
+    if (saved && saved.length > 0) return saved;
+    return mode === "household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
   });
   const [editingBudget, setEditingBudget] = useState(false);
   const [tempBudget,    setTempBudget]    = useState("10000");
@@ -1561,12 +1562,11 @@ export default function BudgetTracker() {
   const switchMode = (m: AppMode) => {
     setAppMode(m);
     lsSave("budgetly_mode", m);
-    // Auto-switch categories to match mode defaults if still on defaults
-    const currentDef = appMode==="household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
-    const newDef = m==="household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
-    if (JSON.stringify(categories.slice().sort()) === JSON.stringify(currentDef.slice().sort())) {
-      setCategories(newDef);
-    }
+    // Load categories for the new mode from mode-specific storage or defaults
+    const modeKey = m === "household" ? "budgetly_cats_household" : "budgetly_cats_student";
+    const savedCats = lsLoad<string[]>(modeKey, null as any);
+    const newDef = m === "household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
+    setCategories(savedCats && savedCats.length > 0 ? savedCats : newDef);
     setShowModeSelect(false);
   };
 
@@ -1642,9 +1642,21 @@ export default function BudgetTracker() {
       const modeCredits = appMode==="household" ? (row.household_credits??[]) : (row.credits??[]);
       setCredits(modeCredits);
       // Restore categories and accounts from server (more reliable than localStorage)
-      if (row.categories && row.categories.length > 0) {
-        setCategories(row.categories);
-        lsSave("budgetly_cats", row.categories);
+      if (row.categories) {
+        let modeCats: string[] | null = null;
+        if (Array.isArray(row.categories) && row.categories.length > 0) {
+          // Legacy format: array stored for current mode only
+          modeCats = row.categories;
+        } else if (typeof row.categories === "object" && !Array.isArray(row.categories)) {
+          // New format: {student: [...], household: [...]}
+          const mk = appMode === "household" ? "household" : "student";
+          const mc = (row.categories as Record<string, string[]>)[mk];
+          modeCats = mc && mc.length > 0 ? mc : null;
+        }
+        if (modeCats) {
+          setCategories(modeCats);
+          lsSave(appMode === "household" ? "budgetly_cats_household" : "budgetly_cats_student", modeCats);
+        }
       }
       if (row.accounts && row.accounts.length > 0) {
         setAccounts(row.accounts);
@@ -1668,8 +1680,16 @@ export default function BudgetTracker() {
 
   const saveUserPrefs = useCallback(async (cats: string[], accs: string[]) => {
     if (!user) return;
-    await supabase.from("user_credits").upsert({ user_id:user.id, categories:cats, accounts:accs, updated_at:new Date().toISOString() },{ onConflict:"user_id" });
-  }, [user]);
+    // Read existing to merge both modes' categories without overwriting the other
+    const { data: existing } = await supabase.from("user_credits").select("categories").eq("user_id", user.id).single();
+    const existingCats = existing?.categories;
+    const baseCats: Record<string, string[]> =
+      existingCats && typeof existingCats === "object" && !Array.isArray(existingCats)
+        ? (existingCats as Record<string, string[]>)
+        : {};
+    const updatedCats = { ...baseCats, [appMode ?? "student"]: cats };
+    await supabase.from("user_credits").upsert({ user_id:user.id, categories:updatedCats, accounts:accs, updated_at:new Date().toISOString() },{ onConflict:"user_id" });
+  }, [user, appMode]);
 
   const setAllMonths = useCallback((updater: AllMonths|((prev:AllMonths)=>AllMonths)) => {
     setAllMonthsRaw(prev => { const next=typeof updater==="function"?updater(prev):updater; return next; });
@@ -1742,10 +1762,10 @@ export default function BudgetTracker() {
   const updateEarning  = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,earnings:earnings.map(e=>e.id===id?{...e,...u}:e)});
   const updateSaving   = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,savings: savings.map (e=>e.id===id?{...e,...u}:e)});
   const updateCredit   = (id:number,u:Partial<CreditEntry>) => setCredits(prev=>prev.map(c=>c.id===id?{...c,...u}:c));
-  const addCategory    = () => { const t=newCategory.trim(); if(!t||categories.includes(t))return; const n=[...categories,t]; setCategories(n); lsSave("budgetly_cats",n); saveUserPrefs(n,accounts); setNewCategory(""); };
+  const addCategory    = () => { const t=newCategory.trim(); if(!t||categories.includes(t))return; const n=[...categories,t]; setCategories(n); lsSave(appMode==="household"?"budgetly_cats_household":"budgetly_cats_student",n); saveUserPrefs(n,accounts); setNewCategory(""); };
   const deleteCategory = (cat:string) => {
     const def = appMode==="household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
-    if(def.includes(cat))return; const n=categories.filter(c=>c!==cat); setCategories(n); lsSave("budgetly_cats",n); saveUserPrefs(n,accounts);
+    if(def.includes(cat))return; const n=categories.filter(c=>c!==cat); setCategories(n); lsSave(appMode==="household"?"budgetly_cats_household":"budgetly_cats_student",n); saveUserPrefs(n,accounts);
   };
   const addAccount     = () => { const t=newAccount.trim(); if(!t||accounts.includes(t))return; const n=[...accounts,t]; saveAccounts(n); saveUserPrefs(categories,n); setNewAccount(""); };
   const deleteAccount  = (acc:string) => { if(DEFAULT_ACCOUNTS.includes(acc))return; const n=accounts.filter(a=>a!==acc); saveAccounts(n); saveUserPrefs(categories,n); };
@@ -2146,7 +2166,7 @@ export default function BudgetTracker() {
         @keyframes slideUp{from{transform:translateY(32px);opacity:0}to{transform:translateY(0);opacity:1}}
         .drawer-panel{animation:slideInLeft 0.25s cubic-bezier(0.32,0.72,0,1)}
         .drawer-overlay{animation:fadeIn 0.2s ease}
-        .settings-modal{animation:slideUp 0.25s cubic-bezier(0.32,0.72,0,1)}
+        .settings-modal{animation:slideUp 0.25s cubic-bezier(0.32,0.72,0,1);overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:90vh;}
         @media(max-width:768px){
           .mob-header{display:flex!important;position:fixed;top:0;left:0;right:0;z-index:100;background:${C.sidebar};border-bottom:1px solid ${C.border};padding:14px 18px;align-items:center;justify-content:space-between;}
           .desk-sidebar{display:none!important;}
@@ -2157,6 +2177,8 @@ export default function BudgetTracker() {
           .col-actions-mobile{display:none!important;}
           .col-date-mobile{display:none!important;}
           .col-mode-mobile{display:none!important;}
+          .settings-modal{max-height:90dvh;overflow-y:scroll;-webkit-overflow-scrolling:touch;}
+          .cat-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))!important;}
           @keyframes fadeIn{from{opacity:0}to{opacity:1}}
           @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
         }
