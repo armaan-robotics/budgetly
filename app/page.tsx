@@ -35,7 +35,8 @@ function lsSave(key: string, val: unknown): void {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_CATS: string[] = ["Food","Transport","College","Entertainment","Health","Shopping","Other"];
-const DEFAULT_HOUSEHOLD_CATS: string[] = ["Groceries","Electricity","Water","Gas","Rent","Internet","Transport","Medical","School Fees","Dining Out","Shopping","Maintenance","Other"];
+const DEFAULT_HOUSEHOLD_CATS: string[] = ["Groceries","Rent","Transport","Medical","School Fees","Dining Out","Shopping","Maintenance","Other"];
+const OLD_HOUSEHOLD_UTILITY_CATS = ["Water","Gas","Electricity","Internet"];
 const DEFAULT_ACCOUNTS: string[] = ["Main Account","Cash","Savings Account"];
 const PAYMENT_MODES: string[] = ["UPI","Cash","Card","Bank Transfer","Other"];
 const CAT_COLORS: string[]   = ["#f97316","#06b6d4","#8b5cf6","#10b981","#f43f5e","#eab308","#6366f1","#ec4899","#14b8a6","#84cc16","#ef4444","#3b82f6"];
@@ -129,7 +130,7 @@ interface OvProps {
   moneyLeft:number; daysLeft:number; currentDailyAvg:number; currentIdealAvg:number;
   credits:CreditEntry[]; setActiveTab:(v:string)=>void;
 }
-interface ExProps { C:Theme; expenses:Expense[];categories:string[];accounts:string[];appMode:AppMode;totalExpenses:number;expAmt:string;expCat:string;expDesc:string;expDate:string;expMode:string;expAcc:string;setExpAmt:(v:string)=>void;setExpCat:(v:string)=>void;setExpDesc:(v:string)=>void;setExpDate:(v:string)=>void;setExpMode:(v:string)=>void;setExpAcc:(v:string)=>void;addExpense:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteExpense:(id:number)=>void;deleteManyExpenses:(ids:number[])=>void;updateExpense:(id:number,u:Partial<Expense>)=>void; }
+interface ExProps { C:Theme; expenses:Expense[];categories:string[];accounts:string[];appMode:AppMode;totalExpenses:number;expAmt:string;expCat:string;expDesc:string;expDate:string;expMode:string;expAcc:string;setExpAmt:(v:string)=>void;setExpCat:(v:string)=>void;setExpDesc:(v:string)=>void;setExpDate:(v:string)=>void;setExpMode:(v:string)=>void;setExpAcc:(v:string)=>void;addExpense:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteExpense:(id:number)=>void;deleteManyExpenses:(ids:number[])=>void;updateExpense:(id:number,u:Partial<Expense>)=>void;onOpenCategories:()=>void; }
 interface ErProps { C:Theme; earnings:Entry[];accounts:string[];appMode:AppMode;totalEarnings:number;earnAmt:string;earnDesc:string;earnDate:string;earnMode:string;earnAcc:string;setEarnAmt:(v:string)=>void;setEarnDesc:(v:string)=>void;setEarnDate:(v:string)=>void;setEarnMode:(v:string)=>void;setEarnAcc:(v:string)=>void;addEarning:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteEarning:(id:number)=>void;deleteManyEarnings:(ids:number[])=>void;updateEarning:(id:number,u:Partial<Entry>)=>void; }
 interface SvProps { C:Theme; savings:Entry[];accounts:string[];appMode:AppMode;totalSavings:number;cashFlowIn:number;savAmt:string;savDesc:string;savDate:string;savMode:string;savAcc:string;setSavAmt:(v:string)=>void;setSavDesc:(v:string)=>void;setSavDate:(v:string)=>void;setSavMode:(v:string)=>void;setSavAcc:(v:string)=>void;addSaving:()=>void;deleteConfirm:number|null;setDeleteConfirm:(v:number|null)=>void;deleteSaving:(id:number)=>void;deleteManySavings:(ids:number[])=>void;updateSaving:(id:number,u:Partial<Entry>)=>void; }
 interface CaProps { C:Theme; categories:string[];expenses:Expense[];cashFlowOut:number;newCategory:string;setNewCategory:(v:string)=>void;addCategory:()=>void;deleteCategory:(cat:string)=>void;appMode:AppMode; }
@@ -654,7 +655,7 @@ function ExpensesTab(p: ExProps) {
           <div style={{...sSecT,marginBottom:"14px"}}>Add Expense</div>
           <div className="form-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.expAmt} onChange={e=>p.setExpAmt(e.target.value)} style={sInput}/></FF>
-            <FF label="Category" C={C}><select value={p.expCat} onChange={e=>p.setExpCat(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>{p.categories.map(c=><option key={c} value={c}>{c}</option>)}</select></FF>
+            <FF label="Category" C={C}><select value={p.expCat} onChange={e=>{if(e.target.value==="__add_cat__"){e.target.value=p.expCat;p.onOpenCategories();}else{p.setExpCat(e.target.value);}}} style={{...sInput,appearance:"none",cursor:"pointer"}}>{p.categories.map(c=><option key={c} value={c}>{c}</option>)}<option value="__add_cat__">＋ Add Category</option></select></FF>
             <FF label="Description" C={C}><input type="text" placeholder="What did you spend on?" value={p.expDesc} onChange={e=>p.setExpDesc(e.target.value)} style={sInput}/></FF>
             <FF label="Date" C={C}><input type="date" value={p.expDate} onChange={e=>p.setExpDate(e.target.value)} style={sInput}/></FF>
             <FF label="Payment Mode" C={C}><select value={p.expMode} onChange={e=>p.setExpMode(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>{PAYMENT_MODES.map(m=><option key={m} value={m}>{m}</option>)}</select></FF>
@@ -1536,7 +1537,14 @@ export default function BudgetTracker() {
     const modeKey = mode === "household" ? "budgetly_cats_household" : "budgetly_cats_student";
     // Try mode-specific key first, fall back to legacy key for migration
     const saved = lsLoad<string[]>(modeKey, null as any) ?? lsLoad<string[]>("budgetly_cats", null as any);
-    if (saved && saved.length > 0) return saved;
+    if (saved && saved.length > 0) {
+      if (mode === "household") {
+        const migrated = saved.filter(c => !OLD_HOUSEHOLD_UTILITY_CATS.includes(c));
+        if (migrated.length !== saved.length) lsSave("budgetly_cats_household", migrated);
+        return migrated.length > 0 ? migrated : DEFAULT_HOUSEHOLD_CATS;
+      }
+      return saved;
+    }
     return mode === "household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
   });
   const [editingBudget, setEditingBudget] = useState(false);
@@ -1565,8 +1573,12 @@ export default function BudgetTracker() {
     lsSave("budgetly_mode", m);
     // Load categories for the new mode from mode-specific storage or defaults
     const modeKey = m === "household" ? "budgetly_cats_household" : "budgetly_cats_student";
-    const savedCats = lsLoad<string[]>(modeKey, null as any);
+    let savedCats = lsLoad<string[]>(modeKey, null as any);
     const newDef = m === "household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
+    if (savedCats && savedCats.length > 0 && m === "household") {
+      const migrated = savedCats.filter(c => !OLD_HOUSEHOLD_UTILITY_CATS.includes(c));
+      if (migrated.length !== savedCats.length) { savedCats = migrated; lsSave(modeKey, migrated); }
+    }
     setCategories(savedCats && savedCats.length > 0 ? savedCats : newDef);
     setShowModeSelect(false);
   };
@@ -1655,6 +1667,11 @@ export default function BudgetTracker() {
           modeCats = mc && mc.length > 0 ? mc : null;
         }
         if (modeCats) {
+          // Remove old household utility defaults that are no longer in the new defaults
+          if (appMode === "household") {
+            modeCats = modeCats.filter(c => !OLD_HOUSEHOLD_UTILITY_CATS.includes(c));
+            if (modeCats.length === 0) modeCats = DEFAULT_HOUSEHOLD_CATS;
+          }
           // Ensure all required defaults for current mode are present.
           // Legacy format may have stored the wrong mode's categories.
           const requiredDefs = appMode === "household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
@@ -2139,7 +2156,7 @@ export default function BudgetTracker() {
   }
 
   const ovProps: OvProps = { C,budget,cashFlowIn,cashFlowOut,totalEarnings,totalSavings,remaining,spentPct,editingBudget,tempBudget,setEditingBudget,setTempBudget,saveBudget,expenses,earnings,savings,categories,accounts,appMode,daysInMonth,todayDay,idealPerDay,idealSpentByToday,actualVsIdeal,moneyLeft,daysLeft,currentDailyAvg,currentIdealAvg,credits,setActiveTab };
-  const exProps: ExProps = { C,expenses,categories,accounts,appMode,totalExpenses:cashFlowOut,expAmt,expCat,expDesc,expDate,expMode,expAcc,setExpAmt,setExpCat,setExpDesc,setExpDate,setExpMode,setExpAcc,addExpense,deleteConfirm,setDeleteConfirm,deleteExpense,deleteManyExpenses,updateExpense };
+  const exProps: ExProps = { C,expenses,categories,accounts,appMode,totalExpenses:cashFlowOut,expAmt,expCat,expDesc,expDate,expMode,expAcc,setExpAmt,setExpCat,setExpDesc,setExpDate,setExpMode,setExpAcc,addExpense,deleteConfirm,setDeleteConfirm,deleteExpense,deleteManyExpenses,updateExpense,onOpenCategories:()=>{setActiveTab("categories");} };
   const erProps: ErProps = { C,earnings,accounts,appMode,totalEarnings,earnAmt,earnDesc,earnDate,earnMode,earnAcc,setEarnAmt,setEarnDesc,setEarnDate,setEarnMode,setEarnAcc,addEarning,deleteConfirm,setDeleteConfirm,deleteEarning,deleteManyEarnings,updateEarning };
   const svProps: SvProps = { C,savings,accounts,appMode,totalSavings,cashFlowIn,savAmt,savDesc,savDate,savMode,savAcc,setSavAmt,setSavDesc,setSavDate,setSavMode,setSavAcc,addSaving,deleteConfirm,setDeleteConfirm,deleteSaving,deleteManySavings,updateSaving };
   const caProps: CaProps = { C,categories,expenses,cashFlowOut,newCategory,setNewCategory,addCategory,deleteCategory,appMode };
