@@ -35,7 +35,7 @@ function lsSave(key: string, val: unknown): void {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_CATS: string[] = ["Food","Transport","College","Entertainment","Health","Shopping","Other"];
-const DEFAULT_HOUSEHOLD_CATS: string[] = ["Groceries","Electricity","Water","Gas","Rent","Internet","Transport","Medical","School Fees","Dining Out","Shopping","Maintenance","Salaries","Other"];
+const DEFAULT_HOUSEHOLD_CATS: string[] = ["Groceries","Electricity","Water","Gas","Rent","Internet","Transport","Medical","School Fees","Dining Out","Shopping","Maintenance","Other"];
 const DEFAULT_ACCOUNTS: string[] = ["Main Account","Cash","Savings Account"];
 const PAYMENT_MODES: string[] = ["UPI","Cash","Card","Bank Transfer","Other"];
 const CAT_COLORS: string[]   = ["#f97316","#06b6d4","#8b5cf6","#10b981","#f43f5e","#eab308","#6366f1","#ec4899","#14b8a6","#84cc16","#ef4444","#3b82f6"];
@@ -844,7 +844,8 @@ function CategoriesTab(p: CaProps) {
       </div>
       <div style={sCard}>
         <div style={sSecT}>{p.categories.length} Categories</div>
-        <div className="cat-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"14px"}}>
+        <div className="cat-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"14px",overflowY:"auto"}}>
+          {(()=>{console.log("[CategoriesTab] categories at render:", p.categories, "appMode:", p.appMode);return null;})()}
           {p.categories.map((cat,i)=>{
             const total=p.expenses.filter(e=>e.category===cat).reduce((s,e)=>s+e.amount,0);
             const count=p.expenses.filter(e=>e.category===cat).length;
@@ -1654,6 +1655,17 @@ export default function BudgetTracker() {
           modeCats = mc && mc.length > 0 ? mc : null;
         }
         if (modeCats) {
+          // Ensure all required defaults for current mode are present.
+          // Legacy format may have stored the wrong mode's categories.
+          const requiredDefs = appMode === "household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
+          const missing = requiredDefs.filter(d => !modeCats!.includes(d));
+          if (missing.length > requiredDefs.length / 2) {
+            // More than half the defaults are missing — likely wrong-mode legacy data; use defaults + any extras
+            const extras = modeCats.filter(c => !DEFAULT_CATS.includes(c) && !DEFAULT_HOUSEHOLD_CATS.includes(c));
+            modeCats = [...requiredDefs, ...extras];
+          } else if (missing.length > 0) {
+            modeCats = [...missing, ...modeCats];
+          }
           setCategories(modeCats);
           lsSave(appMode === "household" ? "budgetly_cats_household" : "budgetly_cats_student", modeCats);
         }
@@ -2024,7 +2036,18 @@ export default function BudgetTracker() {
                 <button onClick={()=>switchMode("household")} style={{flex:1,padding:"7px",borderRadius:"8px",border:`1.5px solid ${appMode==="household"?C.accent:C.border}`,background:appMode==="household"?C.navActive:"transparent",color:appMode==="household"?C.accent:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>🏠 Household</button>
               </div>
             </div>
-            <button onClick={()=>{setShowSettings(false);setActiveTab("categories");}} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:500,textAlign:"left",marginBottom:"8px",display:"flex",alignItems:"center",gap:"10px"}}>
+            <button onClick={()=>{
+              // Force-merge any missing defaults for the current mode before opening categories
+              const reqDefs = appMode==="household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
+              const missing = reqDefs.filter(d => !categories.includes(d));
+              if (missing.length > 0) {
+                const merged = [...missing, ...categories];
+                setCategories(merged);
+                lsSave(appMode==="household" ? "budgetly_cats_household" : "budgetly_cats_student", merged);
+              }
+              setShowSettings(false);
+              setActiveTab("categories");
+            }} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:500,textAlign:"left",marginBottom:"8px",display:"flex",alignItems:"center",gap:"10px"}}>
               <span style={{fontSize:"15px"}}>▦</span> Manage Categories
             </button>
             {appMode==="household"&&<button onClick={()=>{setShowSettings(false);setActiveTab("accounts");}} style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${C.border}`,background:C.cardAlt,color:C.text,cursor:"pointer",fontSize:"13px",fontFamily:"'DM Sans',sans-serif",fontWeight:500,textAlign:"left",marginBottom:"8px",display:"flex",alignItems:"center",gap:"10px"}}>

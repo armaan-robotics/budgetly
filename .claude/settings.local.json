@@ -5,7 +5,8 @@
       "Bash(find . -not -path */node_modules/* -not -path */.next/* -name *.tsx -o -name *.ts -not -path */node_modules/* -not -path */.next/*)",
       "Bash(find . -not -path */node_modules/* -not -path */.next/* -name *.js)",
       "Bash(git add:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(find C:/budgetly -name globals.css -o -name *.module.css)"
     ]
   }
 }
