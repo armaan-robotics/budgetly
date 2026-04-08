@@ -163,8 +163,8 @@ export default function BudgetTracker() {
           onTouchEnd={e=>{const el=e.currentTarget as HTMLElement;el.dataset.dragging="";const dx=e.changedTouches[0].clientX-parseFloat(el.dataset.touchX||"0");const dy=e.changedTouches[0].clientY-parseFloat(el.dataset.touchY||"0");setSwipeOffset(0);if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy)*1.5)return;const idx=SWIPE_TABS.indexOf(activeTab);if(dx<0&&idx<SWIPE_TABS.length-1){setSwipeAnim("in-left");setActiveTab(SWIPE_TABS[idx+1]);setTimeout(()=>setSwipeAnim(null),350);}if(dx>0&&idx>0){setSwipeAnim("in-right");setActiveTab(SWIPE_TABS[idx-1]);setTimeout(()=>setSwipeAnim(null),350);}}}>
           <div style={{transform:`translateX(${swipeOffset}px)`,transition:swipeOffset===0?"transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)":"none",animation:swipeAnim==="in-left"?"slideInFromRight 0.32s cubic-bezier(0.25,0.46,0.45,0.94)":swipeAnim==="in-right"?"slideInFromLeft 0.32s cubic-bezier(0.25,0.46,0.45,0.94)":"none",willChange:"transform",overflowX:"hidden",overflowY:"auto",maxWidth:"100%",height:"100%"}}>
             {!["expenses","earnings","savings","credit"].includes(activeTab) && (
-              <div className="page-title-row" style={{paddingTop:"32px",paddingBottom:"24px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px"}}>
-                <h1 style={{fontSize:"clamp(24px,4vw,38px)",fontWeight:700,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>
+              <div className="page-title-row" style={{paddingTop:"28px",paddingBottom:"20px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px"}}>
+                <h1 style={{fontSize:"clamp(22px,3vw,32px)",fontWeight:700,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>
                   {activeTab==="categories"?"Categories":activeTab==="tutorial"?"How to use Budgetly":activeTab==="trends"?"Trends":activeTab==="accounts"?"Accounts":activeTab==="settings"?"Settings":NAV.find(n=>n.id===activeTab)?.label}
                 </h1>
               </div>

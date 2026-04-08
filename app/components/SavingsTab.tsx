@@ -28,8 +28,8 @@ export default function SavingsTab(p: SvProps) {
 
   return (
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"32px",paddingBottom:"24px",flexWrap:"wrap",gap:"8px"}}>
-        <h1 style={{fontSize:"clamp(24px,4vw,38px)",fontWeight:700,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>Savings</h1>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"28px",paddingBottom:"20px",flexWrap:"wrap",gap:"8px"}}>
+        <h1 style={{fontSize:"clamp(22px,3vw,32px)",fontWeight:700,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>Savings</h1>
         <button onClick={()=>setShowForm(v=>!v)} style={{...btnA,padding:"8px 16px",fontSize:"13px",fontWeight:700}}>+ Add</button>
       </div>
 

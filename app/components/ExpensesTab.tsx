@@ -10,6 +10,7 @@ export default function ExpensesTab(p: ExProps) {
   const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
   const sSecT:  CSSProperties = { fontSize:"11px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:800 };
   const [showForm, setShowForm] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [editEntry, setEditEntry] = useState<import("./types").Expense|null>(null);
   const [editAmt, setEditAmt] = useState(""); const [editCat, setEditCat] = useState("");
   const [editDesc, setEditDesc] = useState(""); const [editDate, setEditDate] = useState("");
@@ -33,8 +34,8 @@ export default function ExpensesTab(p: ExProps) {
 
   return (
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"32px",paddingBottom:"24px",flexWrap:"wrap",gap:"8px"}}>
-        <h1 style={{fontSize:"clamp(24px,4vw,38px)",fontWeight:700,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>Expenses</h1>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"28px",paddingBottom:"20px",flexWrap:"wrap",gap:"8px"}}>
+        <h1 style={{fontSize:"clamp(22px,3vw,32px)",fontWeight:700,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>Expenses</h1>
         <button onClick={()=>setShowForm(v=>!v)} style={{...btnP,padding:"8px 16px",fontSize:"13px",fontWeight:700}}>+ Add</button>
       </div>
 
@@ -57,7 +58,18 @@ export default function ExpensesTab(p: ExProps) {
       )}
 
       <div style={sCard}>
-        <EntryTable entries={p.expenses} columns={cols} accentColor={C.red} onEdit={openEdit} onDelete={p.deleteExpense} onDeleteMany={p.deleteManyExpenses} C={C}/>
+        {(()=>{
+          const todayD = new Date(); todayD.setHours(0,0,0,0);
+          const yest = new Date(todayD); yest.setDate(todayD.getDate()-1);
+          const cutoff = `${yest.getFullYear()}-${String(yest.getMonth()+1).padStart(2,"0")}-${String(yest.getDate()).padStart(2,"0")}`;
+          const visible = showAll ? p.expenses : p.expenses.filter(e=>(e.date||"").slice(0,10)>=cutoff);
+          return <EntryTable entries={visible} columns={cols} accentColor={C.red} onEdit={openEdit} onDelete={p.deleteExpense} onDeleteMany={p.deleteManyExpenses} C={C}/>;
+        })()}
+      </div>
+      <div style={{textAlign:"center",marginTop:"10px"}}>
+        <button onClick={()=>setShowAll(v=>!v)} style={{background:"none",border:"none",color:C.accent,cursor:"pointer",fontSize:"13px",fontWeight:600,fontFamily:"'DM Sans',sans-serif",padding:"6px 12px",textDecoration:"underline"}}>
+          {showAll?"Collapse to last 2 days":"Show all entries this month"}
+        </button>
       </div>
 
       {editEntry&&<EditModal C={C} title="Edit Expense"
