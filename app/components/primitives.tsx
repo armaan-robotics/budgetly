@@ -130,7 +130,7 @@ export function EntryTable<T extends Entry>({entries, columns, accentColor, onEd
     borderBottom:`1px solid ${C.border}`, textAlign:"left", whiteSpace:"nowrap",
   };
   const tdStyle: CSSProperties = {
-    padding:"12px 12px", fontSize:"13px", color:C.text, borderBottom:`1px solid ${C.border}`,
+    padding:"16px 12px", fontSize:"13px", color:C.text, borderBottom:`1px solid ${C.border}`,
     verticalAlign:"middle",
   };
 

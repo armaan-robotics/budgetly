@@ -12,11 +12,11 @@ export function useCredits(user: User | null, appMode: AppMode | null) {
   useEffect(() => {
     if (!user || !appMode) return;
     const field = appMode === "household" ? "household_credits" : "credits";
-    console.log(`[credits] mode changed → reading column "${field}" (appMode: ${appMode})`);
+    console.log("Loading credits for mode:", appMode);
     let cancelled = false;
     setCreditsLoaded(false);
     setCredits([]);
-    supabase.from("user_credits").select("*").eq("user_id", user.id).then(({ data }) => {
+    supabase.from("user_credits").select(field).eq("user_id", user.id).then(({ data }) => {
       if (cancelled) return;
       if (data && data.length > 0) {
         const row = data[0] as any;
@@ -35,10 +35,10 @@ export function useCredits(user: User | null, appMode: AppMode | null) {
   const reloadCredits = useCallback(async () => {
     if (!user || !appMode) return;
     const field = appMode === "household" ? "household_credits" : "credits";
-    console.log(`[credits] reloadCredits → reading column "${field}" (appMode: ${appMode})`);
+    console.log("Loading credits for mode:", appMode);
     setCreditsLoaded(false);
     setCredits([]);
-    const { data } = await supabase.from("user_credits").select("*").eq("user_id", user.id);
+    const { data } = await supabase.from("user_credits").select(field).eq("user_id", user.id);
     if (data && data.length > 0) {
       const row = data[0] as any;
       const loaded = row[field] ?? [];
