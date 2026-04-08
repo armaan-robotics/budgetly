@@ -8,12 +8,18 @@ export default function SavingsTab(p: SvProps) {
   const { C } = p;
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
   const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"11px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:800 };
+  const sSecT:  CSSProperties = { fontSize:"20px",fontWeight:700,color:C.text,marginTop:"24px",marginBottom:"12px" };
   const [showForm, setShowForm] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [editEntry, setEditEntry] = useState<Entry|null>(null);
   const [editAmt, setEditAmt] = useState(""); const [editDesc, setEditDesc] = useState("");
   const [editDate, setEditDate] = useState(""); const [editMode, setEditMode] = useState("");
   const [editAcc, setEditAcc] = useState("");
+
+  const todayD = new Date(); todayD.setHours(0,0,0,0);
+  const yest = new Date(todayD); yest.setDate(todayD.getDate()-1);
+  const cutoff = `${yest.getFullYear()}-${String(yest.getMonth()+1).padStart(2,"0")}-${String(yest.getDate()).padStart(2,"0")}`;
+  const visibleSavings = showAll ? p.savings : p.savings.filter(e=>(e.date||"").slice(0,10)>=cutoff);
 
   const openEdit = (e: Entry) => {
     setEditEntry(e); setEditAmt(String(e.amount)); setEditDesc(e.description);
@@ -28,14 +34,14 @@ export default function SavingsTab(p: SvProps) {
 
   return (
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"28px",paddingBottom:"20px",flexWrap:"wrap",gap:"8px"}}>
-        <h1 style={{fontSize:"clamp(22px,3vw,32px)",fontWeight:700,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>Savings</h1>
-        <button onClick={()=>setShowForm(v=>!v)} style={{...btnA,padding:"8px 16px",fontSize:"13px",fontWeight:700}}>+ Add</button>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"40px",paddingBottom:"12px",flexWrap:"wrap",gap:"10px"}}>
+        <h1 style={{fontSize:"36px",fontWeight:800,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>Savings</h1>
+        <button onClick={()=>setShowForm(v=>!v)} style={{...btnA,padding:"6px 12px",fontSize:"20px",fontWeight:600,lineHeight:1}}>+</button>
       </div>
 
       {showForm&&(
-        <div style={{...sCard,marginBottom:"14px"}}>
-          <div style={{...sSecT,marginBottom:"14px"}}>Add Saving</div>
+        <div style={{...sCard,marginBottom:"14px",marginTop:"16px"}}>
+          <div style={sSecT}>Add Saving</div>
           <div className="form-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
             <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.savAmt} onChange={e=>p.setSavAmt(e.target.value)} style={sInput}/></FF>
             <FF label="Description" C={C}><input type="text" placeholder="What are you saving for?" value={p.savDesc} onChange={e=>p.setSavDesc(e.target.value)} style={sInput}/></FF>
@@ -51,7 +57,10 @@ export default function SavingsTab(p: SvProps) {
       )}
 
       <div style={sCard}>
-        <EntryTable entries={p.savings} columns={cols} accentColor={C.amber} onEdit={openEdit} onDelete={p.deleteSaving} onDeleteMany={p.deleteManySavings} C={C}/>
+        <div style={{fontSize:"18px",fontWeight:700,color:C.text,marginTop:"8px",marginBottom:"16px"}}>Recent Entries</div>
+        <EntryTable entries={visibleSavings} columns={cols} accentColor={C.amber} onEdit={openEdit} onDelete={p.deleteSaving} onDeleteMany={p.deleteManySavings} C={C}
+          toggleButton={<button onClick={()=>setShowAll(v=>!v)} style={{background:"#7C6EE0",color:"#fff",border:"none",borderRadius:"999px",padding:"6px 16px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{showAll?"Show last 2 days":"Show full month"}</button>}
+        />
       </div>
 
       {editEntry&&<EditModal C={C} title="Edit Saving"

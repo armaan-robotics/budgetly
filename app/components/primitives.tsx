@@ -71,7 +71,7 @@ export function EditModal({ C, title, fields, onSave, onClose }: {
   );
 }
 
-export function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onDelete, onDeleteMany, C}: {
+export function EntryTable<T extends Entry>({entries, columns, accentColor, onEdit, onDelete, onDeleteMany, C, toggleButton}: {
   entries: T[];
   columns: {key: SortKey; label: string; render: (e:T)=>ReactNode; sortable?: boolean}[];
   accentColor: string;
@@ -79,6 +79,7 @@ export function EntryTable<T extends Entry>({entries, columns, accentColor, onEd
   onDelete: (id:number)=>void;
   onDeleteMany: (ids:number[])=>void;
   C: Theme;
+  toggleButton?: ReactNode;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<"asc"|"desc">("desc");
@@ -154,7 +155,7 @@ export function EntryTable<T extends Entry>({entries, columns, accentColor, onEd
               ✕ Delete {selectedIds.size}
             </button>
           )}
-          <div style={{fontSize:"12px",color:C.muted}}>{sorted.length} of {entries.length}</div>
+          {toggleButton ?? null}
         </div>
       </div>
       {showFilters&&(

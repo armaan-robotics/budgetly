@@ -36,12 +36,7 @@ export default function EarningsTab(p: ErProps) {
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"40px",paddingBottom:"12px",flexWrap:"wrap",gap:"10px"}}>
         <h1 style={{fontSize:"36px",fontWeight:800,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>Cash In</h1>
-        <div style={{display:"flex",gap:"10px",alignItems:"center",flexWrap:"wrap"}}>
-          <button onClick={()=>setShowAll(v=>!v)} style={{background:"#7C6EE0",color:"#fff",border:"none",borderRadius:"999px",padding:"10px 24px",fontSize:"14px",fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",boxShadow:"0 2px 8px rgba(124,110,224,0.3)",whiteSpace:"nowrap"}}>
-            {showAll?"⬆ Show last 2 days":"📅 Show full month"}
-          </button>
-          <button onClick={()=>setShowForm(v=>!v)} style={{...btnG,padding:"10px 20px",fontSize:"13px",fontWeight:700}}>+ Add</button>
-        </div>
+        <button onClick={()=>setShowForm(v=>!v)} style={{...btnG,padding:"6px 12px",fontSize:"20px",fontWeight:600,lineHeight:1}}>+</button>
       </div>
 
       {showForm&&(
@@ -63,7 +58,9 @@ export default function EarningsTab(p: ErProps) {
 
       <div style={sCard}>
         <div style={{fontSize:"18px",fontWeight:700,color:C.text,marginTop:"8px",marginBottom:"16px"}}>Recent Entries</div>
-        <EntryTable entries={visibleEarnings} columns={cols} accentColor={C.green} onEdit={openEdit} onDelete={p.deleteEarning} onDeleteMany={p.deleteManyEarnings} C={C}/>
+        <EntryTable entries={visibleEarnings} columns={cols} accentColor={C.green} onEdit={openEdit} onDelete={p.deleteEarning} onDeleteMany={p.deleteManyEarnings} C={C}
+          toggleButton={<button onClick={()=>setShowAll(v=>!v)} style={{background:"#7C6EE0",color:"#fff",border:"none",borderRadius:"999px",padding:"6px 16px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{showAll?"Show last 2 days":"Show full month"}</button>}
+        />
       </div>
 
       {editEntry&&<EditModal C={C} title="Edit Income"
