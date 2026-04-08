@@ -12,6 +12,8 @@ export function lsSave(key: string, val: unknown): void {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 export const DEFAULT_CATS: string[] = ["Food","Transport","College","Entertainment","Health","Shopping","Other"];
+export const DEFAULT_HOUSEHOLD_CATS: string[] = ["Salaries","Groceries","Rent","Bills","Transport","Fees","Medical","Shopping","Entertainment","Misc"];
+export const DEFAULT_ACCOUNTS: string[] = ["Savings Account","Main Account","Current Account","Joint Account"];
 export const CAT_COLORS: string[]   = ["#f97316","#06b6d4","#8b5cf6","#10b981","#f43f5e","#eab308","#6366f1","#ec4899","#14b8a6","#84cc16","#ef4444","#3b82f6"];
 export const NAV = [
   { id:"overview",   label:"Overview",   icon:"◎" },
