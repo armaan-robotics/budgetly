@@ -34,9 +34,14 @@ export default function EarningsTab(p: ErProps) {
 
   return (
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"36px",paddingBottom:"8px",flexWrap:"wrap",gap:"8px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"40px",paddingBottom:"12px",flexWrap:"wrap",gap:"10px"}}>
         <h1 style={{fontSize:"36px",fontWeight:800,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>Cash In</h1>
-        <button onClick={()=>setShowForm(v=>!v)} style={{...btnG,padding:"8px 16px",fontSize:"13px",fontWeight:700}}>+ Add</button>
+        <div style={{display:"flex",gap:"10px",alignItems:"center",flexWrap:"wrap"}}>
+          <button onClick={()=>setShowAll(v=>!v)} style={{background:"#7C6EE0",color:"#fff",border:"none",borderRadius:"999px",padding:"10px 24px",fontSize:"14px",fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",boxShadow:"0 2px 8px rgba(124,110,224,0.3)",whiteSpace:"nowrap"}}>
+            {showAll?"⬆ Show last 2 days":"📅 Show full month"}
+          </button>
+          <button onClick={()=>setShowForm(v=>!v)} style={{...btnG,padding:"10px 20px",fontSize:"13px",fontWeight:700}}>+ Add</button>
+        </div>
       </div>
 
       {showForm&&(
@@ -56,13 +61,8 @@ export default function EarningsTab(p: ErProps) {
         </div>
       )}
 
-      <div style={{marginTop:"20px",marginBottom:"12px"}}>
-        <button onClick={()=>setShowAll(v=>!v)} style={{background:C.accent,color:"#fff",border:"none",borderRadius:"20px",padding:"8px 20px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
-          {showAll?"Show last 2 days":"Show all month"}
-        </button>
-      </div>
-
       <div style={sCard}>
+        <div style={{fontSize:"18px",fontWeight:700,color:C.text,marginTop:"8px",marginBottom:"16px"}}>Recent Entries</div>
         <EntryTable entries={visibleEarnings} columns={cols} accentColor={C.green} onEdit={openEdit} onDelete={p.deleteEarning} onDeleteMany={p.deleteManyEarnings} C={C}/>
       </div>
 
