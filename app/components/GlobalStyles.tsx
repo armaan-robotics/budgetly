@@ -59,6 +59,38 @@ export default function GlobalStyles({ C, dark, appMode }: { C: Theme; dark: boo
           .form-grid{grid-template-columns:1fr!important;}
           .table-scroll{overflow-x:auto;max-width:100%;}
         }
+        @media(min-width:769px){
+          /* Sidebar */
+          .desk-sidebar{width:260px!important;box-shadow:2px 0 20px ${C.border};}
+          /* Main content padding */
+          .main-wrap{padding:40px 48px!important;}
+          /* Page title row */
+          .page-title-row{padding-top:48px!important;padding-bottom:24px!important;}
+          .page-title-row h1{font-size:44px!important;letter-spacing:-1.5px!important;}
+          /* Overview: 4-col stat grid */
+          .stat-grid-desk{grid-template-columns:repeat(4,1fr)!important;gap:20px!important;}
+          /* Overview: donut + legend side by side, no wrap */
+          .ov-chart-wrap{flex-wrap:nowrap!important;gap:40px!important;align-items:flex-start!important;}
+          /* Trends: full width */
+          .trends-wrap{max-width:100%!important;}
+          /* Settings: wider on desktop */
+          .settings-wrap{max-width:640px!important;}
+          /* Forms: better column sizing */
+          .form-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))!important;}
+          /* Table: bolder headers */
+          th{font-weight:700!important;}
+          /* Sidebar nav hover */
+          .desk-sidebar nav button:hover{background:${C.navActive}!important;color:${C.accent}!important;opacity:1!important;}
+          /* General interactive elements */
+          button{cursor:pointer!important;}
+          a{cursor:pointer!important;}
+          /* Subtle hover feedback on buttons */
+          button:not(.no-hover):hover{opacity:0.85;}
+          /* Card max-width constraint for very wide screens */
+          .main-content-inner{max-width:1140px;margin:0 auto;}
+          /* Breathing room between sections */
+          .desk-section-gap{margin-bottom:28px!important;}
+        }
       `}</style>
     </>
   );

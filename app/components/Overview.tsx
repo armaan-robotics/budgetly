@@ -14,7 +14,7 @@ export default function OverviewTab(p: OvProps) {
   })).filter(c=>c.total>0);
   return (
     <div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:"14px",marginBottom:"18px"}}>
+      <div className="stat-grid-desk" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:"14px",marginBottom:"18px"}}>
         {(()=>{
           const studentCards = [
             {label:"Cash Flow In", val:fmt(p.cashFlowIn),  color:C.green,  sub:""},
@@ -98,7 +98,7 @@ export default function OverviewTab(p: OvProps) {
             <div style={sSecT}>Spending by Category</div>
             <div style={{fontSize:"12px",color:C.muted,fontWeight:600}}>{fmt(p.cashFlowOut)} total</div>
           </div>
-          <div style={{display:"flex",gap:"32px",alignItems:"center",flexWrap:"wrap"}}>
+          <div className="ov-chart-wrap" style={{display:"flex",gap:"32px",alignItems:"center",flexWrap:"wrap"}}>
             {(()=>{
               const total = p.cashFlowOut;
               if(total===0) return <div style={{fontSize:"13px",color:C.faint,padding:"20px"}}>No expenses yet</div>;

@@ -60,7 +60,7 @@ export default function TrendsTab(p: TrProps) {
   const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
 
   return (
-    <div style={{maxWidth:"820px"}}>
+    <div className="trends-wrap" style={{maxWidth:"820px"}}>
       {/* Filter toggle */}
       <div style={{marginBottom:showTrendFilters?"10px":"18px"}}>
         <button onClick={()=>setShowTrendFilters(v=>!v)} style={{padding:"7px 14px",borderRadius:"20px",border:`1.5px solid ${view==="month"?C.accent:C.border}`,background:view==="month"?C.navActive:"transparent",color:view==="month"?C.accent:C.muted,cursor:"pointer",fontSize:"12px",fontWeight:600,fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",gap:"5px"}}>

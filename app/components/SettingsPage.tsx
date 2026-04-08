@@ -4,7 +4,7 @@ import { SettingsProps, AppMode, DEFAULT_CATS, DEFAULT_HOUSEHOLD_CATS, fmtMK, bt
 
 export default function SettingsPage({ C, user, dark, appMode, activeMK, categories, deleteMonthConfirm, deleteAccountConfirm, deleteAccountText, logout, toggleDark, switchMode, setCategories, setActiveTab, addNextMonth, deleteMonth, setDeleteMonthConfirm, setDeleteAccountConfirm, setDeleteAccountText, deleteUserAccount, exportCSV }: SettingsProps) {
   return (
-    <div style={{maxWidth:"460px",width:"100%",fontFamily:"'DM Sans',sans-serif",overflowX:"hidden",boxSizing:"border-box"}}>
+    <div className="settings-wrap" style={{maxWidth:"460px",width:"100%",fontFamily:"'DM Sans',sans-serif",overflowX:"hidden",boxSizing:"border-box"}}>
         {/* Account */}
         <div style={{marginBottom:"26px",paddingBottom:"26px",borderBottom:`1px solid ${C.border}`}}>
           <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"10px",fontWeight:600}}>Account</div>
