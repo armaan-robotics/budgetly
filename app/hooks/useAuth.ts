@@ -4,17 +4,28 @@ import { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 
 export function useAuth() {
-  const [user,        setUser]        = useState<User|null>(null);
-  const [authReady,   setAuthReady]   = useState(false);
-  const [showMigrate, setShowMigrate] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user??null); setAuthReady(true); });
-    const { data:{subscription} } = supabase.auth.onAuthStateChange((_,session) => setUser(session?.user??null));
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
+      setAuthReady(true);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) =>
+      setUser(session?.user ?? null)
+    );
     return () => subscription.unsubscribe();
   }, []);
 
-  const logout = async () => { await supabase.auth.signOut(); setUser(null); };
+  const logout = async () => {
+    await supabase.auth.signOut();
+  };
 
-  return { user, setUser, authReady, showMigrate, setShowMigrate, logout };
+  const deleteUserAccount = async () => {
+    await supabase.rpc("delete_user");
+    await supabase.auth.signOut();
+  };
+
+  return { user, setUser, authReady, logout, deleteUserAccount };
 }

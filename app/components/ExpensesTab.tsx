@@ -1,63 +1,77 @@
 "use client";
-import React, { CSSProperties } from "react";
-import { ExProps } from "../types";
-import { CAT_COLORS, fmt, btnP } from "../constants";
-import { FF, EntryRow, DelBtn, EditModal } from "./ui";
 
-export function ExpensesTab(p: ExProps) {
+import { useState, CSSProperties } from "react";
+import { ExProps, CAT_COLORS, PAYMENT_MODES, fmt, btnB, btnP } from "./types";
+import { FF, EntryTable, EditModal, SortKey } from "./primitives";
+
+export default function ExpensesTab(p: ExProps) {
   const { C } = p;
   const sInput: CSSProperties = { width:"100%",padding:"9px 13px",borderRadius:"9px",border:`1.5px solid ${C.border}`,background:C.inputBg,color:C.text,fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif" };
-  const sCard:  CSSProperties = { background:C.card,borderRadius:"14px",padding:"20px",border:`1px solid ${C.border}` };
-  const sSecT:  CSSProperties = { fontSize:"10px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"12px",fontWeight:600 };
+  const sCard:  CSSProperties = { background:C.card,borderRadius:"16px",padding:"32px",border:`1px solid ${C.border}` };
+  const sSecT:  CSSProperties = { fontSize:"11px",color:C.muted,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"16px",fontWeight:800 };
+  const [showForm, setShowForm] = useState(false);
+  const [editEntry, setEditEntry] = useState<import("./types").Expense|null>(null);
+  const [editAmt, setEditAmt] = useState(""); const [editCat, setEditCat] = useState("");
+  const [editDesc, setEditDesc] = useState(""); const [editDate, setEditDate] = useState("");
+  const [editMode, setEditMode] = useState(""); const [editAcc, setEditAcc] = useState("");
+
+  const openEdit = (e: import("./types").Expense) => {
+    setEditEntry(e); setEditAmt(String(e.amount)); setEditCat(e.category);
+    setEditDesc(e.description); setEditDate(e.date);
+    setEditMode(e.mode||""); setEditAcc(e.account||"");
+  };
+
+  const cols = [
+    {key:"date" as SortKey, label:"Date", render:(e:import("./types").Expense)=><span style={{color:C.muted,fontSize:"12px"}}>{e.date}</span>},
+    {key:"description" as SortKey, label:"Description", render:(e:import("./types").Expense)=><span>{e.description||"—"}</span>},
+    {key:"category" as SortKey, label:"Category", render:(e:import("./types").Expense)=>{
+      const ci=p.categories.indexOf(e.category); const col=CAT_COLORS[ci>=0?ci%CAT_COLORS.length:0];
+      return <span style={{background:col+"22",color:col,padding:"2px 8px",borderRadius:"20px",fontSize:"11px",fontWeight:600}}>{e.category}</span>;
+    }},
+    {key:"amount" as SortKey, label:"Amount", render:(e:import("./types").Expense)=><span style={{color:C.red,fontWeight:600}}>-{fmt(e.amount)}</span>},
+  ];
+
   return (
-    <div className="two-col-grid" style={{display:"grid",gridTemplateColumns:"clamp(240px,30%,300px) 1fr",gap:"16px"}}>
-      <div>
-        <div style={sCard}>
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"32px",paddingBottom:"24px",flexWrap:"wrap",gap:"8px"}}>
+        <h1 style={{fontSize:"clamp(24px,4vw,38px)",fontWeight:700,color:C.text,letterSpacing:"-0.8px",lineHeight:1.1}}>Expenses</h1>
+        <button onClick={()=>setShowForm(v=>!v)} style={{...btnP,padding:"8px 16px",fontSize:"13px",fontWeight:700}}>+ Add</button>
+      </div>
+
+      {showForm&&(
+        <div style={{...sCard,marginBottom:"14px"}}>
           <div style={{...sSecT,marginBottom:"14px"}}>Add Expense</div>
-          <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.expAmt} onChange={e=>p.setExpAmt(e.target.value)} style={sInput}/></FF>
-          <FF label="Category" C={C}><select value={p.expCat} onChange={e=>p.setExpCat(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>{p.categories.map(c=><option key={c} value={c}>{c}</option>)}</select></FF>
-          <FF label="Description" C={C}><input type="text" placeholder="What did you spend on?" value={p.expDesc} onChange={e=>p.setExpDesc(e.target.value)} style={sInput}/></FF>
-          <FF label="Date" C={C}><input type="date" value={p.expDate} onChange={e=>p.setExpDate(e.target.value)} style={sInput}/></FF>
-          <button onClick={p.addExpense} style={{...btnP,width:"100%",padding:"11px"}}>+ Add Expense</button>
+          <div className="form-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"14px"}}>
+            <FF label="Amount (₹) *" C={C}><input type="number" placeholder="0" value={p.expAmt} onChange={e=>p.setExpAmt(e.target.value)} style={sInput}/></FF>
+            <FF label="Category" C={C}><select value={p.expCat} onChange={e=>{if(e.target.value==="__add_cat__"){e.target.value=p.expCat;p.onOpenCategories();}else{p.setExpCat(e.target.value);}}} style={{...sInput,appearance:"none",cursor:"pointer"}}>{p.categories.map(c=><option key={c} value={c}>{c}</option>)}<option value="__add_cat__">＋ Add Category</option></select></FF>
+            <FF label="Description" C={C}><input type="text" placeholder="What did you spend on?" value={p.expDesc} onChange={e=>p.setExpDesc(e.target.value)} style={sInput}/></FF>
+            <FF label="Date" C={C}><input type="date" value={p.expDate} onChange={e=>p.setExpDate(e.target.value)} style={sInput}/></FF>
+            <FF label="Payment Mode" C={C}><select value={p.expMode} onChange={e=>p.setExpMode(e.target.value)} style={{...sInput,appearance:"none",cursor:"pointer"}}>{PAYMENT_MODES.map(m=><option key={m} value={m}>{m}</option>)}</select></FF>
+            {p.appMode==="household"&&<FF label="Account" C={C}><select value={p.expAcc} onChange={e=>{if(e.target.value==="__add_acc__"){e.target.value=p.expAcc;p.onOpenAccounts();}else{p.setExpAcc(e.target.value);}}} style={{...sInput,appearance:"none",cursor:"pointer"}}><option value="">—</option>{p.accounts.map(a=><option key={a} value={a}>{a}</option>)}<option value="__add_acc__">＋ Add Account</option></select></FF>}
+          </div>
+          <div style={{display:"flex",gap:"8px",marginTop:"4px"}}>
+            <button onClick={()=>{p.addExpense();setShowForm(false);}} style={{...btnP,flex:1,padding:"11px"}}>+ Add Expense</button>
+            <button onClick={()=>setShowForm(false)} style={{...btnB,background:C.cancelBg,color:C.muted,padding:"11px 18px"}}>Cancel</button>
+          </div>
         </div>
-        <div style={{...sCard,marginTop:"12px",textAlign:"center"}}>
-          <div style={sSecT}>Total Expenses</div>
-          <div style={{fontSize:"22px",fontWeight:600,color:C.red}}>{fmt(p.totalExpenses)}</div>
-          <div style={{fontSize:"11px",color:C.faint,marginTop:"3px"}}>{p.expenses.length} entries</div>
-        </div>
-      </div>
+      )}
+
       <div style={sCard}>
-        <div style={sSecT}>All Expenses</div>
-        {p.expenses.length===0&&<div style={{textAlign:"center",color:C.faint,padding:"32px",fontSize:"13px"}}>No expenses yet</div>}
-        {(()=>{
-          const [editId,setEditId]=React.useState<number|null>(null);
-          const [editAmt,setEditAmt]=React.useState("");
-          const [editCat,setEditCat]=React.useState("");
-          const [editDesc,setEditDesc]=React.useState("");
-          const [editDate,setEditDate]=React.useState("");
-          return <>
-            {[...p.expenses].reverse().map(exp=>{
-              const ci=p.categories.indexOf(exp.category); const col=CAT_COLORS[ci>=0?ci%CAT_COLORS.length:0];
-              return <EntryRow key={exp.id} C={C}
-                left={<><div style={{display:"flex",gap:"6px",marginBottom:"3px",flexWrap:"wrap",alignItems:"center"}}><span style={{fontSize:"10px",padding:"2px 7px",borderRadius:"20px",background:col+"22",color:col,fontWeight:600}}>{exp.category}</span><span style={{fontSize:"10px",color:C.faint}}>{exp.date}</span></div><div style={{fontSize:"13px",color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{exp.description||"—"}</div></>}
-                right={<><span style={{fontSize:"14px",fontWeight:600,color:C.red,whiteSpace:"nowrap"}}>-{fmt(exp.amount)}</span>
-                  <button onClick={()=>{setEditId(exp.id);setEditAmt(String(exp.amount));setEditCat(exp.category);setEditDesc(exp.description);setEditDate(exp.date);}} style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"11px",borderRadius:"7px",padding:"3px 8px"}}>✎</button>
-                  <DelBtn id={exp.id} confirm={p.deleteConfirm} setConfirm={p.setDeleteConfirm} onDel={p.deleteExpense} C={C}/></>}
-              />;
-            })}
-            {editId!==null&&<EditModal C={C} title="Edit Expense"
-              fields={[
-                {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
-                {label:"Category",value:editCat,onChange:setEditCat,options:p.categories},
-                {label:"Description",value:editDesc,onChange:setEditDesc},
-                {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
-              ]}
-              onSave={()=>{p.updateExpense(editId,{amount:+editAmt,category:editCat,description:editDesc,date:editDate});setEditId(null);}}
-              onClose={()=>setEditId(null)}
-            />}
-          </>;
-        })()}
+        <EntryTable entries={p.expenses} columns={cols} accentColor={C.red} onEdit={openEdit} onDelete={p.deleteExpense} onDeleteMany={p.deleteManyExpenses} C={C}/>
       </div>
+
+      {editEntry&&<EditModal C={C} title="Edit Expense"
+        fields={[
+          {label:"Amount (₹)",value:editAmt,onChange:setEditAmt,type:"number"},
+          {label:"Category",value:editCat,onChange:setEditCat,options:p.categories},
+          {label:"Description",value:editDesc,onChange:setEditDesc},
+          {label:"Date",value:editDate,onChange:setEditDate,type:"date"},
+          {label:"Payment Mode",value:editMode,onChange:setEditMode,options:PAYMENT_MODES},
+          ...(p.appMode==="household"?[{label:"Account",value:editAcc,onChange:setEditAcc,options:["—",...p.accounts]}]:[]),
+        ]}
+        onSave={()=>{p.updateExpense(editEntry.id,{amount:+editAmt,category:editCat,description:editDesc,date:editDate,mode:editMode,account:editAcc||undefined});setEditEntry(null);}}
+        onClose={()=>setEditEntry(null)}
+      />}
     </div>
   );
 }

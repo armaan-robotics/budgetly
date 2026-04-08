@@ -1,12 +1,54 @@
 "use client";
-import { useState } from "react";
-import { todayS } from "../constants";
+import { useState, useEffect, useCallback } from "react";
+import { User } from "@supabase/supabase-js";
+import { CreditEntry, AppMode } from "../components/types";
+import { supabase } from "../lib/supabase";
 
-export function useCredits() {
-  const [crAmt,    setCrAmt]    = useState("");
-  const [crPerson, setCrPerson] = useState("");
-  const [crDesc,   setCrDesc]   = useState("");
-  const [crDate,   setCrDate]   = useState(() => todayS());
-  const [crType,   setCrType]   = useState<"owed_to_me"|"i_owe">("owed_to_me");
-  return { crAmt, setCrAmt, crPerson, setCrPerson, crDesc, setCrDesc, crDate, setCrDate, crType, setCrType };
+export function useCredits(user: User | null, appMode: AppMode | null) {
+  const [credits, setCredits] = useState<CreditEntry[]>([]);
+  const [creditsLoaded, setCreditsLoaded] = useState(false);
+
+  // Reload credits when mode switches — cancels stale fetches so modes never bleed
+  useEffect(() => {
+    if (!user || !appMode) return;
+    const field = appMode === "household" ? "household_credits" : "credits";
+    console.log(`[credits] mode changed → reading column "${field}" (appMode: ${appMode})`);
+    let cancelled = false;
+    setCreditsLoaded(false);
+    setCredits([]);
+    supabase.from("user_credits").select("*").eq("user_id", user.id).then(({ data }) => {
+      if (cancelled) return;
+      if (data && data.length > 0) {
+        const row = data[0] as any;
+        const loaded = row[field] ?? [];
+        console.log(`[credits] loaded ${loaded.length} entries from column "${field}"`);
+        setCredits(loaded);
+      } else {
+        console.log(`[credits] no row found in user_credits — starting empty (column "${field}")`);
+      }
+      setCreditsLoaded(true);
+    });
+    return () => { cancelled = true; };
+  }, [appMode, user]);
+
+  // Explicit reload (e.g. after migration) — uses current appMode so correct field is always read
+  const reloadCredits = useCallback(async () => {
+    if (!user || !appMode) return;
+    const field = appMode === "household" ? "household_credits" : "credits";
+    console.log(`[credits] reloadCredits → reading column "${field}" (appMode: ${appMode})`);
+    setCreditsLoaded(false);
+    setCredits([]);
+    const { data } = await supabase.from("user_credits").select("*").eq("user_id", user.id);
+    if (data && data.length > 0) {
+      const row = data[0] as any;
+      const loaded = row[field] ?? [];
+      console.log(`[credits] reloadCredits loaded ${loaded.length} entries from column "${field}"`);
+      setCredits(loaded);
+    } else {
+      console.log(`[credits] reloadCredits — no row found (column "${field}")`);
+    }
+    setCreditsLoaded(true);
+  }, [user, appMode]);
+
+  return { credits, setCredits, creditsLoaded, setCreditsLoaded, reloadCredits };
 }

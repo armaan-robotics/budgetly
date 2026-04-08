@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd /c \"dir \\\\\"C:\\\\Users\\\\Armaan Gupta\\\\budgetly\\\\app\\\\\" /s /b\")",
+      "Bash(npm run:*)"
+    ]
+  }
+}

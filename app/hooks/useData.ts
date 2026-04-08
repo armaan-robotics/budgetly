@@ -1,118 +1,147 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
-import { AllMonths, CreditEntry, Expense, Entry, MonthData } from "../types";
-import { DEFAULT_CATS, curMK, emptyMD, todayS } from "../constants";
+import {
+  AllMonths, MonthData, Expense, Entry, CreditEntry, AppMode,
+  DEFAULT_CATS, DEFAULT_HOUSEHOLD_CATS, OLD_HOUSEHOLD_UTILITY_CATS, OLD_HOUSEHOLD_DEFAULT_CATS,
+  DEFAULT_ACCOUNTS, lsLoad, lsSave,
+} from "../components/types";
 
-export function useData(user: User | null) {
-  const isGuest = false; // guest mode removed
+export function useData(user: User | null, appMode: AppMode | null) {
+  const [allMonths, setAllMonthsRaw] = useState<AllMonths>({});
+  const [dbLoading, setDbLoading] = useState(false);
 
-  const [allMonths,          setAllMonthsRaw]        = useState<AllMonths>({});
-  const [activeMK,           setActiveMK]            = useState<string>(curMK());
-  const [categories,         setCategories]          = useState<string[]>(DEFAULT_CATS);
-  const [editingBudget,      setEditingBudget]       = useState(false);
-  const [tempBudget,         setTempBudget]          = useState("10000");
-  const [deleteConfirm,      setDeleteConfirm]       = useState<number|null>(null);
-  const [newCategory,        setNewCategory]         = useState("");
-  const [deleteMonthConfirm, setDeleteMonthConfirm]  = useState(false);
-  const [dbLoading,          setDbLoading]           = useState(false);
-  const [credits,            setCredits]             = useState<CreditEntry[]>([]);
-  const [creditsLoaded,      setCreditsLoaded]       = useState(false);
+  const [categories, setCategories] = useState<string[]>(() => {
+    const mode = lsLoad<AppMode | null>("budgetly_mode", null);
+    const modeKey = mode === "household" ? "budgetly_cats_household" : "budgetly_cats_student";
+    // Try mode-specific key first, fall back to legacy key for migration
+    const saved = lsLoad<string[]>(modeKey, null as any) ?? lsLoad<string[]>("budgetly_cats", null as any);
+    if (saved && saved.length > 0) {
+      if (mode === "household") {
+        let migrated = saved.filter(c => !OLD_HOUSEHOLD_UTILITY_CATS.includes(c));
+        migrated = migrated.filter(c => !OLD_HOUSEHOLD_DEFAULT_CATS.includes(c));
+        if (migrated.length !== saved.length) lsSave("budgetly_cats_household", migrated);
+        return migrated.length > 0 ? migrated : DEFAULT_HOUSEHOLD_CATS;
+      }
+      return saved;
+    }
+    return mode === "household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
+  });
+
+  const [accounts, setAccounts] = useState<string[]>(() =>
+    lsLoad<string[]>("budgetly_accounts", DEFAULT_ACCOUNTS)
+  );
+
+  const saveAccounts = (acc: string[]) => {
+    setAccounts(acc);
+    lsSave("budgetly_accounts", acc);
+  };
 
   const loadFromSupabase = useCallback(async () => {
     if (!user) return;
     setDbLoading(true);
     const [{ data, error }, { data: cData, error: cError }] = await Promise.all([
-      supabase.from("month_data").select("*").eq("user_id",user.id),
-      supabase.from("user_credits").select("*").eq("user_id",user.id),
+      supabase.from("month_data").select("*").eq("user_id", user.id),
+      supabase.from("user_credits").select("*").eq("user_id", user.id),
     ]);
     if (error) { console.error(error); setDbLoading(false); return; }
     const rebuilt: AllMonths = {};
-    (data??[]).forEach((row:{month_key:string;budget:number;expenses:Expense[];earnings:Entry[];savings:Entry[]}) => {
-      rebuilt[row.month_key]={budget:row.budget,expenses:row.expenses,earnings:row.earnings,savings:row.savings};
+    (data ?? []).forEach((row: { month_key: string; budget: number; expenses: Expense[]; earnings: Entry[]; savings: Entry[] }) => {
+      rebuilt[row.month_key] = { budget: row.budget, expenses: row.expenses, earnings: row.earnings, savings: row.savings };
     });
     setAllMonthsRaw(rebuilt);
     if (!cError && cData && cData.length > 0) {
-      setCredits((cData[0] as {credits:CreditEntry[]}).credits ?? []);
+      const row = cData[0] as { categories?: string[]; accounts?: string[] };
+      // Restore categories and accounts from server (more reliable than localStorage)
+      if (row.categories) {
+        let modeCats: string[] | null = null;
+        if (Array.isArray(row.categories) && row.categories.length > 0) {
+          // Legacy format: array stored for current mode only
+          modeCats = row.categories;
+        } else if (typeof row.categories === "object" && !Array.isArray(row.categories)) {
+          // New format: {student: [...], household: [...]}
+          const mk = appMode === "household" ? "household" : "student";
+          const mc = (row.categories as Record<string, string[]>)[mk];
+          modeCats = mc && mc.length > 0 ? mc : null;
+        }
+        if (modeCats) {
+          // Remove old household utility defaults that are no longer in the new defaults
+          if (appMode === "household") {
+            modeCats = modeCats.filter(c => !OLD_HOUSEHOLD_UTILITY_CATS.includes(c));
+            modeCats = modeCats.filter(c => !OLD_HOUSEHOLD_DEFAULT_CATS.includes(c));
+            if (modeCats.length === 0) modeCats = DEFAULT_HOUSEHOLD_CATS;
+          }
+          // Ensure all required defaults for current mode are present.
+          // Legacy format may have stored the wrong mode's categories.
+          const requiredDefs = appMode === "household" ? DEFAULT_HOUSEHOLD_CATS : DEFAULT_CATS;
+          const missing = requiredDefs.filter(d => !modeCats!.includes(d));
+          if (missing.length > requiredDefs.length / 2) {
+            // More than half the defaults are missing — likely wrong-mode legacy data; use defaults + any extras
+            const extras = modeCats.filter(c => !DEFAULT_CATS.includes(c) && !DEFAULT_HOUSEHOLD_CATS.includes(c));
+            modeCats = [...requiredDefs, ...extras];
+          } else if (missing.length > 0) {
+            modeCats = [...missing, ...modeCats];
+          }
+          // Household: Misc must always be absolute last
+          if (appMode === "household" && modeCats.includes("Misc")) {
+            modeCats = [...modeCats.filter(c => c !== "Misc"), "Misc"];
+          }
+          setCategories(modeCats);
+          lsSave(appMode === "household" ? "budgetly_cats_household" : "budgetly_cats_student", modeCats);
+        }
+      }
+      if (row.accounts && row.accounts.length > 0) {
+        setAccounts(row.accounts);
+        lsSave("budgetly_accounts", row.accounts);
+      }
     }
-    setCreditsLoaded(true);
     setDbLoading(false);
-  }, [user, isGuest]);
+  }, [user, appMode]);
 
-  const saveToSupabase = useCallback(async (mk:string, md:MonthData) => {
+  const saveToSupabase = useCallback(async (mk: string, md: MonthData) => {
     if (!user) return;
-    await supabase.from("month_data").upsert({ user_id:user.id,month_key:mk,budget:md.budget,expenses:md.expenses,earnings:md.earnings,savings:md.savings,updated_at:new Date().toISOString() },{ onConflict:"user_id,month_key" });
-  }, [user, isGuest]);
+    await supabase.from("month_data").upsert(
+      { user_id: user.id, month_key: mk, budget: md.budget, expenses: md.expenses, earnings: md.earnings, savings: md.savings, updated_at: new Date().toISOString() },
+      { onConflict: "user_id,month_key" }
+    );
+  }, [user]);
 
   const saveCreditsToSupabase = useCallback(async (c: CreditEntry[]) => {
     if (!user) return;
-    await supabase.from("user_credits").upsert({ user_id:user.id, credits:c, updated_at:new Date().toISOString() },{ onConflict:"user_id" });
-  }, [user, isGuest]);
+    const field = appMode === "household" ? "household_credits" : "credits";
+    console.log(`[credits] saving ${c.length} entries to column "${field}" (appMode: ${appMode})`);
+    await supabase.from("user_credits").upsert(
+      { user_id: user.id, [field]: c, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+  }, [user, appMode]);
 
-  useEffect(()=>{
-    if (!creditsLoaded) return;
-    saveCreditsToSupabase(credits);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [credits, creditsLoaded]);
+  const saveUserPrefs = useCallback(async (cats: string[], accs: string[]) => {
+    if (!user) return;
+    // Read existing to merge both modes' categories without overwriting the other
+    const { data: existing } = await supabase.from("user_credits").select("categories").eq("user_id", user.id).single();
+    const existingCats = existing?.categories;
+    const baseCats: Record<string, string[]> =
+      existingCats && typeof existingCats === "object" && !Array.isArray(existingCats)
+        ? (existingCats as Record<string, string[]>)
+        : {};
+    const updatedCats = { ...baseCats, [appMode ?? "student"]: cats };
+    await supabase.from("user_credits").upsert(
+      { user_id: user.id, categories: updatedCats, accounts: accs, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+  }, [user, appMode]);
 
-  const setAllMonths = useCallback((updater: AllMonths|((prev:AllMonths)=>AllMonths)) => {
-    setAllMonthsRaw(prev => { const next=typeof updater==="function"?updater(prev):updater; return next; });
-  }, [isGuest]);
-
-  const getM = useCallback((mk:string): MonthData => allMonths[mk]??emptyMD(), [allMonths]);
-  const setM = useCallback(async (mk:string,d:MonthData) => { setAllMonths(prev=>({...prev,[mk]:d})); await saveToSupabase(mk,d); }, [setAllMonths,saveToSupabase]);
-
-  const md = getM(activeMK);
-  const { budget, expenses, earnings, savings } = md;
-
-  const saveBudget     = () => { const v=parseFloat(tempBudget); if(!isNaN(v)&&v>0)setM(activeMK,{...md,budget:v}); setEditingBudget(false); };
-  const deleteExpense  = (id:number) => { setM(activeMK,{...md,expenses:expenses.filter(e=>e.id!==id)}); setDeleteConfirm(null); };
-  const deleteEarning  = (id:number) => { setM(activeMK,{...md,earnings:earnings.filter(e=>e.id!==id)}); setDeleteConfirm(null); };
-  const deleteSaving   = (id:number) => { setM(activeMK,{...md,savings: savings.filter (e=>e.id!==id)}); setDeleteConfirm(null); };
-  const updateExpense  = (id:number,u:Partial<Expense>) => setM(activeMK,{...md,expenses:expenses.map(e=>e.id===id?{...e,...u}:e)});
-  const updateEarning  = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,earnings:earnings.map(e=>e.id===id?{...e,...u}:e)});
-  const updateSaving   = (id:number,u:Partial<Entry>)   => setM(activeMK,{...md,savings: savings.map (e=>e.id===id?{...e,...u}:e)});
-  const addCategory    = () => { const t=newCategory.trim(); if(!t||categories.includes(t))return; setCategories([...categories,t]); setNewCategory(""); };
-  const deleteCategory = (cat:string) => { if(DEFAULT_CATS.includes(cat))return; setCategories(categories.filter(c=>c!==cat)); };
-  const toggleCleared  = (id:number) => {
-    setCredits(prev => prev.map(c => {
-      if (c.id !== id) return c;
-      const nowCleared = !c.cleared;
-      const label = `Credit: ${c.person}${c.description ? ` — ${c.description}` : ""}`;
-      if (nowCleared) {
-        if (c.type === "owed_to_me") {
-          setM(activeMK, { ...getM(activeMK), earnings: [...getM(activeMK).earnings, { id: Date.now(), amount: c.amount, description: label, date: todayS() }] });
-        } else {
-          setM(activeMK, { ...getM(activeMK), expenses: [...getM(activeMK).expenses, { id: Date.now(), amount: c.amount, category: "Other", description: label, date: todayS() }] });
-        }
-      } else {
-        if (c.type === "owed_to_me") {
-          setM(activeMK, { ...getM(activeMK), earnings: getM(activeMK).earnings.filter(e => e.description !== label) });
-        } else {
-          setM(activeMK, { ...getM(activeMK), expenses: getM(activeMK).expenses.filter(e => e.description !== label) });
-        }
-      }
-      return { ...c, cleared: nowCleared };
-    }));
-  };
-  const deleteCredit   = (id:number) => { setCredits(prev=>prev.filter(c=>c.id!==id)); setDeleteConfirm(null); };
-  const addNextMonth   = () => { const [y,m]=activeMK.split("-").map(Number); const nd=new Date(y,m,1); const nk=`${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2,"0")}`; if(!allMonths[nk])setM(nk,emptyMD()); setActiveMK(nk); };
-  const deleteMonth    = async () => { setDeleteMonthConfirm(false); setAllMonths(prev=>{const next={...prev};delete next[activeMK];return next;}); if(user) await supabase.from("month_data").delete().eq("user_id",user.id).eq("month_key",activeMK); setActiveMK(curMK()); };
-  const clearMonths    = () => setAllMonthsRaw({});
-  const allMKs = (() => { const k=Object.keys(allMonths); if(!k.includes(curMK()))k.push(curMK()); return k.sort().reverse(); })();
+  const deleteMonthFromDB = useCallback(async (mk: string) => {
+    if (!user) return;
+    await supabase.from("month_data").delete().eq("user_id", user.id).eq("month_key", mk);
+  }, [user]);
 
   return {
-    allMonths, activeMK, setActiveMK, categories, setCategories,
-    editingBudget, setEditingBudget, tempBudget, setTempBudget,
-    deleteConfirm, setDeleteConfirm, newCategory, setNewCategory,
-    deleteMonthConfirm, setDeleteMonthConfirm, dbLoading,
-    credits, setCredits, creditsLoaded,
-    loadFromSupabase, saveToSupabase, setAllMonths, getM, setM, clearMonths,
-    md, budget, expenses, earnings, savings, allMKs,
-    saveBudget, deleteExpense, deleteEarning, deleteSaving,
-    updateExpense, updateEarning, updateSaving,
-    addCategory, deleteCategory, toggleCleared, deleteCredit,
-    addNextMonth, deleteMonth,
+    allMonths, setAllMonthsRaw, dbLoading,
+    categories, setCategories,
+    accounts, saveAccounts,
+    loadFromSupabase, saveToSupabase, saveCreditsToSupabase, saveUserPrefs, deleteMonthFromDB,
   };
 }
