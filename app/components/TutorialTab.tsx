@@ -33,35 +33,105 @@ export default function TutorialTab({ C, appMode }: TutorialTabProps) {
         <div style={{ fontSize: "24px", fontWeight: 800, color: C.text, marginBottom: "6px" }}>How to use Budgetly</div>
         <div style={{ fontSize: "13px", color: C.muted }}>Quick guide · {appMode === "student" ? "🎓 Student mode" : "🏠 Household mode"}</div>
       </div>
-      {row("◎", "Overview", "Your financial snapshot for the month.",
-        <>{tag("Stats", "#6c5ce7")}{tag("Trends", "#00b894")}{appMode === "student" && tag("Budget", "#e0a800")}</>,
+
+      {row("◎", "Overview", "Your financial snapshot for the month. Shows Cash Flow In, Cash Flow Out, Savings, and Net" + (appMode === "student" ? "/To Spend" : "") + " cards. A credits summary block also shows money owed to you and money you owe. Tap any stat card to jump directly to that tab.",
+        <>{tag("Stats", "#6c5ce7")}{tag("Credits", "#e17055")}{appMode === "student" ? tag("Budget", "#e0a800") : tag("Accounts", "#06b6d4")}</>,
         appMode === "student"
-          ? ["4 cards: Cash In, Cash Out, Savings, To Spend", "Progress bar shows % of budget used", "Daily Averages: ideal vs actual spend per day", "Category cards show where money is going"]
-          : ["Cash In = total income logged", "Net = Income − Expenses", "Account breakdown shows per-account spend", "No budget limit — pure tracking"]
+          ? ["Cash Flow In, Cash Flow Out, Savings, To Spend — four main cards", "Budget progress bar shows % of monthly budget used", "Daily averages: ideal vs actual spend per day", "Credits block shows pending amounts owed to/from you", "Click any card to navigate directly to that tab", "Check overview daily to stay on track"]
+          : ["Cash Flow In, Cash Flow Out, Savings, Net — four main cards", "Account breakdown shows per-account totals", "Credits block shows pending amounts owed to/from you", "Click any card to navigate directly to that tab", "Check overview daily to stay on track"]
       )}
-      {row("↓", "Expenses", "Log every payment you make.",
+
+      {row("↓", "Expenses", "Log every payment you make — amount, description, category, date, and payment mode.",
         <>{tag("Table", "#e17055")}{tag("Sortable", "#06b6d4")}{tag("Filterable", "#8b5cf6")}</>,
-        ["Tap + to open the add form", "Click any row to see full details (mode, account)", "Sort by any column header", "Search or filter by date range using the filter bar", "✎ to edit any entry"]
+        [
+          "Default view shows last 7 days — tap Show Full Month to see all entries",
+          "Tap any row to expand full details including mode and account",
+          "Edit or delete an entry directly from the expanded row",
+          "Use the Filter button to search, filter by category, date range, or amount",
+          "Tap + to add a new expense",
+          appMode === "student"
+            ? "Categories: Food, Transport, College, Entertainment, Health, Shopping, Other"
+            : "Categories: Salaries, Groceries, Rent, Bills, Transport, Fees, Medical, Shopping, Entertainment, Misc",
+          "Add expenses right after spending so you don't forget",
+          "Use categories consistently for accurate trend data",
+        ]
       )}
-      {row("↑", "Cash In", "Record money you receive.",
-        <>{tag("Income", "#00b894")}{tag("Auto-UPI", "#6c5ce7")}</>,
-        ["Manual entry or auto-detected from UPI SMS (Android app)", "Each entry has date, description, payment mode", appMode === "household" ? "Tag to an account to track per-account income" : "Adds to Cash Flow In on Overview"]
+
+      {row("↑", "Cash In", "Record all money you receive — salary, pocket money, transfers, freelance, or any income.",
+        <>{tag("Income", "#00b894")}{tag("Filterable", "#8b5cf6")}</>,
+        [
+          "Default view shows last 7 days — tap Show Full Month to see all entries",
+          "Filter by description, date range, or amount",
+          appMode === "household" ? "Tag to an account to track per-account income" : "Adds to Cash Flow In on Overview",
+          "Log all income sources to get an accurate cash flow picture",
+        ]
       )}
-      {row("⬡", "Savings", "Lock away money you don't want to spend.",
+
+      {row("⬡", "Savings", "Track money you set aside each month.",
         <>{tag("Savings", "#e0a800")}</>,
-        ["Savings are deducted from To Spend immediately", "Add a savings entry at the start of the month as a commitment", "View % of income saved on Overview"]
+        [
+          "Default view shows last 7 days — tap Show Full Month to see all entries",
+          "Savings are deducted from To Spend immediately",
+          "View % of income saved on Overview",
+          "Log savings as soon as you transfer them",
+        ]
       )}
-      {row("⇄", "Credit", "Track who owes who.",
-        <>{tag("They Owe Me", "#00b894")}{tag("I Owe", "#e17055")}</>,
-        ["Mark as Cleared when settled — auto-adds to Cash In or Expenses", "Pending entries stay highlighted", "Table view — sort, filter, edit same as other tabs"]
+
+      {row("⇄", "Credits", "Track money you lent or borrowed.",
+        <>{tag("They Owe Me", "#00b894")}{tag("I Owe", "#e17055")}{tag("Clearable", "#6c5ce7")}</>,
+        [
+          "They Owe: someone owes you money — I Owe: you owe someone",
+          "Mark as Cleared when settled — auto-adds the amount to Cash In or Expenses",
+          "Filter by type (They Owe / I Owe), status, or search by name",
+          "Student and Household mode have completely separate credits data",
+          "Log credits immediately so you never forget who owes what",
+        ]
       )}
-      {row("∿", "Trends", "See your spending patterns.",
+
+      {row("∿", "Trends", "See your spending patterns over time.",
         <>{tag("7 days", "#6c5ce7")}{tag("30 days", "#8b5cf6")}</>,
-        ["Bar chart of daily spending", "Switch between 7-day and 30-day view", "Category breakdown shows % of spend per category", "Today's bar is highlighted"]
+        [
+          "Bar chart of daily spending — today's bar is highlighted",
+          "Switch between 7-day and 30-day view",
+          "See your highest spending day at a glance",
+          "Category breakdown shows % of spend per category for the period",
+          "Data matches your Overview totals exactly",
+          "Check trends weekly to spot spending patterns early",
+        ]
       )}
-      {row("⚙", "Settings", "Customise Budgetly.",
-        <>{tag("Mode", "#6c5ce7")}{tag("Categories", "#e0a800")}{appMode === "household" && tag("Accounts", "#06b6d4")}</>,
-        ["Switch between Student and Household mode anytime", "Manage Categories — add or remove spending categories", appMode === "household" ? "Manage Accounts — add bank accounts, wallets, cash" : "Export month data as CSV spreadsheet", "Dark mode toggle"]
+
+      {row("⚙", "Settings", "Customise Budgetly to match how you track money.",
+        <>{tag("Mode", "#6c5ce7")}{tag("Categories", "#e0a800")}{appMode === "household" ? tag("Accounts", "#06b6d4") : tag("Export", "#00b894")}</>,
+        [
+          "Switch between Student and Household mode anytime",
+          "Manage Categories: add or delete custom categories (defaults cannot be deleted)",
+          appMode === "household" ? "Manage Accounts: add or delete accounts, defaults cannot be deleted" : "Export CSV: download all your data as a spreadsheet",
+          "Add or delete months to manage your history",
+          "Dark mode toggle",
+          "Delete account: permanently removes all your data",
+          "Set up your categories before logging entries for the cleanest data",
+        ]
+      )}
+
+      {appMode === "student" && row("🎓", "Student Mode", "Budgeting with a monthly spending limit.",
+        <>{tag("Student only", "#e0a800")}</>,
+        [
+          "Set a monthly budget in Settings",
+          "Overview shows To Spend amount and daily spend target",
+          "Budget progress bar shows how much of your budget is used",
+          "Daily averages section: avg per day spent, earned, and saved",
+        ]
+      )}
+
+      {appMode === "household" && row("🏠", "Household Mode", "Full transaction tracking across multiple accounts — no budget cap.",
+        <>{tag("Household only", "#06b6d4")}</>,
+        [
+          "No budget limit — pure income and expense tracking",
+          "Multiple accounts: Main Account, Cash, Savings Account, Joint Account, Current Account",
+          "Tag every expense or income to an account for per-account breakdowns",
+          "Overview shows account-wise totals",
+          "Net surplus or deficit shown instead of To Spend",
+        ]
       )}
     </div>
   );
