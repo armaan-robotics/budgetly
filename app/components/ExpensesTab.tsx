@@ -17,8 +17,8 @@ export default function ExpensesTab(p: ExProps) {
   const [editMode, setEditMode] = useState(""); const [editAcc, setEditAcc] = useState("");
 
   const todayD = new Date(); todayD.setHours(0,0,0,0);
-  const yest = new Date(todayD); yest.setDate(todayD.getDate()-1);
-  const cutoff = `${yest.getFullYear()}-${String(yest.getMonth()+1).padStart(2,"0")}-${String(yest.getDate()).padStart(2,"0")}`;
+  const weekAgo = new Date(todayD); weekAgo.setDate(todayD.getDate()-6);
+  const cutoff = `${weekAgo.getFullYear()}-${String(weekAgo.getMonth()+1).padStart(2,"0")}-${String(weekAgo.getDate()).padStart(2,"0")}`;
   const visibleExpenses = showAll ? p.expenses : p.expenses.filter(e=>(e.date||"").slice(0,10)>=cutoff);
 
   const openEdit = (e: import("./types").Expense) => {
@@ -65,7 +65,7 @@ export default function ExpensesTab(p: ExProps) {
       <div style={sCard}>
         <div style={{fontSize:"18px",fontWeight:700,color:C.text,marginTop:"8px",marginBottom:"16px"}}>Recent Entries</div>
         <EntryTable entries={visibleExpenses} columns={cols} accentColor={C.red} onEdit={openEdit} onDelete={p.deleteExpense} onDeleteMany={p.deleteManyExpenses} C={C}
-          toggleButton={<button onClick={()=>setShowAll(v=>!v)} style={{background:"#7C6EE0",color:"#fff",border:"none",borderRadius:"999px",padding:"6px 16px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{showAll?"Show last 2 days":"Show full month"}</button>}
+          toggleButton={<button onClick={()=>setShowAll(v=>!v)} style={{background:"#7C6EE0",color:"#fff",border:"none",borderRadius:"999px",padding:"6px 16px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{showAll?"Show last week":"Show full month"}</button>}
         />
       </div>
 

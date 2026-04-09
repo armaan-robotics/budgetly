@@ -17,8 +17,8 @@ export default function SavingsTab(p: SvProps) {
   const [editAcc, setEditAcc] = useState("");
 
   const todayD = new Date(); todayD.setHours(0,0,0,0);
-  const yest = new Date(todayD); yest.setDate(todayD.getDate()-1);
-  const cutoff = `${yest.getFullYear()}-${String(yest.getMonth()+1).padStart(2,"0")}-${String(yest.getDate()).padStart(2,"0")}`;
+  const weekAgo = new Date(todayD); weekAgo.setDate(todayD.getDate()-6);
+  const cutoff = `${weekAgo.getFullYear()}-${String(weekAgo.getMonth()+1).padStart(2,"0")}-${String(weekAgo.getDate()).padStart(2,"0")}`;
   const visibleSavings = showAll ? p.savings : p.savings.filter(e=>(e.date||"").slice(0,10)>=cutoff);
 
   const openEdit = (e: Entry) => {
@@ -59,7 +59,7 @@ export default function SavingsTab(p: SvProps) {
       <div style={sCard}>
         <div style={{fontSize:"18px",fontWeight:700,color:C.text,marginTop:"8px",marginBottom:"16px"}}>Recent Entries</div>
         <EntryTable entries={visibleSavings} columns={cols} accentColor={C.amber} onEdit={openEdit} onDelete={p.deleteSaving} onDeleteMany={p.deleteManySavings} C={C}
-          toggleButton={<button onClick={()=>setShowAll(v=>!v)} style={{background:"#7C6EE0",color:"#fff",border:"none",borderRadius:"999px",padding:"6px 16px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{showAll?"Show last 2 days":"Show full month"}</button>}
+          toggleButton={<button onClick={()=>setShowAll(v=>!v)} style={{background:"#7C6EE0",color:"#fff",border:"none",borderRadius:"999px",padding:"6px 16px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>{showAll?"Show last week":"Show full month"}</button>}
         />
       </div>
 
